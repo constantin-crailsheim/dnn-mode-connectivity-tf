@@ -8,5 +8,13 @@ class Transforms:
         pass
 
 
-def loaders():
+def loaders(
+    dataset: str,
+    path: str,
+    batch_size: int,
+    num_workers: int,
+    transform_name: str,
+    use_test: bool = False,
+    shuffle_train: bool = True,
+):
     pass
