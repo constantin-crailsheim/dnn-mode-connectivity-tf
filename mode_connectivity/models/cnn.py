@@ -10,6 +10,7 @@ class CNNBase(): # Inherit equivalent of torch.nn
         super(CNNBase, self).__init__()
         self.conv_part = tf.keras.models.Sequential(
            tf.keras.layers()
+           # Add layers
         )
         self.fc_part = tf.keras.models.Sequential(
             
