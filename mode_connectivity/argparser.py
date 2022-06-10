@@ -1,6 +1,8 @@
 import argparse
+from dataclasses import dataclass
 
 
+@dataclass
 class Arguments:
     # Dataset
     dir: str = "/tmp/curve"
@@ -42,33 +44,30 @@ def parse_train_arguments() -> Arguments:
     parse_checkpoint_arguments(parser=parser)
 
     args = parser.parse_args()
-    return Arguments(**args)
+    return Arguments(**args.__dict__)
 
 
-def parse_dataset_arguments(parser: argparse.ArgumentParser):
-    dataset_parser = parser.add_subparsers(help="Dataset options")
-
-    dataset_parser.add_argument(
+def parse_dataset_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
         "--dir",
         type=str,
         default="/tmp/curve/",
         metavar="DIR",
         help="training directory (default: /tmp/curve/)",
     )
-
-    dataset_parser.add_argument(
+    parser.add_argument(
         "--dataset",
         type=str,
         default="CIFAR10",
         metavar="DATASET",
         help="dataset name (default: CIFAR10)",
     )
-    dataset_parser.add_argument(
+    parser.add_argument(
         "--use_test",
         action="store_true",
         help="switches between validation and test set (default: validation)",
     )
-    dataset_parser.add_argument(
+    parser.add_argument(
         "--data_path",
         type=str,
         default=None,
@@ -77,42 +76,35 @@ def parse_dataset_arguments(parser: argparse.ArgumentParser):
     )
 
 
-def parse_compute_arguments(parser: argparse.ArgumentParser):
-    compute_parser = parser.add_subparsers(help="Compute options")
-
-    compute_parser.add_argument(
+def parse_compute_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
         "--num-workers",
         type=int,
         default=4,
         metavar="N",
         help="number of workers (default: 4)",
     )
-
-    compute_parser.add_argument(
+    parser.add_argument(
         "--seed", type=int, default=1, metavar="S", help="random seed (default: 1)"
     )
 
 
-def parse_model_arguments(parser: argparse.ArgumentParser):
-    model_parser = parser.add_subparsers(help="Model options")
-
-    model_parser.add_argument(
+def parse_model_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
         "--transform",
         type=str,
         default="VGG",
         metavar="TRANSFORM",
         help="transform name (default: VGG)",
     )
-
-    model_parser.add_argument(
+    parser.add_argument(
         "--batch_size",
         type=int,
         default=128,
         metavar="N",
         help="input batch size (default: 128)",
     )
-
-    model_parser.add_argument(
+    parser.add_argument(
         "--model",
         type=str,
         default=None,
@@ -120,54 +112,50 @@ def parse_model_arguments(parser: argparse.ArgumentParser):
         required=True,
         help="model name (default: None)",
     )
-
-    model_parser.add_argument(
+    parser.add_argument(
         "--curve",
         type=str,
         default=None,
         metavar="CURVE",
         help="curve type to use (default: None)",
     )
-    model_parser.add_argument(
+    parser.add_argument(
         "--num_bends",
         type=int,
         default=3,
         metavar="N",
         help="number of curve bends (default: 3)",
     )
-
-    model_parser.add_argument(
+    parser.add_argument(
         "--epochs",
         type=int,
         default=200,
         metavar="N",
         help="number of epochs to train (default: 200)",
     )
-
-    model_parser.add_argument(
+    parser.add_argument(
         "--lr",
         type=float,
         default=0.01,
         metavar="LR",
         help="initial learning rate (default: 0.01)",
     )
-    model_parser.add_argument(
+    parser.add_argument(
         "--momentum",
         type=float,
         default=0.9,
         metavar="M",
         help="SGD momentum (default: 0.9)",
     )
-    model_parser.add_argument(
+    parser.add_argument(
         "--wd",
         type=float,
         default=1e-4,
         metavar="WD",
         help="weight decay (default: 1e-4)",
     )
-
-    model_parser.set_defaults(init_linear=True)
-    model_parser.add_argument(
+    parser.set_defaults(init_linear=True)
+    parser.add_argument(
         "--init_linear_off",
         dest="init_linear",
         action="store_false",
@@ -175,43 +163,41 @@ def parse_model_arguments(parser: argparse.ArgumentParser):
     )
 
 
-def parse_checkpoint_arguments(parser: argparse.ArgumentParser):
-    checkpoint_parser = parser.add_subparsers(help="Checkpoint options")
-
-    checkpoint_parser.add_argument(
+def parse_checkpoint_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
         "--init_start",
         type=str,
         default=None,
         metavar="CKPT",
         help="checkpoint to init start point (default: None)",
     )
-    checkpoint_parser.add_argument(
+    parser.add_argument(
         "--fix_start",
         dest="fix_start",
         action="store_true",
         help="fix start point (default: off)",
     )
-    checkpoint_parser.add_argument(
+    parser.add_argument(
         "--init_end",
         type=str,
         default=None,
         metavar="CKPT",
         help="checkpoint to init end point (default: None)",
     )
-    checkpoint_parser.add_argument(
+    parser.add_argument(
         "--fix_end",
         dest="fix_end",
         action="store_true",
         help="fix end point (default: off)",
     )
-    checkpoint_parser.add_argument(
+    parser.add_argument(
         "--resume",
         type=str,
         default=None,
         metavar="CKPT",
         help="checkpoint to resume training from (default: None)",
     )
-    checkpoint_parser.add_argument(
+    parser.add_argument(
         "--save_freq",
         type=int,
         default=50,
