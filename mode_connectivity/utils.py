@@ -14,6 +14,10 @@ def l2_regularizer(weight_decay):
 
 
 def adjust_learning_rate():
+    # For PyTorch:
+    # for param_group in optimizer.param_groups:
+    #     param_group['lr'] = lr
+    # return lr
     pass
 
 

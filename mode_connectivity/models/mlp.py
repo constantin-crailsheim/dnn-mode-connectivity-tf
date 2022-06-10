@@ -11,8 +11,11 @@ class MLPBase:  # Inherit equivalent of torch.nn
         self.fc_part = tf.keras.models.Sequential(
             [
                 tf.keras.layers.Flatten(),
-                tf.keras.layers.Dense(256, activation="relu"),
-                tf.keras.layers.Dense(10),
+                tf.keras.layers.Dense(256, 
+                    activation="relu",
+                    kernel_regularizer = tf.keras.regularizer.l2(args.wd if args.curve is None else 0.0)),
+                tf.keras.layers.Dense(10,
+                kernel_regularizer = tf.keras.regularizer.l2(args.wd if args.curve is None else 0.0)),
             ]
         )
 
