@@ -7,16 +7,16 @@ class Arguments:
     # Dataset
     dir: str = "/tmp/curve"
     dataset: str = "CIFAR10"
-    use_test: bool = False  # -> store_true
+    use_test: bool = False
     data_path: str = None
 
     # Model
-    transform: str = "VGG"
-    batch_size: int = 128
     model: str = None
     curve: str = None
+    transform: str = "VGG"
+    batch_size: int = 128
     num_bends: int = 3
-    init_linear: bool = True  # -> default
+    init_linear: bool = True
     epochs: int = 200
     lr: float = 0.01
     momentum: float = 0.9
@@ -29,8 +29,8 @@ class Arguments:
     # Checkpoints
     init_start: str = None
     init_end: str = None
-    fix_end: bool = False  # -> Store true
-    fix_start: bool = False  # -> Store true
+    fix_end: bool = False
+    fix_start: bool = False
     resume: str = None
     save_freq: int = 50
 
@@ -91,20 +91,6 @@ def _add_compute_arguments(parser: argparse.ArgumentParser) -> None:
 
 def _add_model_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
-        "--transform",
-        type=str,
-        default="VGG",
-        metavar="TRANSFORM",
-        help="transform name (default: VGG)",
-    )
-    parser.add_argument(
-        "--batch-size",
-        type=int,
-        default=128,
-        metavar="N",
-        help="input batch size (default: 128)",
-    )
-    parser.add_argument(
         "--model",
         type=str,
         default=None,
@@ -118,6 +104,20 @@ def _add_model_arguments(parser: argparse.ArgumentParser) -> None:
         default=None,
         metavar="CURVE",
         help="curve type to use (default: None)",
+    )
+    parser.add_argument(
+        "--transform",
+        type=str,
+        default="VGG",
+        metavar="TRANSFORM",
+        help="transform name (default: VGG)",
+    )
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=128,
+        metavar="N",
+        help="input batch size (default: 128)",
     )
     parser.add_argument(
         "--num-bends",

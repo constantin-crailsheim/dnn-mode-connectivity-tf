@@ -1,7 +1,7 @@
-from mode_connectivity.argparser import parse_train_arguments, Arguments
-import pytest
 from unittest import mock
 
+import pytest
+from mode_connectivity.argparser import Arguments, parse_train_arguments
 
 BASIC_ARGS = ["python", "--model", "SomeModel"]
 
@@ -16,6 +16,11 @@ class TestArgparser:
 
     def test_parse_train_arguments_no_model(self):
         with mock.patch("sys.argv", ["python"]):
+            with pytest.raises(SystemExit):
+                parse_train_arguments()
+
+    def test_parse_train_arguments_unknown_arg(self):
+        with mock.patch("sys.argv", ["python", "--this-is-no-option", "NoOption"]):
             with pytest.raises(SystemExit):
                 parse_train_arguments()
 
