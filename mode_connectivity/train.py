@@ -36,6 +36,9 @@ def main():
     )
 
     # TODO: criterion = F.cross_entropy
+    criterion = tf.nn.softmax_cross_entropy_with_logits()
+    # Check if correct function, takes labels of shape [nbatch, nclass], while F.cross_entropy()
+    # takes labels of shape [nBatch]
     regularizer = None if not args.curve else l2_regularizer(args.wd)
     # TODO : optimizer = torch.optim.SGD(
     #     filter(lambda param: param.requires_grad, model.parameters()),
@@ -43,6 +46,19 @@ def main():
     #     momentum=args.momentum,
     #     weight_decay=args.wd if args.curve is None else 0.0,
     # )
+    optimizer = tf.keras.optimizers.SGD(
+        # TODO how can we fit equivalent of arg params in PyTorch
+        # PyTorch: params=filter(lambda param: param.requires_grad, model.parameters()),
+        # https://pytorch.org/docs/stable/generated/torch.optim.SGD.html#torch.optim.SGD
+        learning_rate = args.lr,
+        momentum = args.momentum,
+        # Weight decay added into models/mlp.py
+        # https://stackoverflow.com/questions/55046234/sgd-with-weight-decay-parameter-in-tensorflow
+        # https://d2l.ai/chapter_multilayer-perceptrons/weight-decay.html
+        # PyTorch: weight_decay=args.wd if args.curve is None else 0.0,
+    )
+    # https://www.tensorflow.org/api_docs/python/tf/keras/optimizers/SGD
+    
 
     load_checkpoint()
     save_checkpoint()
@@ -125,16 +141,132 @@ def train(
         print_epoch_stats()
 
 
-def train_epoch():
-    pass
+def train_epoch(train_loader, model, optimizer, criterion, regularizer = None, lr_schedule = None):
+    loss_sum = 0.0
+    correct = 0.0
+
+    num_iters = len(train_loader)
+    # PyTorch: model.train()
+    for iter, (input, target) in enumerate(train_loader):
+        if lr_schedule is not None:
+            lr = lr_schedule(iter / num_iters)
+            adjust_learning_rate(optimizer, lr)
+        loss_sum , correct = train_batch(
+            input = input,
+            target = target,
+            loss_sum = loss_sum,
+            correct = correct,
+            model = model,
+            optimizer = optimizer,
+            criterion = criterion,
+            regularizer = None,
+            lr_schedule = None
+            )
+    
+    return {
+        'loss': loss_sum / len(train_loader.dataset),
+        'accuracy': correct * 100.0 / len(train_loader.dataset),
+    }
 
 
-def test_epoch():
-    pass
+def test_epoch(test_loader, model, criterion, regularizer=None, **kwargs):
+    nll_sum = 0.0
+    loss_sum = 0.0
+    correct = 0.0
+
+    # PyTorch: model.eval()
+    for input, target in test_loader:
+        nll_sum, loss_sum, correct = test_batch(
+            input = input,
+            target = target,
+            nll_sum = nll_sum,
+            correct = correct,
+            test_loader = test_loader,
+            model = model,
+            criterion = criterion,
+            regularizer = None,
+            **kwargs
+        )
+    
+    return {
+        'nll': nll_sum / len(test_loader.dataset),
+        'loss': loss_sum / len(test_loader.dataset),
+        'accuracy': correct * 100.0 / len(test_loader.dataset),
+    }
 
 
-def train_batch():
-    pass
+def train_batch(
+    input, 
+    target, 
+    loss_sum, 
+    correct, 
+    model, 
+    optimizer, 
+    criterion, 
+    regularizer = None, 
+    lr_schedule = None
+):
+    # TODO Allocate model to CPU or GPU
+    # PyTorch:
+    # if torch.cuda.is_available():
+#       model.cuda()
+    # else:
+    #   device = torch.device('cpu')
+    #   model.to(device)
+
+
+    with tf.GradientTape() as tape:
+        output = model(input)
+        loss = criterion(output, target) + model.losses # + model.losses necessary?
+        # PyTorch:
+        # if regularizer is not None:
+        #     loss += regularizer(model)
+
+    grads = tape.gradient(loss, model.trainable_variables)
+    processed_grads = [g for g in grads]
+    grads_and_vars = zip(processed_grads, model.trainable_variables)
+    optimizer.apply_gradients(grads_and_vars)
+
+    # See for above:
+    # https://medium.com/analytics-vidhya/3-different-ways-to-perform-gradient-descent-in-tensorflow-2-0-and-ms-excel-ffc3791a160a
+    # https://d2l.ai/chapter_multilayer-perceptrons/weight-decay.html (4.5.4)
+
+    loss_sum += loss.item() * input.size(0)
+    pred = output.data.argmax(1, keepdim=True)
+    correct += pred.eq(target.data.view_as(pred)).sum().item()
+
+    return loss_sum, correct # Do we need to return the model as well?
+
+def test_batch(
+    input,
+    target,
+    nll_sum,
+    correct,
+    test_loader,
+    model,
+    criterion,
+    regularizer = None,
+    **kwargs
+):
+    # TODO Allocate model to CPU or GPU
+
+    output = model(input, **kwargs)
+    nll = criterion(output, target)
+    loss = nll.clone()
+    # PyTorch:
+        # if regularizer is not None:
+        #     loss += regularizer(model)
+
+    nll_sum += nll.item() * input.size(0)
+    loss_sum += loss.item() * input.size(0)
+    pred = output.data.argmax(1, keepdim=True)
+    correct += pred.eq(target.data.view_as(pred)).sum().item()
+
+    return {
+        'nll': nll_sum / len(test_loader.dataset),
+        'loss': loss_sum / len(test_loader.dataset),
+        'accuracy': correct * 100.0 / len(test_loader.dataset),
+    }
 
 
 def print_epoch_stats(values, columns, epoch, start_epoch):
