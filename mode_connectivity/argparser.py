@@ -38,16 +38,16 @@ class Arguments:
 def parse_train_arguments() -> Arguments:
     parser = argparse.ArgumentParser(description="DNN curve training")
 
-    parse_dataset_arguments(parser=parser)
-    parse_compute_arguments(parser=parser)
-    parse_model_arguments(parser=parser)
-    parse_checkpoint_arguments(parser=parser)
+    _add_dataset_arguments(parser=parser)
+    _add_compute_arguments(parser=parser)
+    _add_model_arguments(parser=parser)
+    _add_checkpoint_arguments(parser=parser)
 
     args = parser.parse_args()
     return Arguments(**args.__dict__)
 
 
-def parse_dataset_arguments(parser: argparse.ArgumentParser) -> None:
+def _add_dataset_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--dir",
         type=str,
@@ -76,7 +76,7 @@ def parse_dataset_arguments(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def parse_compute_arguments(parser: argparse.ArgumentParser) -> None:
+def _add_compute_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--num-workers",
         type=int,
@@ -89,7 +89,7 @@ def parse_compute_arguments(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def parse_model_arguments(parser: argparse.ArgumentParser) -> None:
+def _add_model_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--transform",
         type=str,
@@ -163,7 +163,7 @@ def parse_model_arguments(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def parse_checkpoint_arguments(parser: argparse.ArgumentParser) -> None:
+def _add_checkpoint_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--init_start",
         type=str,
