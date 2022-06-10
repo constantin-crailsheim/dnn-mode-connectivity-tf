@@ -1,4 +1,6 @@
 import time
+from typing import Callable
+from typing import Tuple
 
 import tabulate
 import tensorflow as tf
@@ -36,7 +38,7 @@ def main():
     )
 
     # TODO: criterion = F.cross_entropy
-    criterion = tf.nn.softmax_cross_entropy_with_logits()
+    criterion = tf.nn.softmax_cross_entropy_with_logits
     # Check if correct function, takes labels of shape [nbatch, nclass], while F.cross_entropy()
     # takes labels of shape [nBatch]
     regularizer = None if not args.curve else l2_regularizer(args.wd)
@@ -141,14 +143,14 @@ def train(
         print_epoch_stats()
 
 
-def train_epoch(train_loader, model, optimizer, criterion, regularizer = None, lr_schedule = None):
+def train_epoch(train_loader: Callable, model, optimizer, criterion, regularizer = None, lr_schedule: Callable = None) -> dict:
     loss_sum = 0.0
     correct = 0.0
 
     num_iters = len(train_loader)
     # PyTorch: model.train()
     for iter, (input, target) in enumerate(train_loader):
-        if lr_schedule is not None:
+        if callable(lr_schedule):
             lr = lr_schedule(iter / num_iters)
             adjust_learning_rate(optimizer, lr)
         loss_sum , correct = train_batch(
@@ -169,7 +171,7 @@ def train_epoch(train_loader, model, optimizer, criterion, regularizer = None, l
     }
 
 
-def test_epoch(test_loader, model, criterion, regularizer=None, **kwargs):
+def test_epoch(test_loader: Callable, model, criterion, regularizer=None, **kwargs):
     nll_sum = 0.0
     loss_sum = 0.0
     correct = 0.0
@@ -205,7 +207,7 @@ def train_batch(
     criterion, 
     regularizer = None, 
     lr_schedule = None
-):
+) -> Tuple[float, float]:
     # TODO Allocate model to CPU or GPU
     # PyTorch:
     # if torch.cuda.is_available():
@@ -247,7 +249,7 @@ def test_batch(
     criterion,
     regularizer = None,
     **kwargs
-):
+) -> Tuple[float, float]:
     # TODO Allocate model to CPU or GPU
 
     output = model(input, **kwargs)
