@@ -63,12 +63,12 @@ def _add_dataset_arguments(parser: argparse.ArgumentParser) -> None:
         help="dataset name (default: CIFAR10)",
     )
     parser.add_argument(
-        "--use_test",
+        "--use-test",
         action="store_true",
         help="switches between validation and test set (default: validation)",
     )
     parser.add_argument(
-        "--data_path",
+        "--data-path",
         type=str,
         default=None,
         metavar="PATH",
@@ -98,7 +98,7 @@ def _add_model_arguments(parser: argparse.ArgumentParser) -> None:
         help="transform name (default: VGG)",
     )
     parser.add_argument(
-        "--batch_size",
+        "--batch-size",
         type=int,
         default=128,
         metavar="N",
@@ -120,7 +120,7 @@ def _add_model_arguments(parser: argparse.ArgumentParser) -> None:
         help="curve type to use (default: None)",
     )
     parser.add_argument(
-        "--num_bends",
+        "--num-bends",
         type=int,
         default=3,
         metavar="N",
@@ -154,9 +154,8 @@ def _add_model_arguments(parser: argparse.ArgumentParser) -> None:
         metavar="WD",
         help="weight decay (default: 1e-4)",
     )
-    parser.set_defaults(init_linear=True)
     parser.add_argument(
-        "--init_linear_off",
+        "--init-linear-off",
         dest="init_linear",
         action="store_false",
         help="turns off linear initialization of intermediate points (default: on)",
@@ -165,27 +164,27 @@ def _add_model_arguments(parser: argparse.ArgumentParser) -> None:
 
 def _add_checkpoint_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
-        "--init_start",
+        "--init-start",
         type=str,
         default=None,
         metavar="CKPT",
         help="checkpoint to init start point (default: None)",
     )
     parser.add_argument(
-        "--fix_start",
+        "--fix-start",
         dest="fix_start",
         action="store_true",
         help="fix start point (default: off)",
     )
     parser.add_argument(
-        "--init_end",
+        "--init-end",
         type=str,
         default=None,
         metavar="CKPT",
         help="checkpoint to init end point (default: None)",
     )
     parser.add_argument(
-        "--fix_end",
+        "--fix-end",
         dest="fix_end",
         action="store_true",
         help="fix end point (default: off)",
@@ -198,7 +197,7 @@ def _add_checkpoint_arguments(parser: argparse.ArgumentParser) -> None:
         help="checkpoint to resume training from (default: None)",
     )
     parser.add_argument(
-        "--save_freq",
+        "--save-freq",
         type=int,
         default=50,
         metavar="N",
