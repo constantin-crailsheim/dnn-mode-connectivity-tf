@@ -6,6 +6,8 @@ __all__ = [
 
 
 class CNNBase:  # Inherit equivalent of torch.nn
+    # -> Should be tf.keras.layers.Layer
+    # https://stackoverflow.com/a/69151656/10429039
     def __init__(self, num_classes):
         super(CNNBase, self).__init__()
         self.conv_part = tf.keras.models.Sequential(tf.keras.layers())
