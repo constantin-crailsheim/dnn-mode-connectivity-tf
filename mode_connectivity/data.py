@@ -125,31 +125,4 @@ def loaders(
 
 
 
-# %%
-import matplotlib.pyplot as plt
-import numpy as np
-import tensorflow as tf
-import tensorflow_datasets as tfds
-from tensorflow import keras
-from keras import layers
-dataset="mnist"
-shuffle_train = True
 
-(train_set, test_set), ds = tfds.load(
-    dataset,
-    split=['train', 'test'],
-    shuffle_files=shuffle_train,
-    as_supervised=True,
-    with_info=True,
-    )
-
-print(ds)    
-
-#dataset = keras.datasets.mnist
-#(train_images_tf, train_labels_tf), (test_images_tf, test_labels_tf) = dataset.load_data()
-#train_images_tf = train_images_tf / 255.0
-#test_images_tf = test_images_tf / 255.0
-
-#plt.imshow(train_images_tf[1])
-
-# %%
