@@ -1,11 +1,12 @@
 import time
-from typing import Callable
-from typing import Tuple
+from typing import Callable, Dict, Iterable, Tuple, Union
 
 import tabulate
 import tensorflow as tf
+from keras.layers import Layer
+from keras.optimizers import Optimizer
 
-from mode_connectivity.argparser import parse_train_arguments
+from mode_connectivity.argparser import Arguments, parse_train_arguments
 from mode_connectivity.data import loaders
 from mode_connectivity.models.cnn import CNN
 from mode_connectivity.models.mlp import MLP
@@ -13,6 +14,7 @@ from mode_connectivity.utils import (
     adjust_learning_rate,
     check_batch_normalization,
     l2_regularizer,
+    learning_rate_schedule,
 )
 
 COLUMNS = ["ep", "lr", "tr_loss", "tr_acc", "te_nll", "te_acc", "time"]
@@ -52,20 +54,29 @@ def main():
         # TODO how can we fit equivalent of arg params in PyTorch
         # PyTorch: params=filter(lambda param: param.requires_grad, model.parameters()),
         # https://pytorch.org/docs/stable/generated/torch.optim.SGD.html#torch.optim.SGD
-        learning_rate = args.lr,
-        momentum = args.momentum,
+        learning_rate=args.lr,
+        momentum=args.momentum,
         # Weight decay added into models/mlp.py
         # https://stackoverflow.com/questions/55046234/sgd-with-weight-decay-parameter-in-tensorflow
         # https://d2l.ai/chapter_multilayer-perceptrons/weight-decay.html
         # PyTorch: weight_decay=args.wd if args.curve is None else 0.0,
     )
     # https://www.tensorflow.org/api_docs/python/tf/keras/optimizers/SGD
-    
 
-    load_checkpoint()
+    start_epoch = 1
+    if args.resume:
+        start_epoch = load_checkpoint()
     save_checkpoint()
 
-    train()
+    train(
+        args=args,
+        loaders=loaders,
+        model=model,
+        criterion=criterion,
+        regularizer=regularizer,
+        optimizer=optimizer,
+        start_epoch=start_epoch,
+    )
 
     if args.epochs % args.save_freq != 0:
         save_checkpoint()
@@ -92,6 +103,14 @@ def get_model(curve: str, architecture, num_classes: int):
 
 
 def load_checkpoint():
+    # Pytorch:
+    # start_epoch = 1
+    # if args.resume is not None:
+    #     print('Resume training from %s' % args.resume)
+    #     checkpoint = torch.load(args.resume)
+    #     start_epoch = checkpoint['epoch'] + 1
+    #     model.load_state_dict(checkpoint['model_state'])
+    #     optimizer.load_state_dict(checkpoint['optimizer_state'])
     pass
 
 
@@ -100,15 +119,13 @@ def save_checkpoint():
 
 
 def train(
-    args,
-    loaders,
-    model,
-    learning_rate_schedule,
-    criterion,
-    regularizer,
-    optimizer,
-    start_epoch,
-    columns,
+    args: Arguments,
+    loaders: Dict[str, Iterable],
+    model: Layer,
+    criterion: Callable,
+    regularizer: Union[Callable, None],
+    optimizer: Optimizer,
+    start_epoch: int,
 ):
     has_batch_normalization = check_batch_normalization(model)
     test_results = {"loss": None, "accuracy": None, "nll": None}
@@ -143,7 +160,14 @@ def train(
         print_epoch_stats()
 
 
-def train_epoch(train_loader: Callable, model, optimizer, criterion, regularizer = None, lr_schedule: Callable = None) -> dict:
+def train_epoch(
+    train_loader: Iterable,
+    model: Layer,
+    optimizer: Optimizer,
+    criterion: Callable,
+    regularizer: Union[Callable, None] = None,
+    lr_schedule: Union[Callable, None] = None,
+) -> Dict[str, float]:
     loss_sum = 0.0
     correct = 0.0
 
@@ -153,25 +177,31 @@ def train_epoch(train_loader: Callable, model, optimizer, criterion, regularizer
         if callable(lr_schedule):
             lr = lr_schedule(iter / num_iters)
             adjust_learning_rate(optimizer, lr)
-        loss_sum , correct = train_batch(
-            input = input,
-            target = target,
-            loss_sum = loss_sum,
-            correct = correct,
-            model = model,
-            optimizer = optimizer,
-            criterion = criterion,
-            regularizer = None,
-            lr_schedule = None
-            )
-    
+        loss_sum, correct = train_batch(
+            input=input,
+            target=target,
+            loss_sum=loss_sum,
+            correct=correct,
+            model=model,
+            optimizer=optimizer,
+            criterion=criterion,
+            regularizer=regularizer,
+            lr_schedule=lr_schedule,
+        )
+
     return {
-        'loss': loss_sum / len(train_loader.dataset),
-        'accuracy': correct * 100.0 / len(train_loader.dataset),
+        "loss": loss_sum / len(train_loader.dataset),
+        "accuracy": correct * 100.0 / len(train_loader.dataset),
     }
 
 
-def test_epoch(test_loader: Callable, model, criterion, regularizer=None, **kwargs):
+def test_epoch(
+    test_loader: Iterable,
+    model: Layer,
+    criterion: Callable,
+    regularizer: Union[Callable, None] = None,
+    **kwargs,
+) -> Dict[str, float]:
     nll_sum = 0.0
     loss_sum = 0.0
     correct = 0.0
@@ -179,47 +209,46 @@ def test_epoch(test_loader: Callable, model, criterion, regularizer=None, **kwar
     # PyTorch: model.eval()
     for input, target in test_loader:
         nll_sum, loss_sum, correct = test_batch(
-            input = input,
-            target = target,
-            nll_sum = nll_sum,
-            correct = correct,
-            test_loader = test_loader,
-            model = model,
-            criterion = criterion,
-            regularizer = None,
-            **kwargs
+            input=input,
+            target=target,
+            nll_sum=nll_sum,
+            correct=correct,
+            test_loader=test_loader,
+            model=model,
+            criterion=criterion,
+            regularizer=regularizer,
+            **kwargs,
         )
-    
+
     return {
-        'nll': nll_sum / len(test_loader.dataset),
-        'loss': loss_sum / len(test_loader.dataset),
-        'accuracy': correct * 100.0 / len(test_loader.dataset),
+        "nll": nll_sum / len(test_loader.dataset),
+        "loss": loss_sum / len(test_loader.dataset),
+        "accuracy": correct * 100.0 / len(test_loader.dataset),
     }
 
 
 def train_batch(
-    input, 
-    target, 
-    loss_sum, 
-    correct, 
-    model, 
-    optimizer, 
-    criterion, 
-    regularizer = None, 
-    lr_schedule = None
+    input: tf.Tensor,
+    target: tf.Tensor,
+    loss_sum: float,
+    correct: float,
+    model: Layer,
+    optimizer: Optimizer,
+    criterion: Callable,
+    regularizer: Union[Callable, None] = None,
+    lr_schedule: Union[Callable, None] = None,
 ) -> Tuple[float, float]:
     # TODO Allocate model to CPU or GPU
     # PyTorch:
     # if torch.cuda.is_available():
-#       model.cuda()
+    #       model.cuda()
     # else:
     #   device = torch.device('cpu')
     #   model.to(device)
 
-
     with tf.GradientTape() as tape:
         output = model(input)
-        loss = criterion(output, target) + model.losses # + model.losses necessary?
+        loss = criterion(output, target) + model.losses  # + model.losses necessary?
         # PyTorch:
         # if regularizer is not None:
         #     loss += regularizer(model)
@@ -237,27 +266,28 @@ def train_batch(
     pred = output.data.argmax(1, keepdim=True)
     correct += pred.eq(target.data.view_as(pred)).sum().item()
 
-    return loss_sum, correct # Do we need to return the model as well?
+    return loss_sum, correct  # Do we need to return the model as well?
+
 
 def test_batch(
-    input,
-    target,
-    nll_sum,
-    correct,
-    test_loader,
-    model,
-    criterion,
-    regularizer = None,
-    **kwargs
-) -> Tuple[float, float]:
+    input: tf.Tensor,
+    target: tf.Tensor,
+    nll_sum: float,
+    correct: float,
+    test_loader: Iterable,
+    model: Layer,
+    criterion: Callable,
+    regularizer: Union[Callable, None] = None,
+    **kwargs,
+) -> Dict[str, float]:
     # TODO Allocate model to CPU or GPU
 
     output = model(input, **kwargs)
     nll = criterion(output, target)
     loss = nll.clone()
     # PyTorch:
-        # if regularizer is not None:
-        #     loss += regularizer(model)
+    # if regularizer is not None:
+    #     loss += regularizer(model)
 
     nll_sum += nll.item() * input.size(0)
     loss_sum += loss.item() * input.size(0)
@@ -265,14 +295,14 @@ def test_batch(
     correct += pred.eq(target.data.view_as(pred)).sum().item()
 
     return {
-        'nll': nll_sum / len(test_loader.dataset),
-        'loss': loss_sum / len(test_loader.dataset),
-        'accuracy': correct * 100.0 / len(test_loader.dataset),
+        "nll": nll_sum / len(test_loader.dataset),
+        "loss": loss_sum / len(test_loader.dataset),
+        "accuracy": correct * 100.0 / len(test_loader.dataset),
     }
 
 
-def print_epoch_stats(values, columns, epoch, start_epoch):
-    table = tabulate.tabulate([values], columns, tablefmt="simple", floatfmt="9.4f")
+def print_epoch_stats(values, epoch, start_epoch):
+    table = tabulate.tabulate([values], COLUMNS, tablefmt="simple", floatfmt="9.4f")
     if epoch % 40 == 1 or epoch == start_epoch:
         table = table.split("\n")
         table = "\n".join([table[1]] + table)
