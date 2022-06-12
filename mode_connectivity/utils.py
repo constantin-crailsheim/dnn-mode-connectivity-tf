@@ -3,6 +3,7 @@ import os
 
 import keras
 import tensorflow as tf
+from tensorflow.python.framework.errors import NotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +42,9 @@ def load_checkpoint(
     **kwargs,
 ) -> int:
     """Load the model and optimizer from a saved checkpoint.
+    The model and optimizer objects get updated with the stored parameters from the checkpoint.
+
+    Also allows for additional parameters to load via kwargs.
 
     Args:
         checkpoint_path (str): Path to the checkpoint.
@@ -55,7 +59,15 @@ def load_checkpoint(
     checkpoint = tf.train.Checkpoint(
         epoch=epoch, model=model, optimizer=optimizer, **kwargs
     )
-    checkpoint.restore(checkpoint_path).assert_consumed()
+    try:
+        checkpoint.restore(checkpoint_path)
+    except NotFoundError as e:
+        logger.error(
+            f"Could not restore specified checkpoint from {checkpoint_path}. Error: {e.message}"
+        )
+        logger.info("Starting from epoch 1")
+        return 1
+
     next_epoch = int(epoch) + 1
     logger.info(f"Restored checkpoint, resuming from epoch {next_epoch}")
     return next_epoch
@@ -70,6 +82,8 @@ def save_checkpoint(
     **kwargs,
 ) -> None:
     """Save the current train state as a checkpoint.
+
+    Also allows for additional parameters to be saved via kwargs.
 
     Args:
         directory (str): Directory where the checkpoint should be saved.
