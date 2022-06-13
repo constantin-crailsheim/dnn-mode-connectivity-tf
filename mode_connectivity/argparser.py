@@ -1,22 +1,20 @@
 import argparse
-from dataclasses import dataclass
 
 
-@dataclass
 class Arguments:
     # Dataset
     dir: str = "/tmp/curve"
     dataset: str = "CIFAR10"
-    use_test: bool = False
+    use_test: bool = False  # -> store_true
     data_path: str = None
 
     # Model
-    model: str = None
-    curve: str = None
     transform: str = "VGG"
     batch_size: int = 128
+    model: str = None
+    curve: str = None
     num_bends: int = 3
-    init_linear: bool = True
+    init_linear: bool = True  # -> default
     epochs: int = 200
     lr: float = 0.01
     momentum: float = 0.9
@@ -29,8 +27,8 @@ class Arguments:
     # Checkpoints
     init_start: str = None
     init_end: str = None
-    fix_end: bool = False
-    fix_start: bool = False
+    fix_end: bool = False  # -> Store true
+    fix_start: bool = False  # -> Store true
     resume: str = None
     save_freq: int = 50
 
@@ -38,37 +36,40 @@ class Arguments:
 def parse_train_arguments() -> Arguments:
     parser = argparse.ArgumentParser(description="DNN curve training")
 
-    _add_dataset_arguments(parser=parser)
-    _add_compute_arguments(parser=parser)
-    _add_model_arguments(parser=parser)
-    _add_checkpoint_arguments(parser=parser)
+    parse_dataset_arguments(parser=parser)
+    parse_compute_arguments(parser=parser)
+    parse_model_arguments(parser=parser)
+    parse_checkpoint_arguments(parser=parser)
 
     args = parser.parse_args()
-    return Arguments(**args.__dict__)
+    return Arguments(**args)
 
 
-def _add_dataset_arguments(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument(
+def parse_dataset_arguments(parser: argparse.ArgumentParser):
+    dataset_parser = parser.add_subparsers(help="Dataset options")
+
+    dataset_parser.add_argument(
         "--dir",
         type=str,
         default="/tmp/curve/",
         metavar="DIR",
         help="training directory (default: /tmp/curve/)",
     )
-    parser.add_argument(
+
+    dataset_parser.add_argument(
         "--dataset",
         type=str,
         default="CIFAR10",
         metavar="DATASET",
         help="dataset name (default: CIFAR10)",
     )
-    parser.add_argument(
-        "--use-test",
+    dataset_parser.add_argument(
+        "--use_test",
         action="store_true",
         help="switches between validation and test set (default: validation)",
     )
-    parser.add_argument(
-        "--data-path",
+    dataset_parser.add_argument(
+        "--data_path",
         type=str,
         default=None,
         metavar="PATH",
@@ -76,21 +77,42 @@ def _add_dataset_arguments(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def _add_compute_arguments(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument(
+def parse_compute_arguments(parser: argparse.ArgumentParser):
+    compute_parser = parser.add_subparsers(help="Compute options")
+
+    compute_parser.add_argument(
         "--num-workers",
         type=int,
         default=4,
         metavar="N",
         help="number of workers (default: 4)",
     )
-    parser.add_argument(
+
+    compute_parser.add_argument(
         "--seed", type=int, default=1, metavar="S", help="random seed (default: 1)"
     )
 
 
-def _add_model_arguments(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument(
+def parse_model_arguments(parser: argparse.ArgumentParser):
+    model_parser = parser.add_subparsers(help="Model options")
+
+    model_parser.add_argument(
+        "--transform",
+        type=str,
+        default="VGG",
+        metavar="TRANSFORM",
+        help="transform name (default: VGG)",
+    )
+
+    model_parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=128,
+        metavar="N",
+        help="input batch size (default: 128)",
+    )
+
+    model_parser.add_argument(
         "--model",
         type=str,
         default=None,
@@ -98,106 +120,99 @@ def _add_model_arguments(parser: argparse.ArgumentParser) -> None:
         required=True,
         help="model name (default: None)",
     )
-    parser.add_argument(
+
+    model_parser.add_argument(
         "--curve",
         type=str,
         default=None,
         metavar="CURVE",
         help="curve type to use (default: None)",
     )
-    parser.add_argument(
-        "--transform",
-        type=str,
-        default="VGG",
-        metavar="TRANSFORM",
-        help="transform name (default: VGG)",
-    )
-    parser.add_argument(
-        "--batch-size",
-        type=int,
-        default=128,
-        metavar="N",
-        help="input batch size (default: 128)",
-    )
-    parser.add_argument(
-        "--num-bends",
+    model_parser.add_argument(
+        "--num_bends",
         type=int,
         default=3,
         metavar="N",
         help="number of curve bends (default: 3)",
     )
-    parser.add_argument(
+
+    model_parser.add_argument(
         "--epochs",
         type=int,
         default=200,
         metavar="N",
         help="number of epochs to train (default: 200)",
     )
-    parser.add_argument(
+
+    model_parser.add_argument(
         "--lr",
         type=float,
         default=0.01,
         metavar="LR",
         help="initial learning rate (default: 0.01)",
     )
-    parser.add_argument(
+    model_parser.add_argument(
         "--momentum",
         type=float,
         default=0.9,
         metavar="M",
         help="SGD momentum (default: 0.9)",
     )
-    parser.add_argument(
+    model_parser.add_argument(
         "--wd",
         type=float,
         default=1e-4,
         metavar="WD",
         help="weight decay (default: 1e-4)",
     )
-    parser.add_argument(
-        "--init-linear-off",
+
+    model_parser.set_defaults(init_linear=True)
+    model_parser.add_argument(
+        "--init_linear_off",
         dest="init_linear",
         action="store_false",
         help="turns off linear initialization of intermediate points (default: on)",
     )
 
 
-def _add_checkpoint_arguments(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument(
-        "--init-start",
+def parse_checkpoint_arguments(parser: argparse.ArgumentParser):
+    checkpoint_parser = parser.add_subparsers(help="Checkpoint options")
+
+    checkpoint_parser.add_argument(
+        "--init_start",
         type=str,
         default=None,
         metavar="CKPT",
         help="checkpoint to init start point (default: None)",
     )
-    parser.add_argument(
-        "--fix-start",
+    checkpoint_parser.add_argument(
+        "--fix_start",
         dest="fix_start",
         action="store_true",
         help="fix start point (default: off)",
     )
-    parser.add_argument(
-        "--init-end",
+    checkpoint_parser.add_argument(
+        "--init_end",
         type=str,
         default=None,
         metavar="CKPT",
         help="checkpoint to init end point (default: None)",
     )
-    parser.add_argument(
-        "--fix-end",
+    checkpoint_parser.add_argument(
+        "--fix_end",
         dest="fix_end",
         action="store_true",
         help="fix end point (default: off)",
     )
-    parser.add_argument(
+    checkpoint_parser.add_argument(
         "--resume",
         type=str,
         default=None,
         metavar="CKPT",
         help="checkpoint to resume training from (default: None)",
     )
-    parser.add_argument(
-        "--save-freq",
+    checkpoint_parser.add_argument(
+        "--save_freq",
         type=int,
         default=50,
         metavar="N",
