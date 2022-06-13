@@ -28,7 +28,7 @@ share/python-wheels/
 MANIFEST
 
 # Datasets
-mode_connectivity/datasets/mnist
+datasets/mnist/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
