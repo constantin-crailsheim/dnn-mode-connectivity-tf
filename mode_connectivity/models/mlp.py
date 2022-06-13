@@ -5,7 +5,7 @@ __all__ = [
 ]
 
 
-class MLPBase:  # Inherit equivalent of torch.nn
+class MLPBase(tf.keras.Model):  # Inherit equivalent of torch.nn
     def __init__(self, num_classes):
         super(MLPBase, self).__init__()
         self.fc_part = tf.keras.models.Sequential(
@@ -24,7 +24,7 @@ class MLPBase:  # Inherit equivalent of torch.nn
         return x
 
 
-class MLPCurve:  # Inherit equivalent of torch.nn
+class MLPCurve(tf.keras.Model):  # Inherit equivalent of torch.nn
     def __init__(self, num_classes, fix_points):
         super(MLPCurve, self).__init__()
 
