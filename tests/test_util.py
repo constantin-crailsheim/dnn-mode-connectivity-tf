@@ -37,7 +37,9 @@ def basic_optimizer() -> keras.optimizers.Optimizer:
 
 class TestUtil:
     def test_save_checkpoint(self, checkpoints_dir, basic_model, basic_optimizer):
-        assert not os.path.isfile(os.path.join(checkpoints_dir, "checkpoint-1.index"))
+        assert not os.path.isfile(
+            os.path.join(checkpoints_dir, "checkpoint-epoch1-1.index")
+        )
         model = basic_model.get()
         save_checkpoint(
             directory=checkpoints_dir,
@@ -46,7 +48,9 @@ class TestUtil:
             optimizer=basic_optimizer,
             name="checkpoint",
         )
-        assert os.path.isfile(os.path.join(checkpoints_dir, "checkpoint-1.index"))
+        assert os.path.isfile(
+            os.path.join(checkpoints_dir, "checkpoint-epoch1-1.index")
+        )
 
     def test_load_checkpoint(self, checkpoints_dir, basic_model, basic_optimizer):
         model = basic_model.get(fitted=True)
@@ -65,7 +69,7 @@ class TestUtil:
             name="checkpoint",
         )
 
-        ckpt_path = os.path.join(checkpoints_dir, "checkpoint-1")
+        ckpt_path = os.path.join(checkpoints_dir, "checkpoint-epoch1-1")
         epoch = load_checkpoint(ckpt_path, model=new_model, optimizer=basic_optimizer)
         assert epoch == 2
 

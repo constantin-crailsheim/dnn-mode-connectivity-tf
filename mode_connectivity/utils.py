@@ -98,6 +98,6 @@ def save_checkpoint(
         optimizer=optimizer,
         **kwargs,
     )
-    checkpoint_path = os.path.join(directory, name)
+    checkpoint_path = os.path.join(directory, f"{name}-epoch{epoch}")
     logger.info(f"Saving checkpoint to {checkpoint_path}")
     checkpoint.save(checkpoint_path)
