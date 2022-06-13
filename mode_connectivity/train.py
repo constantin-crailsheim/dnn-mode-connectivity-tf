@@ -39,17 +39,10 @@ def main():
         curve=args.curve, architecture=architecture, num_classes=num_classes
     )
 
-    # TODO: criterion = F.cross_entropy
     criterion = tf.nn.softmax_cross_entropy_with_logits
-    # Check if correct function, takes labels of shape [nbatch, nclass], while F.cross_entropy()
+    # TODO: Check if correct function, takes labels of shape [nbatch, nclass], while F.cross_entropy()
     # takes labels of shape [nBatch]
     regularizer = None if not args.curve else l2_regularizer(args.wd)
-    # TODO : optimizer = torch.optim.SGD(
-    #     filter(lambda param: param.requires_grad, model.parameters()),
-    #     lr=args.lr,
-    #     momentum=args.momentum,
-    #     weight_decay=args.wd if args.curve is None else 0.0,
-    # )
     optimizer = tf.keras.optimizers.SGD(
         # TODO how can we fit equivalent of arg params in PyTorch
         # PyTorch: params=filter(lambda param: param.requires_grad, model.parameters()),
