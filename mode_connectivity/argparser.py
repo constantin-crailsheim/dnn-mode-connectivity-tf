@@ -5,15 +5,15 @@ from dataclasses import dataclass
 @dataclass
 class Arguments:
     # Dataset
-    dir: str = "/tmp/curve"
-    dataset: str = "CIFAR10"
+    dir: str = "/results/"
+    dataset: str = "MNIST"
     use_test: bool = False
-    data_path: str = None
+    data_path: str = "/datasets/"
 
     # Model
     model: str = None
     curve: str = None
-    transform: str = "VGG"
+    transform: str = "CNN"
     batch_size: int = 128
     num_bends: int = 3
     init_linear: bool = True
@@ -51,16 +51,16 @@ def _add_dataset_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--dir",
         type=str,
-        default="/tmp/curve/",
+        default="/results/",
         metavar="DIR",
-        help="training directory (default: /tmp/curve/)",
+        help="training directory (default: /results/)",
     )
     parser.add_argument(
         "--dataset",
         type=str,
-        default="CIFAR10",
+        default="MNIST",
         metavar="DATASET",
-        help="dataset name (default: CIFAR10)",
+        help="dataset name (default: MNIST)",
     )
     parser.add_argument(
         "--use-test",
@@ -70,7 +70,7 @@ def _add_dataset_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--data-path",
         type=str,
-        default=None,
+        default="/datasets/",
         metavar="PATH",
         help="path to datasets location (default: None)",
     )
@@ -108,9 +108,9 @@ def _add_model_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--transform",
         type=str,
-        default="VGG",
+        default="CNN",
         metavar="TRANSFORM",
-        help="transform name (default: VGG)",
+        help="transform name (default: CNN)",
     )
     parser.add_argument(
         "--batch-size",

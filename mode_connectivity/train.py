@@ -6,11 +6,12 @@ import tensorflow as tf
 from keras.layers import Layer
 from keras.optimizers import Optimizer
 
-from mode_connectivity.argparser import Arguments, parse_train_arguments
-from mode_connectivity.data import loaders
-from mode_connectivity.models.cnn import CNN
-from mode_connectivity.models.mlp import MLP
-from mode_connectivity.utils import (
+# No mode_connectivity. needed to add before, since we are in the same folder.
+from argparser import Arguments, parse_train_arguments
+from data import loaders
+from models.cnn import CNN
+from models.mlp import MLP
+from utils import (
     adjust_learning_rate,
     check_batch_normalization,
     l2_regularizer,
@@ -79,7 +80,8 @@ def main():
 
 
 def set_seeds(seed: int):
-    pass
+    tf.random.set_seed(seed)
+    # TODO torch.cuda.manual_seed(args.seed)
 
 
 def get_architecture(model_name: str):

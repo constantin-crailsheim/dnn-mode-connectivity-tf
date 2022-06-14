@@ -1,0 +1,21 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: BasicCNN with MNIST (model 1)",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": ["--dir=/results/MNIST_CNN/checkpoints_model_1",
+                "--dataset=MNIST",
+                "--data_path=/datasets/",
+                "--model=CNN",
+                "--epochs=1",
+                "--lr=0.05",
+                "--wd=5e-4",
+                "--transform=CNN",
+                "--seed=1"]
+        }]
+}
