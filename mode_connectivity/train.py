@@ -36,7 +36,7 @@ def main():
     )
     architecture = get_architecture(model_name=args.model)
     model = get_model(
-        curve=args.curve, architecture=architecture, num_classes=num_classes
+        curve=args.curve, architecture=architecture, num_classes=num_classes, weight_decay=args.wd
     )
 
     criterion = tf.nn.softmax_cross_entropy_with_logits
@@ -87,9 +87,9 @@ def get_architecture(model_name: str):
     raise KeyError(f"Unkown model {model_name}")
 
 
-def get_model(curve: str, architecture, num_classes: int):
+def get_model(curve: str, architecture, num_classes: int, weight_decay: float):
     if not curve:
-        return architecture.base(num_classes=num_classes, **architecture.kwargs)
+        return architecture.base(num_classes=num_classes, weight_decay = weight_decay, **architecture.kwargs)
 
     # TODO return curve model
     return None

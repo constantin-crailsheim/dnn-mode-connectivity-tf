@@ -23,28 +23,28 @@ class CNNBase(tf.keras.Model):
 
     # Comment: In contrast to PyTorch there are no input dimensions required in Tensorflow.
 
-    def __init__(self, num_classes: int): # Do we need to pass the object args here as argument or can it be accessed in the function since it is global?
+    def __init__(self, num_classes: int, weight_decay: float):
         super().__init__()
         self.num_classes = num_classes
 
         self.conv_part = tf.keras.Sequential([
             tf.keras.layers.Conv2D(filters= 32, kernel_size=(3, 3), activation='relu', kernel_initializer= 'glorot_normal' , bias_initializer= 'zeros',
-                kernel_regularizer = tf.keras.regularizer.l2(args.wd if args.curve is None else 0.0)),
+                kernel_regularizer = tf.keras.regularizer.l2(weight_decay)),
             tf.keras.layers.MaxPool2D(pool_size=(2, 2)),
             tf.keras.layers.Conv2D(filters= 64, kernel_size=(3, 3), activation='relu', kernel_initializer= 'glorot_normal' , bias_initializer= 'zeros',
-                kernel_regularizer = tf.keras.regularizer.l2(args.wd if args.curve is None else 0.0)),
+                kernel_regularizer = tf.keras.regularizer.l2(weight_decay)),
             tf.keras.layers.MaxPool2D(pool_size=(2, 2)),
             tf.keras.layers.Conv2D(filters= 64, kernel_size=(3, 3), kernel_initializer= 'glorot_normal' , bias_initializer= 'zeros',
-                kernel_regularizer = tf.keras.regularizer.l2(args.wd if args.curve is None else 0.0)),
+                kernel_regularizer = tf.keras.regularizer.l2(weight_decay)),
             tf.keras.layers.Flatten()])
 
         self.fc_part = tf.keras.Sequential([
             tf.keras.layers.Dense(units= 64, activation='relu',
-                kernel_regularizer = tf.keras.regularizer.l2(args.wd if args.curve is None else 0.0)),
+                kernel_regularizer = tf.keras.regularizer.l2(weight_decay)),
             tf.keras.layers.Dense(units= 64, activation='relu',
-                kernel_regularizer = tf.keras.regularizer.l2(args.wd if args.curve is None else 0.0)),
+                kernel_regularizer = tf.keras.regularizer.l2(weight_decay)),
             tf.keras.layers.Dense(units= self.num_classes,
-                kernel_regularizer = tf.keras.regularizer.l2(args.wd if args.curve is None else 0.0))]) 
+                kernel_regularizer = tf.keras.regularizer.l2(weight_decay))]) 
 
     def call(self, inputs, training=None, mask=None): #TO DO: Typehints & Check which arguments necessary
         return self.conv_part(self.fc_part(inputs))
