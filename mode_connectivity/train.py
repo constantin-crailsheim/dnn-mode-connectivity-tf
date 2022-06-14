@@ -238,33 +238,28 @@ def train_batch(
     regularizer: Union[Callable, None] = None,
     lr_schedule: Union[Callable, None] = None,
 ) -> Tuple[float, float]:
-    # TODO Allocate model to CPU or GPU
-    # PyTorch:
-    # if torch.cuda.is_available():
-    #       model.cuda()
-    # else:
-    #   device = torch.device('cpu')
-    #   model.to(device)
+    # TODO Allocate model to GPU as well, but no necessary at the moment, since we don't have GPUs.
 
-    with tf.GradientTape() as tape:
-        output = model(input)
-        loss = criterion(output, target) + model.losses  # + model.losses necessary?
-        # PyTorch:
-        # if regularizer is not None:
-        #     loss += regularizer(model)
+    with tf.device('/cpu:0'):
+        with tf.GradientTape() as tape:
+            output = model(input)
+            loss = criterion(output, target) + model.losses  # + model.losses necessary?
+            # PyTorch:
+            # if regularizer is not None:
+            #     loss += regularizer(model)
 
-    grads = tape.gradient(loss, model.trainable_variables)
-    processed_grads = [g for g in grads]
-    grads_and_vars = zip(processed_grads, model.trainable_variables)
-    optimizer.apply_gradients(grads_and_vars)
+        grads = tape.gradient(loss, model.trainable_variables)
+        processed_grads = [g for g in grads]
+        grads_and_vars = zip(processed_grads, model.trainable_variables)
+        optimizer.apply_gradients(grads_and_vars)
 
-    # See for above:
-    # https://medium.com/analytics-vidhya/3-different-ways-to-perform-gradient-descent-in-tensorflow-2-0-and-ms-excel-ffc3791a160a
-    # https://d2l.ai/chapter_multilayer-perceptrons/weight-decay.html (4.5.4)
+        # See for above:
+        # https://medium.com/analytics-vidhya/3-different-ways-to-perform-gradient-descent-in-tensorflow-2-0-and-ms-excel-ffc3791a160a
+        # https://d2l.ai/chapter_multilayer-perceptrons/weight-decay.html (4.5.4)
 
-    loss_sum += loss.item() * input.size(0)
-    pred = output.data.argmax(1, keepdim=True)
-    correct += pred.eq(target.data.view_as(pred)).sum().item()
+        loss_sum += loss.item() * input.size(0)
+        pred = output.data.argmax(1, keepdim=True)
+        correct += pred.eq(target.data.view_as(pred)).sum().item()
 
     return loss_sum, correct  # Do we need to return the model as well?
 
@@ -280,19 +275,20 @@ def test_batch(
     regularizer: Union[Callable, None] = None,
     **kwargs,
 ) -> Dict[str, float]:
-    # TODO Allocate model to CPU or GPU
+    # TODO Allocate model to GPU as well.
 
-    output = model(input, **kwargs)
-    nll = criterion(output, target)
-    loss = nll.clone()
-    # PyTorch:
-    # if regularizer is not None:
-    #     loss += regularizer(model)
+    with tf.device('/cpu:0'):
+        output = model(input, **kwargs)
+        nll = criterion(output, target)
+        loss = nll.clone()
+        # PyTorch:
+        # if regularizer is not None:
+        #     loss += regularizer(model)
 
-    nll_sum += nll.item() * input.size(0)
-    loss_sum += loss.item() * input.size(0)
-    pred = output.data.argmax(1, keepdim=True)
-    correct += pred.eq(target.data.view_as(pred)).sum().item()
+        nll_sum += nll.item() * input.size(0)
+        loss_sum += loss.item() * input.size(0)
+        pred = output.data.argmax(1, keepdim=True)
+        correct += pred.eq(target.data.view_as(pred)).sum().item()
 
     return {
         "nll": nll_sum / len(test_loader.dataset),
