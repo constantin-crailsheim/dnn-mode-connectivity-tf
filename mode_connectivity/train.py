@@ -15,6 +15,8 @@ from mode_connectivity.utils import (
     check_batch_normalization,
     l2_regularizer,
     learning_rate_schedule,
+    load_checkpoint,
+    save_checkpoint,
 )
 
 COLUMNS = ["ep", "lr", "tr_loss", "tr_acc", "te_nll", "te_acc", "time"]
@@ -58,8 +60,12 @@ def main():
 
     start_epoch = 1
     if args.resume:
-        start_epoch = load_checkpoint()
-    save_checkpoint()
+        start_epoch = load_checkpoint(
+            checkpoint_path=args.resume, model=model, optimizer=optimizer
+        )
+    save_checkpoint(
+        directory=args.dir, epoch=start_epoch - 1, model=model, optimizer=optimizer
+    )
 
     train(
         args=args,
@@ -70,9 +76,6 @@ def main():
         optimizer=optimizer,
         start_epoch=start_epoch,
     )
-
-    if args.epochs % args.save_freq != 0:
-        save_checkpoint()
 
 
 def set_seeds(seed: int):
@@ -93,22 +96,6 @@ def get_model(curve: str, architecture, num_classes: int, weight_decay: float):
 
     # TODO return curve model
     return None
-
-
-def load_checkpoint():
-    # Pytorch:
-    # start_epoch = 1
-    # if args.resume is not None:
-    #     print('Resume training from %s' % args.resume)
-    #     checkpoint = torch.load(args.resume)
-    #     start_epoch = checkpoint['epoch'] + 1
-    #     model.load_state_dict(checkpoint['model_state'])
-    #     optimizer.load_state_dict(checkpoint['optimizer_state'])
-    pass
-
-
-def save_checkpoint():
-    pass
 
 
 def train(
@@ -137,7 +124,9 @@ def train(
             test_results = test_epoch(loaders["test"], model, criterion, regularizer)
 
         if epoch % args.save_freq == 0:
-            save_checkpoint()
+            save_checkpoint(
+                directory=args.dir, epoch=epoch, model=model, optimizer=optimizer
+            )
 
         time_epoch = time.time() - time_epoch
         values = [
@@ -151,6 +140,12 @@ def train(
         ]
 
         print_epoch_stats()
+
+    if args.epochs % args.save_freq != 0:
+        # Save last checkpoint if not already saved
+        save_checkpoint(
+            directory=args.dir, epoch=args.epoch, model=model, optimizer=optimizer
+        )
 
 
 def train_epoch(
