@@ -36,20 +36,13 @@ def main():
     )
     architecture = get_architecture(model_name=args.model)
     model = get_model(
-        curve=args.curve, architecture=architecture, num_classes=num_classes
+        curve=args.curve, architecture=architecture, num_classes=num_classes, weight_decay=args.wd
     )
 
-    # TODO: criterion = F.cross_entropy
     criterion = tf.nn.softmax_cross_entropy_with_logits
-    # Check if correct function, takes labels of shape [nbatch, nclass], while F.cross_entropy()
+    # TODO: Check if correct function, takes labels of shape [nbatch, nclass], while F.cross_entropy()
     # takes labels of shape [nBatch]
     regularizer = None if not args.curve else l2_regularizer(args.wd)
-    # TODO : optimizer = torch.optim.SGD(
-    #     filter(lambda param: param.requires_grad, model.parameters()),
-    #     lr=args.lr,
-    #     momentum=args.momentum,
-    #     weight_decay=args.wd if args.curve is None else 0.0,
-    # )
     optimizer = tf.keras.optimizers.SGD(
         # TODO how can we fit equivalent of arg params in PyTorch
         # PyTorch: params=filter(lambda param: param.requires_grad, model.parameters()),
@@ -94,9 +87,9 @@ def get_architecture(model_name: str):
     raise KeyError(f"Unkown model {model_name}")
 
 
-def get_model(curve: str, architecture, num_classes: int):
+def get_model(curve: str, architecture, num_classes: int, weight_decay: float):
     if not curve:
-        return architecture.base(num_classes=num_classes, **architecture.kwargs)
+        return architecture.base(num_classes=num_classes, weight_decay = weight_decay, **architecture.kwargs)
 
     # TODO return curve model
     return None

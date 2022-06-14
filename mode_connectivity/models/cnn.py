@@ -23,26 +23,32 @@ class CNNBase(tf.keras.Model):
 
     # Comment: In contrast to PyTorch there are no input dimensions required in Tensorflow.
 
-    def __init__(self, num_classes: int):
+    def __init__(self, num_classes: int, weight_decay: float):
         super().__init__()
         self.num_classes = num_classes
 
         self.conv_part = tf.keras.Sequential([
-            tf.keras.layers.Conv2D(filters= 32, kernel_size=(3, 3), activation='relu', kernel_initializer= 'glorot_normal' , bias_initializer= 'zeros'),
+            tf.keras.layers.Conv2D(filters= 32, kernel_size=(3, 3), activation='relu', kernel_initializer= 'glorot_normal' , bias_initializer= 'zeros',
+                kernel_regularizer = tf.keras.regularizer.l2(weight_decay)),
             tf.keras.layers.MaxPool2D(pool_size=(2, 2)),
-            tf.keras.layers.Conv2D(filters= 64, kernel_size=(3, 3), activation='relu', kernel_initializer= 'glorot_normal' , bias_initializer= 'zeros'),
+            tf.keras.layers.Conv2D(filters= 64, kernel_size=(3, 3), activation='relu', kernel_initializer= 'glorot_normal' , bias_initializer= 'zeros',
+                kernel_regularizer = tf.keras.regularizer.l2(weight_decay)),
             tf.keras.layers.MaxPool2D(pool_size=(2, 2)),
-            tf.keras.layers.Conv2D(filters= 64, kernel_size=(3, 3), kernel_initializer= 'glorot_normal' , bias_initializer= 'zeros'),
+            tf.keras.layers.Conv2D(filters= 64, kernel_size=(3, 3), kernel_initializer= 'glorot_normal' , bias_initializer= 'zeros',
+                kernel_regularizer = tf.keras.regularizer.l2(weight_decay)),
             tf.keras.layers.Flatten()])
 
         self.fc_part = tf.keras.Sequential([
-            tf.keras.layers.Dense(units= 64, activation='relu'),
-            tf.keras.layers.Dense(units= 64, activation='relu'),
-            tf.keras.layers.Dense(units= self.num_classes)]) 
+            tf.keras.layers.Dense(units= 64, activation='relu',
+                kernel_regularizer = tf.keras.regularizer.l2(weight_decay)),
+            tf.keras.layers.Dense(units= 64, activation='relu',
+                kernel_regularizer = tf.keras.regularizer.l2(weight_decay)),
+            tf.keras.layers.Dense(units= self.num_classes,
+                kernel_regularizer = tf.keras.regularizer.l2(weight_decay))]) 
 
-    def call(self, inputs, training=None, mask=None): #TO DO: Typehints & Chech which arguments necessary
+    def call(self, inputs, training=None, mask=None): #TO DO: Typehints & Check which arguments necessary
         return self.conv_part(self.fc_part(inputs))
-        #TO DO: Check if x = x.view(x.size(0), -1) necessary 
+        # TODO: Check if x = x.view(x.size(0), -1) necessary 
         
 
 class CNNCurve(tf.keras.Model):
