@@ -54,7 +54,7 @@ class RegressionData:
             pass  
            
 
-def loaders(
+def data_loaders(
     dataset: str,
     path: str,
     batch_size: int,
@@ -84,10 +84,9 @@ def loaders(
         standardization = lambda input, label: (
             tf.cast(input, tf.float32) / 255,
             label)
-
     else:   
         if use_test:
-            print('You are going to tun models on the test set. Are you sure?')
+            print('You are going to run models on the test set. Are you sure?')
             pass
 
         else:
@@ -96,7 +95,7 @@ def loaders(
             pass
     
     return{
-        'train': train_set.map(standardization).shuffle(ds_info.splits['test'].num_examples), 
+        'train': train_set.map(standardization).shuffle(ds_info.splits['train'].num_examples), 
         'test': test_set.map(standardization).shuffle(ds_info.splits['test'].num_examples)
     }, 10 # TODO Find number of train labels in train_set object
 

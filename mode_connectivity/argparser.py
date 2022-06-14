@@ -5,10 +5,10 @@ from dataclasses import dataclass
 @dataclass
 class Arguments:
     # Dataset
-    dir: str = "/results/"
-    dataset: str = "MNIST"
+    dir: str = "results/"
+    dataset: str = "mnist"
     use_test: bool = False
-    data_path: str = "/datasets/"
+    data_path: str = "datasets/"
 
     # Model
     model: str = None
@@ -51,16 +51,16 @@ def _add_dataset_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--dir",
         type=str,
-        default="/results/",
+        default="results/",
         metavar="DIR",
         help="training directory (default: /results/)",
     )
     parser.add_argument(
         "--dataset",
         type=str,
-        default="MNIST",
+        default="mnist",
         metavar="DATASET",
-        help="dataset name (default: MNIST)",
+        help="dataset name (default: mnist)",
     )
     parser.add_argument(
         "--use-test",
@@ -70,7 +70,7 @@ def _add_dataset_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--data-path",
         type=str,
-        default="/datasets/",
+        default="datasets/",
         metavar="PATH",
         help="path to datasets location (default: None)",
     )

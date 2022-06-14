@@ -29,25 +29,26 @@ class CNNBase(tf.keras.Model):
 
         self.conv_part = tf.keras.Sequential([
             tf.keras.layers.Conv2D(filters= 32, kernel_size=(3, 3), activation='relu', kernel_initializer= 'glorot_normal' , bias_initializer= 'zeros',
-                kernel_regularizer = tf.keras.regularizer.l2(weight_decay)),
+                kernel_regularizer = tf.keras.regularizers.L2(weight_decay)),
             tf.keras.layers.MaxPool2D(pool_size=(2, 2)),
             tf.keras.layers.Conv2D(filters= 64, kernel_size=(3, 3), activation='relu', kernel_initializer= 'glorot_normal' , bias_initializer= 'zeros',
-                kernel_regularizer = tf.keras.regularizer.l2(weight_decay)),
+                kernel_regularizer = tf.keras.regularizers.L2(weight_decay)),
             tf.keras.layers.MaxPool2D(pool_size=(2, 2)),
             tf.keras.layers.Conv2D(filters= 64, kernel_size=(3, 3), kernel_initializer= 'glorot_normal' , bias_initializer= 'zeros',
-                kernel_regularizer = tf.keras.regularizer.l2(weight_decay)),
+                kernel_regularizer = tf.keras.regularizers.L2(weight_decay)),
             tf.keras.layers.Flatten()])
 
         self.fc_part = tf.keras.Sequential([
             tf.keras.layers.Dense(units= 64, activation='relu',
-                kernel_regularizer = tf.keras.regularizer.l2(weight_decay)),
+                kernel_regularizer = tf.keras.regularizers.L2(weight_decay)),
             tf.keras.layers.Dense(units= 64, activation='relu',
-                kernel_regularizer = tf.keras.regularizer.l2(weight_decay)),
+                kernel_regularizer = tf.keras.regularizers.L2(weight_decay)),
             tf.keras.layers.Dense(units= self.num_classes,
-                kernel_regularizer = tf.keras.regularizer.l2(weight_decay))]) 
+                kernel_regularizer = tf.keras.regularizers.L2(weight_decay))]) 
 
     def call(self, inputs, training=None, mask=None): #TO DO: Typehints & Check which arguments necessary
-        return self.conv_part(self.fc_part(inputs))
+        x = self.conv_part(inputs)
+        return self.fc_part(x)
         # TODO: Check if x = x.view(x.size(0), -1) necessary 
         
 

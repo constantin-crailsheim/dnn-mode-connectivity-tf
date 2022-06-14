@@ -8,7 +8,7 @@ from keras.optimizers import Optimizer
 
 # No mode_connectivity. needed to add before, since we are in the same folder.
 from argparser import Arguments, parse_train_arguments
-from data import loaders
+from data import data_loaders
 from models.cnn import CNN
 from models.mlp import MLP
 from utils import (
@@ -29,7 +29,7 @@ def main():
     # TODO: Set backends cudnnn
     set_seeds(seed=args.seed)
 
-    loaders, num_classes = loaders(
+    loaders, num_classes = data_loaders(
         dataset=args.dataset,
         path=args.data_path,
         batch_size=args.batch_size,
@@ -42,7 +42,7 @@ def main():
         curve=args.curve, architecture=architecture, num_classes=num_classes, weight_decay=args.wd
     )
 
-    criterion = tf.nn.softmax_cross_entropy_with_logits
+    criterion = tf.nn.sparse_softmax_cross_entropy_with_logits
     # TODO: Check if correct function, takes labels of shape [nbatch, nclass], while F.cross_entropy()
     # takes labels of shape [nBatch]
     regularizer = None if not args.curve else l2_regularizer(args.wd)
@@ -109,14 +109,15 @@ def train(
     optimizer: Optimizer,
     start_epoch: int,
 ):
-    has_batch_normalization = check_batch_normalization(model)
+    has_batch_normalization = check_batch_normalization(model) # Not implemented yet, returns always True
     test_results = {"loss": None, "accuracy": None, "nll": None}
 
     for epoch in range(start_epoch, args.epochs + 1):
         time_epoch = time.time()
 
         lr = learning_rate_schedule(args.lr, epoch, args.epochs)
-        adjust_learning_rate(optimizer, lr)
+        # Not implemented yet:
+        # adjust_learning_rate(optimizer, lr)
 
         train_results = train_epoch(
             loaders["train"], model, optimizer, criterion, regularizer
@@ -141,7 +142,7 @@ def train(
             time_epoch,
         ]
 
-        print_epoch_stats()
+        print_epoch_stats(values, epoch, start_epoch)
 
     if args.epochs % args.save_freq != 0:
         # Save last checkpoint if not already saved
@@ -167,7 +168,7 @@ def train_epoch(
         if callable(lr_schedule):
             lr = lr_schedule(iter / num_iters)
             adjust_learning_rate(optimizer, lr)
-        loss_sum, correct = train_batch(
+        loss_batch, correct_batch = train_batch(
             input=input,
             target=target,
             loss_sum=loss_sum,
@@ -178,10 +179,12 @@ def train_epoch(
             regularizer=regularizer,
             lr_schedule=lr_schedule,
         )
+        loss_sum += loss_batch
+        correct += correct_batch
 
     return {
-        "loss": loss_sum / len(train_loader.dataset),
-        "accuracy": correct * 100.0 / len(train_loader.dataset),
+        "loss": loss_sum / 60000, # Add function to find length
+        "accuracy": correct * 100.0 / 60000 # Add function to find length of dataset,
     }
 
 
@@ -198,7 +201,7 @@ def test_epoch(
 
     # PyTorch: model.eval()
     for input, target in test_loader:
-        nll_sum, loss_sum, correct = test_batch(
+        nll_batch, loss_batch, correct_batch = test_batch(
             input=input,
             target=target,
             nll_sum=nll_sum,
@@ -209,11 +212,15 @@ def test_epoch(
             regularizer=regularizer,
             **kwargs,
         )
+        nll_sum += nll_batch
+        loss_sum += loss_batch
+        correct += correct_batch
+
 
     return {
-        "nll": nll_sum / len(test_loader.dataset),
-        "loss": loss_sum / len(test_loader.dataset),
-        "accuracy": correct * 100.0 / len(test_loader.dataset),
+        "nll": nll_sum / 10000, # Add function to find length
+        "loss": loss_sum / 10000, # Add function to find length
+        "accuracy": correct * 100.0 / 10000, # Add function to find length
     }
 
 
@@ -233,7 +240,7 @@ def train_batch(
     with tf.device('/cpu:0'):
         with tf.GradientTape() as tape:
             output = model(input)
-            loss = criterion(output, target) + model.losses  # + model.losses necessary?
+            loss = criterion(target, output) # + model.losses necessary?
             # PyTorch:
             # if regularizer is not None:
             #     loss += regularizer(model)
@@ -247,11 +254,11 @@ def train_batch(
         # https://medium.com/analytics-vidhya/3-different-ways-to-perform-gradient-descent-in-tensorflow-2-0-and-ms-excel-ffc3791a160a
         # https://d2l.ai/chapter_multilayer-perceptrons/weight-decay.html (4.5.4)
 
-        loss_sum += loss.item() * input.size(0)
-        pred = output.data.argmax(1, keepdim=True)
-        correct += pred.eq(target.data.view_as(pred)).sum().item()
+        loss = tf.reduce_sum(loss).numpy() # What exactly are we trying to add up here, see original code? Check with PyTorch Code.
+        pred = tf.math.argmax(output, axis = 1, output_type=tf.dtypes.int64)
+        correct = tf.math.reduce_sum(tf.cast(tf.math.equal(pred, target), tf.float32)).numpy() # Is there an easier way?
 
-    return loss_sum, correct  # Do we need to return the model as well?
+    return loss, correct  # Do we need to return the model as well?
 
 
 def test_batch(
@@ -269,22 +276,18 @@ def test_batch(
 
     with tf.device('/cpu:0'):
         output = model(input, **kwargs)
-        nll = criterion(output, target)
-        loss = nll.clone()
+        nll = criterion(target, output)
+        loss = tf.identity(nll) # COrrect funtion for nll.clone() in Pytorch
         # PyTorch:
         # if regularizer is not None:
         #     loss += regularizer(model)
 
-        nll_sum += nll.item() * input.size(0)
-        loss_sum += loss.item() * input.size(0)
-        pred = output.data.argmax(1, keepdim=True)
-        correct += pred.eq(target.data.view_as(pred)).sum().item()
+        nll = tf.reduce_sum(nll).numpy()
+        loss = tf.reduce_sum(loss).numpy() # What exactly are we trying to add up here, see original code? Check with PyTorch Code.
+        pred = tf.math.argmax(output, axis = 1, output_type=tf.dtypes.int64)
+        correct = tf.math.reduce_sum(tf.cast(tf.math.equal(pred, target), tf.float32)).numpy()
 
-    return {
-        "nll": nll_sum / len(test_loader.dataset),
-        "loss": loss_sum / len(test_loader.dataset),
-        "accuracy": correct * 100.0 / len(test_loader.dataset),
-    }
+    return nll, loss, correct
 
 
 def print_epoch_stats(values, epoch, start_epoch):

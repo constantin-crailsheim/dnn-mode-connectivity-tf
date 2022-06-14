@@ -1,6 +1,14 @@
 from unittest import mock
 
 import pytest
+
+# Load files from parent directory
+import os
+import sys
+current = os.path.dirname(os.path.realpath(__file__))
+parent = os.path.dirname(current)
+sys.path.append(parent)
+
 from mode_connectivity.argparser import Arguments, parse_train_arguments
 
 BASIC_ARGS = ["python", "--model", "SomeModel"]

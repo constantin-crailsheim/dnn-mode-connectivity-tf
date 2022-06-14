@@ -31,8 +31,8 @@ def adjust_learning_rate():
     pass
 
 
-def check_batch_normalization():
-    pass
+def check_batch_normalization(model):
+    return True
 
 
 def load_checkpoint(
