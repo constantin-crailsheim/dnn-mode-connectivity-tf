@@ -97,7 +97,8 @@ def data_loaders(
     return{
         'train': train_set.map(standardization).shuffle(ds_info.splits['train'].num_examples), 
         'test': test_set.map(standardization).shuffle(ds_info.splits['test'].num_examples)
-    }, 10 # TODO Find number of train labels in train_set object
+    }, 10, {'train': ds_info.splits['train'].num_examples, 'test': ds_info.splits['test'].num_examples} # TODO Find number of train labels in train_set object
+    
 
 
     # Questions:
