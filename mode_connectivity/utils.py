@@ -23,12 +23,9 @@ def l2_regularizer(weight_decay):
     return lambda model: 0.5 * weight_decay * model.l2
 
 
-def adjust_learning_rate():
-    # For PyTorch:
-    # for param_group in optimizer.param_groups:
-    #     param_group['lr'] = lr
-    # return lr
-    pass
+def adjust_learning_rate(optimizer, lr):
+    optimizer.lr.assign(lr)
+    return lr
 
 
 def check_batch_normalization(model):
