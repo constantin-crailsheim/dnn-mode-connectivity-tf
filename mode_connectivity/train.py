@@ -29,7 +29,7 @@ def main():
     # TODO: Set backends cudnnn
     set_seeds(seed=args.seed)
 
-    loaders, num_classes = data_loaders(
+    loaders, num_classes, n_datasets = data_loaders(
         dataset=args.dataset,
         path=args.data_path,
         batch_size=args.batch_size,
@@ -76,6 +76,7 @@ def main():
         regularizer=regularizer,
         optimizer=optimizer,
         start_epoch=start_epoch,
+        n_datasets=n_datasets
     )
 
 
@@ -108,23 +109,25 @@ def train(
     regularizer: Union[Callable, None],
     optimizer: Optimizer,
     start_epoch: int,
+    n_datasets: Dict
 ):
     has_batch_normalization = check_batch_normalization(model) # Not implemented yet, returns always True
     test_results = {"loss": None, "accuracy": None, "nll": None}
+
 
     for epoch in range(start_epoch, args.epochs + 1):
         time_epoch = time.time()
 
         lr = learning_rate_schedule(args.lr, epoch, args.epochs)
         # Not implemented yet:
-        # adjust_learning_rate(optimizer, lr)
+        adjust_learning_rate(optimizer, lr)
 
         train_results = train_epoch(
-            loaders["train"], model, optimizer, criterion, regularizer
+            loaders["train"], model, optimizer, criterion, n_datasets['train'], regularizer 
         )
 
         if not args.curve or not has_batch_normalization:
-            test_results = test_epoch(loaders["test"], model, criterion, regularizer)
+            test_results = test_epoch(loaders["test"], model, criterion, n_datasets['test'], regularizer)
 
         if epoch % args.save_freq == 0:
             save_checkpoint(
@@ -156,8 +159,9 @@ def train_epoch(
     model: Layer,
     optimizer: Optimizer,
     criterion: Callable,
+    n_train: int,
     regularizer: Union[Callable, None] = None,
-    lr_schedule: Union[Callable, None] = None,
+    lr_schedule: Union[Callable, None] = None
 ) -> Dict[str, float]:
     loss_sum = 0.0
     correct = 0.0
@@ -183,8 +187,8 @@ def train_epoch(
         correct += correct_batch
 
     return {
-        "loss": loss_sum / 60000, # Add function to find length
-        "accuracy": correct * 100.0 / 60000 # Add function to find length of dataset,
+        "loss": loss_sum / n_train, # Add function to find length
+        "accuracy": correct * 100.0 / n_train # Add function to find length of dataset,
     }
 
 
@@ -192,6 +196,7 @@ def test_epoch(
     test_loader: Iterable,
     model: Layer,
     criterion: Callable,
+    n_test: int,
     regularizer: Union[Callable, None] = None,
     **kwargs,
 ) -> Dict[str, float]:
@@ -218,9 +223,9 @@ def test_epoch(
 
 
     return {
-        "nll": nll_sum / 10000, # Add function to find length
-        "loss": loss_sum / 10000, # Add function to find length
-        "accuracy": correct * 100.0 / 10000, # Add function to find length
+        "nll": nll_sum / n_test, # Add function to find length
+        "loss": loss_sum / n_test, # Add function to find length
+        "accuracy": correct * 100.0 / n_test # Add function to find length
     }
 
 
@@ -238,16 +243,15 @@ def train_batch(
     # TODO Allocate model to GPU as well, but no necessary at the moment, since we don't have GPUs.
 
     with tf.device('/cpu:0'):
+        
         with tf.GradientTape() as tape:
             output = model(input)
             loss = criterion(target, output) # + model.losses necessary?
             # PyTorch:
             # if regularizer is not None:
             #     loss += regularizer(model)
-
         grads = tape.gradient(loss, model.trainable_variables)
-        processed_grads = [g for g in grads]
-        grads_and_vars = zip(processed_grads, model.trainable_variables)
+        grads_and_vars = zip(grads, model.trainable_variables)
         optimizer.apply_gradients(grads_and_vars)
 
         # See for above:
