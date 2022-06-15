@@ -13,7 +13,7 @@
                 "--data-path=datasets/",
                 "--model=CNN",
                 "--epochs=5",
-                "--lr=0.01",
+                "--lr=0.05",
                 "--wd=5e-4",
                 "--transform=CNN",
                 "--seed=1"]
