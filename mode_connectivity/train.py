@@ -39,10 +39,15 @@ def main():
     )
     architecture = get_architecture(model_name=args.model)
     model = get_model(
-        curve=args.curve, architecture=architecture, num_classes=num_classes, weight_decay=args.wd
+        curve=args.curve,
+        architecture=architecture,
+        num_classes=num_classes,
+        weight_decay=args.wd,
     )
 
-    criterion = tf.nn.sparse_softmax_cross_entropy_with_logits
+    # criterion = tf.nn.sparse_softmax_cross_entropy_with_logits
+    criterion = tf.keras.losses.SparseCategoricalCrossentropy()
+
     # TODO: Check if correct function, takes labels of shape [nbatch, nclass], while F.cross_entropy()
     # takes labels of shape [nBatch]
     regularizer = None if not args.curve else l2_regularizer(args.wd)
@@ -64,9 +69,7 @@ def main():
         start_epoch = load_checkpoint(
             checkpoint_path=args.resume, model=model, optimizer=optimizer
         )
-    save_checkpoint(
-        directory=args.dir, epoch=start_epoch - 1, model=model, optimizer=optimizer
-    )
+    save_checkpoint(directory=args.dir, epoch=start_epoch - 1, model=model, optimizer=optimizer)
 
     train(
         args=args,
@@ -76,7 +79,7 @@ def main():
         regularizer=regularizer,
         optimizer=optimizer,
         start_epoch=start_epoch,
-        n_datasets=n_datasets
+        n_datasets=n_datasets,
     )
 
 
@@ -95,7 +98,9 @@ def get_architecture(model_name: str):
 
 def get_model(curve: str, architecture, num_classes: int, weight_decay: float):
     if not curve:
-        return architecture.base(num_classes=num_classes, weight_decay = weight_decay, **architecture.kwargs)
+        return architecture.base(
+            num_classes=num_classes, weight_decay=weight_decay, **architecture.kwargs
+        )
 
     # TODO return curve model
     return None
@@ -109,11 +114,12 @@ def train(
     regularizer: Union[Callable, None],
     optimizer: Optimizer,
     start_epoch: int,
-    n_datasets: Dict
+    n_datasets: Dict,
 ):
-    has_batch_normalization = check_batch_normalization(model) # Not implemented yet, returns always True
+    has_batch_normalization = check_batch_normalization(
+        model
+    )  # Not implemented yet, returns always True
     test_results = {"loss": None, "accuracy": None, "nll": None}
-
 
     for epoch in range(start_epoch, args.epochs + 1):
         time_epoch = time.time()
@@ -123,16 +129,21 @@ def train(
         adjust_learning_rate(optimizer, lr)
 
         train_results = train_epoch(
-            loaders["train"], model, optimizer, criterion, n_datasets['train'], regularizer 
+            loaders["train"],
+            model,
+            optimizer,
+            criterion,
+            n_datasets["train"],
+            regularizer,
         )
 
         if not args.curve or not has_batch_normalization:
-            test_results = test_epoch(loaders["test"], model, criterion, n_datasets['test'], regularizer)
+            test_results = test_epoch(
+                loaders["test"], model, criterion, n_datasets["test"], regularizer
+            )
 
         if epoch % args.save_freq == 0:
-            save_checkpoint(
-                directory=args.dir, epoch=epoch, model=model, optimizer=optimizer
-            )
+            save_checkpoint(directory=args.dir, epoch=epoch, model=model, optimizer=optimizer)
 
         time_epoch = time.time() - time_epoch
         values = [
@@ -149,9 +160,7 @@ def train(
 
     if args.epochs % args.save_freq != 0:
         # Save last checkpoint if not already saved
-        save_checkpoint(
-            directory=args.dir, epoch=args.epoch, model=model, optimizer=optimizer
-        )
+        save_checkpoint(directory=args.dir, epoch=epoch, model=model, optimizer=optimizer)
 
 
 def train_epoch(
@@ -161,7 +170,7 @@ def train_epoch(
     criterion: Callable,
     n_train: int,
     regularizer: Union[Callable, None] = None,
-    lr_schedule: Union[Callable, None] = None
+    lr_schedule: Union[Callable, None] = None,
 ) -> Dict[str, float]:
     loss_sum = 0.0
     correct = 0.0
@@ -187,8 +196,8 @@ def train_epoch(
         correct += correct_batch
 
     return {
-        "loss": loss_sum / n_train, # Add function to find length
-        "accuracy": correct * 100.0 / n_train # Add function to find length of dataset,
+        "loss": loss_sum / n_train,  # Add function to find length
+        "accuracy": correct * 100.0 / n_train,  # Add function to find length of dataset,
     }
 
 
@@ -221,11 +230,10 @@ def test_epoch(
         loss_sum += loss_batch
         correct += correct_batch
 
-
     return {
-        "nll": nll_sum / n_test, # Add function to find length
-        "loss": loss_sum / n_test, # Add function to find length
-        "accuracy": correct * 100.0 / n_test # Add function to find length
+        "nll": nll_sum / n_test,  # Add function to find length
+        "loss": loss_sum / n_test,  # Add function to find length
+        "accuracy": correct * 100.0 / n_test,  # Add function to find length
     }
 
 
@@ -242,11 +250,10 @@ def train_batch(
 ) -> Tuple[float, float]:
     # TODO Allocate model to GPU as well, but no necessary at the moment, since we don't have GPUs.
 
-    with tf.device('/cpu:0'):
-        
+    with tf.device("/cpu:0"):
         with tf.GradientTape() as tape:
             output = model(input)
-            loss = criterion(target, output) # + model.losses necessary?
+            loss = criterion(target, output)  # + model.losses necessary?
             # PyTorch:
             # if regularizer is not None:
             #     loss += regularizer(model)
@@ -258,9 +265,11 @@ def train_batch(
         # https://medium.com/analytics-vidhya/3-different-ways-to-perform-gradient-descent-in-tensorflow-2-0-and-ms-excel-ffc3791a160a
         # https://d2l.ai/chapter_multilayer-perceptrons/weight-decay.html (4.5.4)
 
-        loss = tf.reduce_sum(loss).numpy() # What exactly are we trying to add up here, see original code? Check with PyTorch Code.
-        pred = tf.math.argmax(output, axis = 1, output_type=tf.dtypes.int64)
-        correct = tf.math.reduce_sum(tf.cast(tf.math.equal(pred, target), tf.float32)).numpy() # Is there an easier way?
+        # What exactly are we trying to add up here, see original code? Check with PyTorch Code.
+        loss = tf.reduce_sum(loss).numpy()
+        pred = tf.math.argmax(output, axis=1, output_type=tf.dtypes.int64)
+        # Is there an easier way?
+        correct = tf.math.reduce_sum(tf.cast(tf.math.equal(pred, target), tf.float32)).numpy()
 
     return loss, correct  # Do we need to return the model as well?
 
@@ -278,17 +287,19 @@ def test_batch(
 ) -> Dict[str, float]:
     # TODO Allocate model to GPU as well.
 
-    with tf.device('/cpu:0'):
+    with tf.device("/cpu:0"):
         output = model(input, **kwargs)
         nll = criterion(target, output)
-        loss = tf.identity(nll) # COrrect funtion for nll.clone() in Pytorch
+        loss = tf.identity(nll)  # COrrect funtion for nll.clone() in Pytorch
         # PyTorch:
         # if regularizer is not None:
         #     loss += regularizer(model)
 
         nll = tf.reduce_sum(nll).numpy()
-        loss = tf.reduce_sum(loss).numpy() # What exactly are we trying to add up here, see original code? Check with PyTorch Code.
-        pred = tf.math.argmax(output, axis = 1, output_type=tf.dtypes.int64)
+        loss = tf.reduce_sum(
+            loss
+        ).numpy()  # What exactly are we trying to add up here, see original code? Check with PyTorch Code.
+        pred = tf.math.argmax(output, axis=1, output_type=tf.dtypes.int64)
         correct = tf.math.reduce_sum(tf.cast(tf.math.equal(pred, target), tf.float32)).numpy()
 
     return nll, loss, correct

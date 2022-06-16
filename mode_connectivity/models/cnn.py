@@ -11,12 +11,12 @@ class CNNBase(tf.keras.Model):
     conv_part: tf.keras.Sequential
     fc_part: tf.keras.Sequential
 
-    #Sources:   
-    #https://www.tensorflow.org/tutorials/customization/custom_layers
-    #https://www.tensorflow.org/api_docs/python/tf/keras/layers
+    # Sources:
+    # https://www.tensorflow.org/tutorials/customization/custom_layers
+    # https://www.tensorflow.org/api_docs/python/tf/keras/layers
 
-    #Network Structure:
-    #https://github.com/constantin-crailsheim/dnn-mode-connectivity/blob/master/models/basiccnn.py
+    # Network Structure:
+    # https://github.com/constantin-crailsheim/dnn-mode-connectivity/blob/master/models/basiccnn.py
 
     # Optional: Alternatively inherit from tf.keras.layers.Layer
     # https://stackoverflow.com/questions/55109696/tensorflow-difference-between-tf-keras-layers-layer-vs-tf-keras-model
@@ -27,31 +27,50 @@ class CNNBase(tf.keras.Model):
         super().__init__()
         self.num_classes = num_classes
 
-        self.conv_part = tf.keras.Sequential([
-            tf.keras.layers.Conv2D(filters= 32, kernel_size=(3, 3), activation='relu', kernel_initializer= 'glorot_normal' , bias_initializer= 'zeros',
-                kernel_regularizer = tf.keras.regularizers.L2(weight_decay)),
-            tf.keras.layers.MaxPool2D(pool_size=(2, 2)),
-            tf.keras.layers.Conv2D(filters= 64, kernel_size=(3, 3), activation='relu', kernel_initializer= 'glorot_normal' , bias_initializer= 'zeros',
-                kernel_regularizer = tf.keras.regularizers.L2(weight_decay)),
-            tf.keras.layers.MaxPool2D(pool_size=(2, 2)),
-            tf.keras.layers.Conv2D(filters= 64, kernel_size=(3, 3), kernel_initializer= 'glorot_normal' , bias_initializer= 'zeros',
-                kernel_regularizer = tf.keras.regularizers.L2(weight_decay)),
-            tf.keras.layers.Flatten()])
+        self.conv_part = tf.keras.Sequential(
+            [
+                tf.keras.layers.Conv2D(filters=32, kernel_size=(3, 3), activation="relu"),
+                tf.keras.layers.MaxPool2D(pool_size=(2, 2)),
+                tf.keras.layers.Conv2D(filters=64, kernel_size=(3, 3), activation="relu"),
+                tf.keras.layers.MaxPool2D(pool_size=(2, 2)),
+                tf.keras.layers.Conv2D(filters=64, kernel_size=(3, 3)),
+                tf.keras.layers.Flatten(),
+            ]
+        )
 
-        self.fc_part = tf.keras.Sequential([
-            tf.keras.layers.Dense(units= 64, activation='relu',
-                kernel_regularizer = tf.keras.regularizers.L2(weight_decay)),
-            tf.keras.layers.Dense(units= 64, activation='relu',
-                kernel_regularizer = tf.keras.regularizers.L2(weight_decay)),
-            tf.keras.layers.Dense(units= self.num_classes,
-                kernel_regularizer = tf.keras.regularizers.L2(weight_decay))])
+        self.fc_part = tf.keras.Sequential(
+            [
+                tf.keras.layers.Dense(units=64, activation="relu"),
+                tf.keras.layers.Dense(units=64, activation="relu"),
+                tf.keras.layers.Dense(units=self.num_classes),
+            ]
+        )
+        # self.conv_part = tf.keras.Sequential([
+        #     tf.keras.layers.Conv2D(filters= 32, kernel_size=(3, 3), activation='relu', kernel_initializer= 'glorot_normal' , bias_initializer= 'zeros',
+        #         kernel_regularizer = tf.keras.regularizers.L2(weight_decay)),
+        #     tf.keras.layers.MaxPool2D(pool_size=(2, 2)),
+        #     tf.keras.layers.Conv2D(filters= 64, kernel_size=(3, 3), activation='relu', kernel_initializer= 'glorot_normal' , bias_initializer= 'zeros',
+        #         kernel_regularizer = tf.keras.regularizers.L2(weight_decay)),
+        #     tf.keras.layers.MaxPool2D(pool_size=(2, 2)),
+        #     tf.keras.layers.Conv2D(filters= 64, kernel_size=(3, 3), kernel_initializer= 'glorot_normal' , bias_initializer= 'zeros',
+        #         kernel_regularizer = tf.keras.regularizers.L2(weight_decay)),
+        #     tf.keras.layers.Flatten()])
 
+        # self.fc_part = tf.keras.Sequential([
+        #     tf.keras.layers.Dense(units= 64, activation='relu',
+        #         kernel_regularizer = tf.keras.regularizers.L2(weight_decay)),
+        #     tf.keras.layers.Dense(units= 64, activation='relu',
+        #         kernel_regularizer = tf.keras.regularizers.L2(weight_decay)),
+        #     tf.keras.layers.Dense(units= self.num_classes,
+        #         kernel_regularizer = tf.keras.regularizers.L2(weight_decay))])
 
-    def call(self, inputs, training=None, mask=None): #TO DO: Typehints & Check which arguments necessary
+    def call(
+        self, inputs, training=None, mask=None
+    ):  # TO DO: Typehints & Check which arguments necessary
         x = self.conv_part(inputs)
         return self.fc_part(x)
-        # TODO: Check if x = x.view(x.size(0), -1) necessary 
-        
+        # TODO: Check if x = x.view(x.size(0), -1) necessary
+
 
 class CNNCurve(tf.keras.Model):
     def __init__(self, num_classes: int, fix_points: List[bool]):
@@ -60,7 +79,7 @@ class CNNCurve(tf.keras.Model):
         self.fix_points = fix_points
         # TO DO
 
-    def call(self, inputs, coeffs_t, training=None, mask=None): #TO DO: Typehints
+    def call(self, inputs, coeffs_t, training=None, mask=None):  # TO DO: Typehints
         # TO DO
         pass
 
