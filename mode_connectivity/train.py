@@ -46,7 +46,7 @@ def main():
     )
 
     # criterion = tf.nn.sparse_softmax_cross_entropy_with_logits
-    criterion = tf.keras.losses.SparseCategoricalCrossentropy()
+    criterion = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 
     # TODO: Check if correct function, takes labels of shape [nbatch, nclass], while F.cross_entropy()
     # takes labels of shape [nBatch]
@@ -177,6 +177,7 @@ def train_epoch(
 
     num_iters = len(train_loader)
     # PyTorch: model.train()
+
     for iter, (input, target) in enumerate(train_loader):
         if callable(lr_schedule):
             lr = lr_schedule(iter / num_iters)
