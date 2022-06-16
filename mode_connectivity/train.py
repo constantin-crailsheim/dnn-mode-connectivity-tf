@@ -175,7 +175,7 @@ def train_epoch(
     loss_sum = 0.0
     correct = 0.0
 
-    num_iters = len(train_loader)
+    num_iters = len(train_loader) 
     # PyTorch: model.train()
 
     for iter, (input, target) in enumerate(train_loader):
