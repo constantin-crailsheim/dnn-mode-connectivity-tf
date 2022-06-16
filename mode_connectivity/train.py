@@ -101,12 +101,13 @@ def get_model(architecture, args, num_classes: int):
 
     #If no curve is to be fit the base version of the architecture is initialised (e.g CNNBase instead of CNNCurve).
     if not args.curve:
-        model = architecture.base(num_classes=num_classes, weight_decay=weight_decay, **architecture.kwargs)
+        model = architecture.base(num_classes=num_classes, weight_decay= args.wd, **architecture.kwargs)
         return model
 
     #Otherwise the curve version of the architecture (e.g. CNNCurve) is initialised in the context of a CurveNet.
     #The CurveNet additionally contains the curve (e.g. Bezier) and imports the parameters of the pre-trained base-nets that constitute the outer points of the curve.
     else:
+        pass
         curve = getattr(curves, args.curve)
         model = curves.CurveNet(
             num_classes,
@@ -130,9 +131,8 @@ def get_model(architecture, args, num_classes: int):
                     # checkpoint = torch.load(path) #Angepasst                    
                     # base_model.load_state_dict(checkpoint['model_state']) #Angepasst
 
-                    # Source of TF Translation: https://d2l.ai/chapter_deep-learning-computation/read-write.html
-
-                    base_model.load_weights(path)
+                    checkpoint = tf.train.Checkpoint(base_model)
+                    checkpoint.restore(args.init_end) #Restores checkpoint in base_model
                     model.import_base_parameters(base_model, k)
             if args.init_linear:
                 print('Linear initialization.')

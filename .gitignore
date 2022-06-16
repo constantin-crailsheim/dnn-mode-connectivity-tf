@@ -130,3 +130,15 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+results/MNIST_BasicCNN/checkpoints_model_1/checkpoint
+results/MNIST_BasicCNN/checkpoints_model_1/checkpoint-epoch0-1.data-00000-of-00001
+results/MNIST_BasicCNN/checkpoints_model_1/checkpoint-epoch0-1.index
+results/MNIST_BasicCNN/checkpoints_model_1/checkpoint-epoch5-1.data-00000-of-00001
+results/MNIST_BasicCNN/checkpoints_model_1/checkpoint-epoch5-1.index
+results/MNIST_BasicCNN/checkpoints_model_2/checkpoint
+results/MNIST_BasicCNN/checkpoints_model_2/checkpoint-epoch0-1.data-00000-of-00001
+results/MNIST_BasicCNN/checkpoints_model_2/checkpoint-epoch0-1.index
+results/MNIST_BasicCNN/checkpoints_model_2/checkpoint-epoch5-1.data-00000-of-00001
+results/MNIST_BasicCNN/checkpoints_model_2/checkpoint-epoch5-1.index
+results/.DS_Store
+results/MNIST_BasicCNN/.DS_Store
