@@ -98,3 +98,22 @@ def save_checkpoint(
     checkpoint_path = os.path.join(directory, f"{name}-epoch{epoch}")
     logger.info(f"Saving checkpoint to {checkpoint_path}")
     checkpoint.save(checkpoint_path)
+
+def save_model(
+    directory: str,
+    epoch: int,
+    model: keras.Model,
+) -> None:
+    """
+    Save the current model in SavedModel format.
+    Can only be called once the input dimension is specified.
+
+    Args:
+        directory (str): Directory where the checkpoint should be saved.
+        epoch (int): The current train epoch.
+        model (keras.Model): The trained model.
+     """
+
+    model_path = os.path.join(directory, f"model-epoch{epoch}")
+    logger.info(f"Saving model to {model_path}")
+    model.save(model_path)    

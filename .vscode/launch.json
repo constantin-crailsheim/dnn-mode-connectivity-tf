@@ -12,7 +12,7 @@
                 "--dataset=mnist",
                 "--data-path=datasets/",
                 "--model=CNN",
-                "--epochs=5",
+                "--epochs=3",
                 "--lr=0.05",
                 "--wd=5e-4",
                 "--transform=CNN",
@@ -30,7 +30,7 @@
                 "--data-path=datasets/",
                 "--model=CNN",
                 "--epochs=5",
-                "--lr=0.05",
+                "--lr=0.03",
                 "--wd=5e-4",
                 "--transform=CNN",
                 "--seed=42"]
@@ -52,9 +52,9 @@
                 "--epochs=5",
                 "--lr=0.01",
                 "--wd=1e-4",
-                "--init-start=results/MNIST_BasicCNN/checkpoints_model_1/checkpoint-epoch5-1",
+                "--init-start=results/MNIST_BasicCNN/checkpoints_model_1/model-epoch3",
                 "--fix-start",
-                "--init-end=results/MNIST_BasicCNN/checkpoints_model_2/checkpoint-epoch5-1",
+                "--init-end=results/MNIST_BasicCNN/checkpoints_model_2/model-epoch5",
                 "--fix-end"]
         }]
 }

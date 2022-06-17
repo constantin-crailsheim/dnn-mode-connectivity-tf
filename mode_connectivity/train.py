@@ -18,6 +18,7 @@ from utils import (
     learning_rate_schedule,
     load_checkpoint,
     save_checkpoint,
+    save_model
 )
 import curves
 
@@ -44,6 +45,7 @@ def main():
         args = args,
         num_classes = num_classes,
     )
+
 
     # criterion = tf.nn.sparse_softmax_cross_entropy_with_logits
     criterion = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
@@ -107,7 +109,6 @@ def get_model(architecture, args, num_classes: int):
     #Otherwise the curve version of the architecture (e.g. CNNCurve) is initialised in the context of a CurveNet.
     #The CurveNet additionally contains the curve (e.g. Bezier) and imports the parameters of the pre-trained base-nets that constitute the outer points of the curve.
     else:
-        pass
         curve = getattr(curves, args.curve)
         model = curves.CurveNet(
             num_classes,
@@ -123,16 +124,8 @@ def get_model(architecture, args, num_classes: int):
         if args.resume is None:
             for path, k in [(args.init_start, 0), (args.init_end, args.num_bends - 1)]:
                 if path is not None:
-                    if base_model is None:
-                        base_model = architecture.base(num_classes=num_classes, **architecture.kwargs)
                     print('Loading %s as point #%d' % (path, k))
-
-                    # Pytorch  Version:
-                    # checkpoint = torch.load(path) #Angepasst                    
-                    # base_model.load_state_dict(checkpoint['model_state']) #Angepasst
-
-                    checkpoint = tf.train.Checkpoint(base_model)
-                    checkpoint.restore(args.init_end) #Restores checkpoint in base_model
+                    base_model = tf.keras.models.load_model(path)
                     model.import_base_parameters(base_model, k)
             if args.init_linear:
                 print('Linear initialization.')
@@ -196,6 +189,9 @@ def train(
     if args.epochs % args.save_freq != 0:
         # Save last checkpoint if not already saved
         save_checkpoint(directory=args.dir, epoch=epoch, model=model, optimizer=optimizer)
+
+        # Additionally save the final model as SavedModel.
+        save_model(directory=args.dir, epoch=epoch, model=model)
 
 
 def train_epoch(
