@@ -42,9 +42,6 @@ class CurveModule(tf.keras.Model):
         for i, parameter_type in enumerate(self.parameter_types): #e.g iterates [(0, Weight), (1, Bias)]
             for j, coeff in enumerate(coeffs_t): #e.g [(0, 0.3), (1, 0.4), (2, 0.3)] with coeffs as the weights of the respective sub-models
                 parameter = getattr(self, '%s_%d' % (parameter_type, j)) #Get Weight or Bias tensor of respective sub_model
-                #In PyTorch Objekt ist das so möglich
-                #Da hat Curve Module tatsächlich einfach die Attribute bias_0, bias_1,..., weight_0, weight_1...
-                #TODODODODODODODODODODOD
                 if parameter is not None:
                     if w_t[i] is None:
                         w_t[i] = parameter * coeff
@@ -135,6 +132,9 @@ class Conv2d(CurveModule):
 
         #Substitutes register_parameter and reset_parameters steps 
         for i, fixed in enumerate(self.fix_points):
+            #temp_kernel = "kernel_" + str(i) 
+            #self.temp_kernel
+
             temp_kernel = "kernel_" + str(i) 
             self.temp_kernel = self.add_weight(
                 name='kernel',
@@ -144,8 +144,9 @@ class Conv2d(CurveModule):
                 constraint=self.kernel_constraint,
                 trainable= not fixed,
                 dtype=self.dtype)
+
+            temp_bias = "bias_" + str(i) 
             if self.use_bias:
-                temp_bias = "bias_" + str(i) 
                 self.temp_bias = self.add_weight(
                     name='bias',
                     shape=(self.filters,),
@@ -155,7 +156,7 @@ class Conv2d(CurveModule):
                     trainable= not fixed,
                     dtype=self.dtype)
             else:
-                self.bias = None
+                self.temp_bias = None
 
         #Are those variables needed?
         channel_axis = self._get_channel_axis()
@@ -233,63 +234,3 @@ class Conv2d(CurveModule):
                 f'Received input shape {input_shape} which would produce '
                 f'output shape with a zero or negative value in a '
                 f'dimension.')
-
-
-
-
-
-##### OLD
-class Conv2d(CurveModule):
-    def __init__(self, in_channels, out_channels, kernel_size, fix_points, stride=1,
-                 padding=0, dilation=1, groups=1, bias=True):
-        super(Conv2d, self).__init__(fix_points, ('weight', 'bias'))
-
-        if in_channels % groups != 0:
-            raise ValueError('in_channels must be divisible by groups')
-        if out_channels % groups != 0:
-            raise ValueError('out_channels must be divisible by groups')
-        kernel_size = _pair(kernel_size)
-        stride = _pair(stride)
-        padding = _pair(padding)
-        dilation = _pair(dilation)
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.kernel_size = kernel_size
-        self.stride = stride
-        self.padding = padding
-        self.dilation = dilation
-        self.groups = groups
-
-        for i, fixed in enumerate(self.fix_points):
-            self.register_parameter(
-                'weight_%d' % i,
-                Parameter(
-                    torch.Tensor(out_channels, in_channels // groups, *kernel_size),
-                    requires_grad=not fixed
-                )
-            )
-        for i, fixed in enumerate(self.fix_points):
-            if bias:
-                self.register_parameter(
-                    'bias_%d' % i,
-                    Parameter(torch.Tensor(out_channels), requires_grad=not fixed)
-                )
-            else:
-                self.register_parameter('bias_%d' % i, None)
-        self.reset_parameters()
-
-    def reset_parameters(self):
-        n = self.in_channels
-        for k in self.kernel_size:
-            n *= k
-        stdv = 1. / math.sqrt(n)
-        for i in range(self.num_bends):
-            getattr(self, 'weight_%d' % i).data.uniform_(-stdv, stdv)
-            bias = getattr(self, 'bias_%d' % i)
-            if bias is not None:
-                bias.data.uniform_(-stdv, stdv)
-
-    def forward(self, input, coeffs_t):
-        weight_t, bias_t = self.compute_weights_t(coeffs_t)
-        return F.conv2d(input, weight_t, bias_t, self.stride,
-                        self.padding, self.dilation, self.groups)
