@@ -1,5 +1,6 @@
 import tensorflow as tf
 from tensorflow import keras
+import keras.backend as K
 import numpy as np
 from scipy.special import binom
 
@@ -48,9 +49,9 @@ class Linear(CurveModule):
  ## definiton of parameter reset: very unsure if this is correct
 
     def reset_parameters(self):
-        for in in range(self.num_bends):
+        for i in range(self.num_bends):
             session = K.get_session()
-            for layer in model.layers: 
+            for layer in self.layers: 
                 if hasattr(layer, 'kernel_initializer'):
                      layer.kernel.initializer.run(session=session)
    
