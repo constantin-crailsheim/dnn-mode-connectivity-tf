@@ -18,9 +18,7 @@ from utils import (
     learning_rate_schedule,
     load_checkpoint,
     save_checkpoint,
-    save_model
 )
-import curves
 
 COLUMNS = ["ep", "lr", "tr_loss", "tr_acc", "te_nll", "te_acc", "time"]
 
@@ -41,11 +39,11 @@ def main():
     )
     architecture = get_architecture(model_name=args.model)
     model = get_model(
-        architecture = architecture,
-        args = args,
-        num_classes = num_classes,
+        curve=args.curve,
+        architecture=architecture,
+        num_classes=num_classes,
+        weight_decay=args.wd,
     )
-
 
     # criterion = tf.nn.sparse_softmax_cross_entropy_with_logits
     criterion = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
@@ -98,40 +96,14 @@ def get_architecture(model_name: str):
     raise KeyError(f"Unkown model {model_name}")
 
 
-def get_model(architecture, args, num_classes: int): 
-    #Changed method arguments to take args as input () since many of those variables needed in curve-case
-
-    #If no curve is to be fit the base version of the architecture is initialised (e.g CNNBase instead of CNNCurve).
-    if not args.curve:
-        model = architecture.base(num_classes=num_classes, weight_decay= args.wd, **architecture.kwargs)
-        return model
-
-    #Otherwise the curve version of the architecture (e.g. CNNCurve) is initialised in the context of a CurveNet.
-    #The CurveNet additionally contains the curve (e.g. Bezier) and imports the parameters of the pre-trained base-nets that constitute the outer points of the curve.
-    else:
-        curve = getattr(curves, args.curve)
-        model = curves.CurveNet(
-            num_classes,
-            curve,
-            architecture.curve,
-            args.num_bends,
-            args.fix_start,
-            args.fix_end,
-            architecture_kwargs=architecture.kwargs,
+def get_model(curve: str, architecture, num_classes: int, weight_decay: float):
+    if not curve:
+        return architecture.base(
+            num_classes=num_classes, weight_decay=weight_decay, **architecture.kwargs
         )
 
-        base_model = None
-        if args.resume is None:
-            for path, k in [(args.init_start, 0), (args.init_end, args.num_bends - 1)]:
-                if path is not None:
-                    print('Loading %s as point #%d' % (path, k))
-                    base_model = tf.keras.models.load_model(path)
-                    model.import_base_parameters(base_model, k)
-            if args.init_linear:
-                print('Linear initialization.')
-                model.init_linear()
-                
-        return model
+    # TODO return curve model
+    return None
 
 
 def train(
@@ -189,9 +161,6 @@ def train(
     if args.epochs % args.save_freq != 0:
         # Save last checkpoint if not already saved
         save_checkpoint(directory=args.dir, epoch=epoch, model=model, optimizer=optimizer)
-
-        # Additionally save the final model as SavedModel.
-        save_model(directory=args.dir, epoch=epoch, model=model)
 
 
 def train_epoch(

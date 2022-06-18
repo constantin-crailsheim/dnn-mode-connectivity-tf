@@ -167,8 +167,8 @@ def _add_checkpoint_arguments(parser: argparse.ArgumentParser) -> None:
         "--init-start",
         type=str,
         default=None,
-        help="path to SavedModel of init start point (default: None)",
-        #metavar="CKPT", #Since we use the SavedModel instead of the checkpoint now, this term is not suitable anymore
+        metavar="CKPT",
+        help="checkpoint to init start point (default: None)",
     )
     parser.add_argument(
         "--fix-start",
@@ -180,8 +180,8 @@ def _add_checkpoint_arguments(parser: argparse.ArgumentParser) -> None:
         "--init-end",
         type=str,
         default=None,
-        help="path to SavedModel of init end point (default: None)",
-        #metavar="CKPT", #Since we use the SavedModel instead of the checkpoint now, this term is not suitable anymore
+        metavar="CKPT",
+        help="checkpoint to init end point (default: None)",
     )
     parser.add_argument(
         "--fix-end",
