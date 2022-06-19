@@ -1,5 +1,6 @@
 import logging
 import os
+from typing import Any, List
 
 import keras
 import tensorflow as tf
@@ -98,3 +99,22 @@ def save_checkpoint(
     checkpoint_path = os.path.join(directory, f"{name}-epoch{epoch}")
     logger.info(f"Saving checkpoint to {checkpoint_path}")
     checkpoint.save(checkpoint_path)
+
+
+def split_list(list_: List[Any], size: int) -> List[List[Any]]:
+    """Split a list into equal chunks of size 'size'.
+
+    Args:
+        list_ (List[Any]): The list to split.
+        size (int): The chunk size.
+
+    Returns:
+        List[List[Any]]: List with equal sized chunks.
+
+    Example:
+    ```python
+    split_list([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    >>> [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9]]
+    ```
+    """
+    return list(list_[i : i + size] for i in range(0, len(list_), size))
