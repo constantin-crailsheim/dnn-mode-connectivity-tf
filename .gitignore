@@ -154,3 +154,4 @@ results/MNIST_BasicCNN/checkpoints_model_1/model-epoch3/saved_model.pb
 results/MNIST_BasicCNN/checkpoints_model_1/model-epoch3/variables/variables.data-00000-of-00001
 results/MNIST_BasicCNN/checkpoints_model_1/model-epoch3/variables/variables.index
 tests/test_bezier.py
+tests/conv2d_test.py

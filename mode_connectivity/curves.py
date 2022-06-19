@@ -49,8 +49,7 @@ class CurveModule(tf.keras.Model):
                         w_t[i] += parameter * coeff
             if w_t[i] is not None:
                 self.l2 += tf.reduce_sum(w_t[i] ** 2)
-        return w_t #Gibt am Ende nur Liste von Tensoren zurück (Fraglich ob das auch in auch funktioniert)
-
+        return w_t
 
 class Conv2d(CurveModule):
     def __init__(self,
@@ -74,8 +73,8 @@ class Conv2d(CurveModule):
                 #Should there be a possibility to determine input dimensionality as well?
         super().__init__(fix_points, ('kernel', 'bias'))
 
-        if filters % groups != 0:
-            raise ValueError('Filters must be divisible by groups')
+        # if filters % groups != 0:
+        #     raise ValueError('Filters must be divisible by groups')
 
         # Sources:   1) https://github.com/keras-team/keras/blob/07e13740fd181fc3ddec7d9a594d8a08666645f6/keras/layers/convolutional/base_conv.py#L28
         #            2) https://github.com/keras-team/keras/blob/v2.9.0/keras/layers/convolutional/conv2d.py#L28-L188
@@ -98,10 +97,8 @@ class Conv2d(CurveModule):
         self.dilation_rate = conv_utils.normalize_tuple(
             dilation_rate, self.rank, 'dilation_rate')
         self.groups = groups or 1
-
-        self.activation = activations.get(activation)
         self.use_bias = use_bias
-
+        self.activation = activations.get(activation)
         self.kernel_initializer = initializers.get(kernel_initializer)
         self.bias_initializer = initializers.get(bias_initializer)
         self.kernel_regularizer = regularizers.get(kernel_regularizer)
@@ -109,15 +106,12 @@ class Conv2d(CurveModule):
         self.kernel_constraint = constraints.get(kernel_constraint)
         self.bias_constraint = constraints.get(bias_constraint)
         self._tf_data_format = conv_utils.convert_data_format(self.data_format, self.rank + 2)
-        #Checken was davon wirklich verwendet
 
         self._validate_init()
 
-        #Register weights and parameter initialitation in build()
-
     def build(self, input_shape):
         #Copied from 1) build(self, input_shape)
-        #This means that build has to be called in order to define input dimension.
+        #Built gets called once when call() is called for the first time.
         input_shape = tf.TensorShape(input_shape)
         input_channel = self._get_input_channel(input_shape)
         if input_channel % self.groups != 0:
@@ -132,11 +126,8 @@ class Conv2d(CurveModule):
 
         #Substitutes register_parameter and reset_parameters steps 
         for i, fixed in enumerate(self.fix_points):
-            #temp_kernel = "kernel_" + str(i) 
-            #self.temp_kernel
-
-            temp_kernel = "kernel_" + str(i) 
-            self.temp_kernel = self.add_weight(
+            temp_kernel_name = "kernel_" + str(i) 
+            temp_kernel_obj = self.add_weight(
                 name='kernel',
                 shape=kernel_shape,
                 initializer=self.kernel_initializer,
@@ -144,10 +135,11 @@ class Conv2d(CurveModule):
                 constraint=self.kernel_constraint,
                 trainable= not fixed,
                 dtype=self.dtype)
+            setattr(self, temp_kernel_name, temp_kernel_obj)
 
-            temp_bias = "bias_" + str(i) 
+            temp_bias_name = "bias_" + str(i)
             if self.use_bias:
-                self.temp_bias = self.add_weight(
+                temp_bias_obj = self.add_weight(
                     name='bias',
                     shape=(self.filters,),
                     initializer=self.bias_initializer,
@@ -155,8 +147,9 @@ class Conv2d(CurveModule):
                     constraint=self.bias_constraint,
                     trainable= not fixed,
                     dtype=self.dtype)
+                setattr(self, temp_bias_name, temp_bias_obj)
             else:
-                self.temp_bias = None
+                setattr(self, temp_bias_name, None)
 
         #Are those variables needed?
         channel_axis = self._get_channel_axis()
@@ -173,9 +166,9 @@ class Conv2d(CurveModule):
         else:
             tf_padding = self.padding
 
-        kernel_t, _= self.compute_weights_t(coeffs_t) #Eig kommen ja (weight_t, bias_t) zurück
+        kernel_t, bias_t= self.compute_weights_t(coeffs_t) #Eig kommen ja (weight_t, bias_t) zurück
 
-        return tf.nn.convolution(
+        outputs = tf.nn.convolution(
             inputs,
             kernel_t,
             strides=list(self.strides),
@@ -184,6 +177,19 @@ class Conv2d(CurveModule):
             data_format=self._tf_data_format,
             name=self.__class__.__name__)
             #No bias argument in tf.nn.convolution. Solution may be to train Convolutions without  bias.
+
+        if self.use_bias:
+            output_rank = outputs.shape.rank
+            if output_rank is not None and output_rank > 2 + self.rank:
+                def _apply_fn(o):
+                    return tf.nn.bias_add(o, bias_t, data_format=self._tf_data_format)
+                outputs = conv_utils.squeeze_batch_dims(outputs, _apply_fn, inner_rank=self.rank + 1)
+            else:
+                outputs = tf.nn.bias_add(outputs, bias_t, data_format=self._tf_data_format)
+
+        if self.activation is not None:
+            outputs= self.activation(outputs)
+        return outputs
 
     def _validate_init(self):
         #Copied from 1) _validate_init(self) but pruned
@@ -234,3 +240,20 @@ class Conv2d(CurveModule):
                 f'Received input shape {input_shape} which would produce '
                 f'output shape with a zero or negative value in a '
                 f'dimension.')
+
+    def _get_channel_axis(self):
+        if self.data_format == 'channels_first':
+            return -1 - self.rank
+        else:
+            return -1
+
+    def _spatial_output_shape(self, spatial_input_shape):
+        return [
+            conv_utils.conv_output_length(  # pylint: disable=g-complex-comprehension
+                length,
+                self.kernel_size[i],
+                padding=self.padding,
+                stride=self.strides[i],
+                dilation=self.dilation_rate[i])
+            for i, length in enumerate(spatial_input_shape)
+            ]
