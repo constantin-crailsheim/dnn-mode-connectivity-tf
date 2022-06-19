@@ -130,28 +130,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-results/MNIST_BasicCNN/checkpoints_model_1/checkpoint
-results/MNIST_BasicCNN/checkpoints_model_1/checkpoint-epoch0-1.data-00000-of-00001
-results/MNIST_BasicCNN/checkpoints_model_1/checkpoint-epoch0-1.index
-results/MNIST_BasicCNN/checkpoints_model_1/checkpoint-epoch5-1.data-00000-of-00001
-results/MNIST_BasicCNN/checkpoints_model_1/checkpoint-epoch5-1.index
-results/MNIST_BasicCNN/checkpoints_model_2/checkpoint
-results/MNIST_BasicCNN/checkpoints_model_2/checkpoint-epoch0-1.data-00000-of-00001
-results/MNIST_BasicCNN/checkpoints_model_2/checkpoint-epoch0-1.index
-results/MNIST_BasicCNN/checkpoints_model_2/checkpoint-epoch5-1.data-00000-of-00001
-results/MNIST_BasicCNN/checkpoints_model_2/checkpoint-epoch5-1.index
+results/MNIST_BasicCNN/
 results/.DS_Store
-results/MNIST_BasicCNN/.DS_Store
-results/MNIST_BasicCNN/checkpoints_curve/checkpoint
-results/MNIST_BasicCNN/checkpoints_curve/checkpoint-epoch0-1.data-00000-of-00001
-results/MNIST_BasicCNN/checkpoints_curve/checkpoint-epoch0-1.index
-results/MNIST_BasicCNN/checkpoints_model_1/.DS_Store
-results/MNIST_BasicCNN/checkpoints_model_1/checkpoint-epoch3-1.data-00000-of-00001
-results/MNIST_BasicCNN/checkpoints_model_1/checkpoint-epoch3-1.index
-results/MNIST_BasicCNN/checkpoints_model_1/model-epoch3/.DS_Store
-results/MNIST_BasicCNN/checkpoints_model_1/model-epoch3/keras_metadata.pb
-results/MNIST_BasicCNN/checkpoints_model_1/model-epoch3/saved_model.pb
-results/MNIST_BasicCNN/checkpoints_model_1/model-epoch3/variables/variables.data-00000-of-00001
-results/MNIST_BasicCNN/checkpoints_model_1/model-epoch3/variables/variables.index
 tests/test_bezier.py
 tests/conv2d_test.py
