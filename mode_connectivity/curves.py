@@ -85,6 +85,14 @@ class CurveNet(tf.keras.Model):
         for weights in split_weights:
             self._compute_inner_weights(weights=weights)
 
+        # Pytorch for comparison (DELETE on merge)
+        # parameters = list(self.net.parameters())
+        # for i in range(0, len(parameters), self.num_bends):
+        #     weights = parameters[i:i+self.num_bends]
+        #     for j in range(1, self.num_bends - 1):
+        #         alpha = j * 1.0 / (self.num_bends - 1)
+        #         weights[j].data.copy_(alpha * weights[-1].data + (1.0 - alpha) * weights[0].data)
+
     def _compute_inner_weights(self, weights: List[tf.Variable]) -> None:
         # Is this procedure mentioned somewhere in the paper?
         first_weight, last_weight = weights[0].value, weights[-1].value
