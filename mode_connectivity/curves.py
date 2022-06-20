@@ -1,5 +1,5 @@
-from abc import ABC
-from typing import Dict, List, Tuple
+from abc import ABC, abstractmethod
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import tensorflow as tf
@@ -30,7 +30,7 @@ class Bezier(tf.keras.Model):
         )
 
 
-class CurveLayer(tf.keras.layers.Conv2D, ABC):
+class CurveLayer(tf.keras.layers.Layer, ABC):
     fix_points: List[bool]
     num_bends: int
     l2: float
@@ -40,6 +40,14 @@ class CurveLayer(tf.keras.layers.Conv2D, ABC):
         self.fix_points = fix_points
         self.num_bends = len(self.fix_points)
         self.l2 = 0.0
+
+    @abstractmethod
+    def build(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def call(self, *args, **kwargs):
+        pass
 
     def add_parameter_weights(self, kernel_shape: Tuple, bias_shape: Tuple):
         """Add kernel and bias weights for each curve point.
@@ -133,7 +141,13 @@ class CurveLayer(tf.keras.layers.Conv2D, ABC):
 
 
 class Conv2DCurve(CurveLayer, tf.keras.layers.Conv2D):
-    def __init__(self, filters, kernel_size, fix_points, **kwargs):
+    def __init__(
+        self,
+        filters: int,
+        kernel_size: Union[int, Tuple[int, int]],
+        fix_points: List[bool],
+        **kwargs,
+    ):
         super().__init__(
             filters=filters,
             kernel_size=kernel_size,
