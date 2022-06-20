@@ -35,11 +35,7 @@ class CurveLayer(tf.keras.layers.Conv2D, ABC):
     num_bends: int
     l2: float
 
-    def __init__(
-        self,
-        fix_points: List[bool],
-        **kwargs,
-    ):
+    def __init__(self, fix_points: List[bool], **kwargs):
         super().__init__(**kwargs)
         self.fix_points = fix_points
         self.num_bends = len(self.fix_points)
