@@ -104,7 +104,8 @@ class CurveLayer(tf.keras.layers.Conv2D, ABC):
     def _compute_single_weights(
         self, weights: Dict[int, tf.Variable], coeffs_t: tf.Tensor
     ) -> tf.Tensor:
-        """Multiplies the given weights by the respective coefficient.
+        """Multiplies the given weights by the respective coefficient
+        and adds them together.
 
         Adds to the l2 loss as well.
 
@@ -124,6 +125,7 @@ class CurveLayer(tf.keras.layers.Conv2D, ABC):
                 + f"Parameters: {[w.name for w in weights.values()]}"
             )
 
+        # I think this could also be solved by matrix multiplication.
         weight_sum = 0
         for i, coeff in enumerate(coeffs_t):
             weight_sum += weights[i].value() * coeff
