@@ -41,7 +41,7 @@ class CurveModule(tf.keras.Model):
         self.l2 = 0.0
         for i, parameter_type in enumerate(self.parameter_types): #e.g iterates [(0, Weight), (1, Bias)]
             for j, coeff in enumerate(coeffs_t): #e.g [(0, 0.3), (1, 0.4), (2, 0.3)] with coeffs as the weights of the respective sub-models
-                parameter = getattr(self, '%s_%d' % (parameter_type, j)) #Get Weight or Bias tensor of respective sub_model
+                parameter = getattr(self, '%s_%d' % (parameter_type, j)) #Get Weight or Bias tensor of respective sub_model #Use get_weight 
                 if parameter is not None:
                     if w_t[i] is None:
                         w_t[i] = parameter * coeff

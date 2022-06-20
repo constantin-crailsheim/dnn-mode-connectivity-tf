@@ -76,10 +76,7 @@ class CNNBase(tf.keras.Model):
 class CNNCurve(tf.keras.Model):
     def __init__(self, num_classes: int, fix_points: List[bool], weight_decay: float):
         super().__init__()
-        self.num_classes = num_classes
-        self.fix_points = fix_points
-        self.weight_decay = weight_decay
-
+        
         self.conv1 = curves.Conv2D(fix_points, filters= 32, kernel_size=(3, 3), activation='relu', 
                                     kernel_initializer= 'glorot_normal' , bias_initializer= 'zeros',
                                     kernel_regularizer = tf.keras.regularizers.L2(weight_decay)),
