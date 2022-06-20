@@ -20,7 +20,7 @@ class Curve(tf.keras.layers.Layer, ABC):
         pass
 
 
-class CurveModule:
+class CurveLayer:
     pass
 
 
@@ -31,8 +31,8 @@ class CurveNet(tf.keras.Model):
 
     fix_points: List[bool]
 
-    coeff_layer: Curve
-    net: tf.keras.Model
+    curve: Curve
+    curve_model: tf.keras.Model
 
     def __init__(
         self,
@@ -52,15 +52,14 @@ class CurveNet(tf.keras.Model):
         self.fix_points = [fix_start] + [False] * (self.num_bends - 2) + [fix_end]
         self.l2 = 0.0
 
-        # TODO Rename class attributes as well for clarity?
-        self.coeff_layer = curve(self.num_bends)
-        self.net = curve_model(
+        self.curve = curve(self.num_bends)
+        self.curve_model = curve_model(
             num_classes=num_classes, fix_points=self.fix_points, **architecture_kwargs
         )
-        self.curve_modules = [
-            module
-            for module in self.net.submodules()  # TODO Need to check if this gathers the correct modules
-            if issubclass(module.__class__, CurveModule)
+        self.curve_layers = [
+            layer
+            for layer in self.curve_model.submodules()  # TODO Need to check if this gathers the correct modules
+            if issubclass(layer.__class__, CurveLayer)
         ]
 
     def import_base_parameters(self, base_model: tf.keras.Model, index: int) -> None:
@@ -70,7 +69,9 @@ class CurveNet(tf.keras.Model):
             base_model (tf.keras.Model): The base model from which parameters should be imported.
             index (int): _description_
         """
-        variables: List[tf.Variable] = self.net.variables[index :: self.num_bends]
+        variables: List[tf.Variable] = self.curve_model.variables[
+            index :: self.num_bends
+        ]
         base_variables: List[tf.Variable] = base_model.variables
 
         # or should we call get/set_weights ?
@@ -81,17 +82,9 @@ class CurveNet(tf.keras.Model):
 
     def init_linear(self) -> None:
         """Initialize the linear layer of the model."""
-        split_weights = split_list(self.net.variables, size=self.num_bends)
+        split_weights = split_list(self.curve_model.variables, size=self.num_bends)
         for weights in split_weights:
             self._compute_inner_weights(weights=weights)
-
-        # Pytorch for comparison (DELETE on merge)
-        # parameters = list(self.net.parameters())
-        # for i in range(0, len(parameters), self.num_bends):
-        #     weights = parameters[i:i+self.num_bends]
-        #     for j in range(1, self.num_bends - 1):
-        #         alpha = j * 1.0 / (self.num_bends - 1)
-        #         weights[j].data.copy_(alpha * weights[-1].data + (1.0 - alpha) * weights[0].data)
 
     def _compute_inner_weights(self, weights: List[tf.Variable]) -> None:
         # Is this procedure mentioned somewhere in the paper?
@@ -102,7 +95,7 @@ class CurveNet(tf.keras.Model):
 
     def _compute_l2(self) -> None:
         """Compute L2 for each of the curve modules and sum up."""
-        self.l2 = sum(module.l2 for module in self.curve_modules)
+        self.l2 = sum(module.l2 for module in self.curve_layers)
 
     def call(
         self,
@@ -115,19 +108,19 @@ class CurveNet(tf.keras.Model):
         # TODO find a better name for uniform_tensor and coeffs_t
         if uniform_tensor is None:
             uniform_tensor = tf.random.uniform(shape=(1,), dtype=inputs.dtype)
-        coeffs_t = self.coeff_layer(uniform_tensor)
-        output = self.net(inputs, coeffs_t)
+        coeffs_t = self.curve(uniform_tensor)
+        output = self.curve_model(inputs, coeffs_t)
         self._compute_l2()
         return output
 
     def import_base_buffers(self, base_model: tf.keras.Model) -> None:
         # Not needed for now, only used in test_curve.py
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def export_base_parameters(self, base_model: tf.keras.Model, index: int) -> None:
         # Not needed for now, actually never used in original repo
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def weights(self, inputs: tf.Tensor):
         # Not needed for now, only called in eval_curve.py and plane.py
-        raise NotImplementedError
+        raise NotImplementedError()
