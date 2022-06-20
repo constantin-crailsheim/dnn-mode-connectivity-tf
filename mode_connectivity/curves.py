@@ -23,47 +23,63 @@ class Bezier(tf.keras.Model):
 
 
 
-class Linear(CurveModule):
-    def __init__(self, in_features, out_features, fix_points, bias = True):
-        super(Linear, self).__init__(fix_points)
-        self.fix_points = fix_points
-        self.in_features = in_features
-        self.out_features = out_features
-        self.l2 = 0.0
-        self.weights = []
-        self.bs = []
-        for i, fixed in enumerate(self.fix_points):
-            self.weights.append(self.add_weight(
-                shape = (self.in_features, self.out_features),
-                initializer = "random_normal",
-                trainable = True
-                ))
-        for i, fixed in range(self.fix_points):
-            if bias: 
-                self.bs.append(self.add_weight(
-                    shape = (self.out_features,), initializer = "zeros", trainable = True
-                    ))
-            else:
-                self.bs.append(None)
-    
- ## definiton of parameter reset: very unsure if this is correct
+class Dense(CurveLayer, tf.keras.layers.Dense):
+    def __init__(self,
+                 units,
+                 activation = None,
+                 use_bias = True,
+                 kernel_initializer='glorot_uniform',
+                 bias_initializer='zeros',
+                 kernel_regularizer = None,
+                 bias_regularizer = None,
+                 activity_regularizer = None, 
+                 kernel_constraint = None,
+                 bias_constaint = None,
+                 fix_points: List[bool],
+                 **kwargs, 
+                 
+    ):
+        super(Dense, self).__init__(
+            units = units,
+            fix_points = fix_points,
+            kernel_initializer = kernel_initializer,
+            bias_initializer = bias_initializer,
+            **kwargs
+        )
 
-    def reset_parameters(self):
-        for i in range(self.num_bends):
-            session = K.get_session()
-            for layer in self.layers: 
-                if hasattr(layer, 'kernel_initializer'):
-                     layer.kernel.initializer.run(session=session)
-   
+        self.units = int(units) if not isinstance(units, int) else units
+        if self.units < 0:
+            raise ValueError(f'Received an invalid value for `units`, expected '
+                       f'a positive integer. Received: units={units}')
+        self.activation = activations.get(activation)
+        self.use_bias = use_bias
+        self.kernel_initializer = initializers.get(kernel_initializer)
+        self.bias_initializer = initializers.get(bias_initializer)
+        self.kernel_regularizer = regularizers.get(kernel_regularizer)
+        self.bias_regularizer = regularizers.get(bias_regularizer)
+        self.kernel_constraint = constraints.get(kernel_constraint)
+        self.bias_constraint = constraints.get(bias_constraint)
 
-    def call(self, inputs):
-       for point in range(self.num_bends):
-            return tf.matmul(inputs, self.weights[point + 1]) + self.bs[point + 1]
-        ## not sure if it is necessary to iterate over all fix_points again for doing the forward 
-        ## pass or if simply:
-        ## return tf.matmul(inputs, self.weights) + self.bs
-        ## would be enough.
-        
+    def build(self, input_shape):
+        tf.keras.layers.Dense.build(self, input_shape)
+        input_shape = tf.TensorShape(input_shape)
+        input_channel = self._get_input_channel(input_shape)
+        kernel_shape = self.kernel_size + (input_channel // self.groups, self.filters)
+        bias_shape = (self.filters,)
+        last_dim = tf.compat.dimension_value(input_shape[-1])
+       
+        if last_dim is None:
+            raise ValueError('The last dimension of the inputs to a Dense layer '
+                             'should be defined. Found None. '
+                             f'Full input shape received: {input_shape}')
+       
+        self.add_parameter_weights(kernel_shape = kernel_shape, bias_shape = bias_shape)
+
+
+    def call(self, inputs, coeffs_t: tf.Tensor):
+        self.kernel, self.bias = self.compute_weights_t(coeffs_t)   
+        return tf.matmul(inputs, self.kernel) + self.bias
+
                   
 
 
