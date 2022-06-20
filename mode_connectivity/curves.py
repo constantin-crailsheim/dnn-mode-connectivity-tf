@@ -1,15 +1,9 @@
-import tensorflow as tf
-import numpy as np
-from scipy.special import binom
-from typing import List
+from abc import ABC
+from typing import Dict, List, Tuple
 
-from keras import activations
-from keras import constraints
-from keras import initializers
-from keras import regularizers
-from keras.engine.base_layer import Layer
-from keras.engine.input_spec import InputSpec
-from keras.utils import conv_utils
+import numpy as np
+import tensorflow as tf
+from scipy.special import binom
 
 
 class Bezier(tf.keras.Model):
@@ -36,36 +30,108 @@ class Bezier(tf.keras.Model):
         )
 
 
-class CurveLayer:
+class CurveLayer(tf.keras.layers.Conv2D, ABC):
+    fix_points: List[bool]
+    num_bends: int
+    l2: float
+
     def __init__(
         self,
         fix_points: List[bool],
-        parameter_types=("weight", "bias"),
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.fix_points = fix_points
         self.num_bends = len(self.fix_points)
-        self.parameter_types = parameter_types  # Changed variable name from parameter_names to parameter_types. The former could be confusing.
         self.l2 = 0.0
 
-    def compute_weights_t(self, coeffs_t: tf.Tensor):
-        w_t = [None] * len(self.parameter_types)  # e.g [None, None] for Weight and Bias
+    def add_parameter_weights(self, kernel_shape: Tuple, bias_shape: Tuple):
+        """Add kernel and bias weights for each curve point.
+
+        This method needs to be called in the build() method of
+        the new layer.
+
+        The kernel and bias variables are saved in dictionaries in
+        self.curve_kernels and self.curve_biases, with
+        the index of the curve point as the respective key.
+
+        Args:
+            kernel_shape (Tuple): Shape of the kernel.
+            bias_shape (Tuple): Shape of the bias.
+        """
+        self.curve_kernels = {}
+        self.curve_biases = {}
+        for i, fixed in enumerate(self.fix_points):
+            self.curve_kernels[i] = self._add_kernel(i, kernel_shape, fixed)
+            if self.use_bias:
+                self.curve_biases[i] = self._add_bias(i, bias_shape, fixed)
+
+    def _add_kernel(self, index: int, shape: Tuple, fixed: bool):
+        return self._add_weights(index, shape, fixed, "kernel")
+
+    def _add_bias(self, index: int, shape: Tuple, fixed: bool):
+        return self._add_weights(index, shape, fixed, "bias")
+
+    def _add_weights(self, index: int, shape: Tuple, fixed: bool, parameter_type: str):
+        name = f"curve_{parameter_type}_{index}"
+        weight = self.add_weight(
+            name=name,
+            shape=shape,
+            initializer=self.kernel_initializer,
+            regularizer=self.kernel_regularizer,
+            constraint=self.kernel_constraint,
+            trainable=not fixed,
+            dtype=self.dtype,
+        )
+        return weight
+
+    def compute_weights_t(self, coeffs_t: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
+        """Compute weights for the curve kernel and bias.
+
+        Args:
+            coeffs_t (tf.Tensor): Coefficients calculated from the curve.
+
+        Returns:
+            Tuple[tf.Tensor, tf.Tensor]: The scaled weights for kernel and bias.
+        """
         self.l2 = 0.0
-        for i, parameter_type in enumerate(self.parameter_types):
-            # e.g iterates [(0, Weight), (1, Bias)]
-            for j, coeff in enumerate(coeffs_t):
-                # e.g [(0, 0.3), (1, 0.4), (2, 0.3)] with coeffs as the weights of the respective sub-models
-                parameter = getattr(self, f"{parameter_type}_{j}")
-                # Get Weight or Bias tensor of respective sub_model
-                if parameter is not None:
-                    if w_t[i] is None:
-                        w_t[i] = parameter * coeff
-                    else:
-                        w_t[i] += parameter * coeff
-            if w_t[i] is not None:
-                self.l2 += tf.reduce_sum(w_t[i] ** 2)
-        return w_t
+        weights = (
+            self._compute_single_weights(self.curve_kernels, coeffs_t),
+            self._compute_single_weights(self.curve_biases, coeffs_t),
+        )
+        return weights
+
+    def _compute_single_weights(
+        self, weights: Dict[int, tf.Variable], coeffs_t: tf.Tensor
+    ) -> tf.Tensor:
+        """Multiplies the given weights by the respective coefficient.
+
+        Adds to the l2 loss as well.
+
+        Args:
+            weights (Dict[int, tf.Variable]): The weights.
+            coeffs_t (tf.Tensor): Coefficients calculated from the curve.
+
+        Raises:
+            ValueError: If the length of weights and coefficients does not add up.
+
+        Returns:
+            tf.Tensor: The multiplied weights.
+        """
+        if len(weights) != len(coeffs_t):
+            raise ValueError(
+                f"Lengths of curve weights {len(weights)} and coefficients {len(coeffs_t)} is not equal!"
+                + f"Parameters: {[w.name for w in weights.values()]}"
+            )
+
+        weight_sum = 0
+        for i, coeff in enumerate(coeffs_t):
+            weight_sum += weights[i].value() * coeff
+
+        if weight_sum is not None:
+            # I think this should always be called
+            self.l2 += tf.reduce_sum(weight_sum**2)
+        return weight_sum
 
 
 class Conv2DCurve(CurveLayer, tf.keras.layers.Conv2D):
@@ -74,61 +140,19 @@ class Conv2DCurve(CurveLayer, tf.keras.layers.Conv2D):
             filters=filters,
             kernel_size=kernel_size,
             fix_points=fix_points,
-            parameter_types=("kernel", "bias"),
             **kwargs,
         )
 
     def build(self, input_shape):
-        # Copied from 1) build(self, input_shape)
+        tf.keras.layers.Conv2D.build(self, input_shape)
         # Built gets called once when call() is called for the first time.
         input_shape = tf.TensorShape(input_shape)
         input_channel = self._get_input_channel(input_shape)
-        if input_channel % self.groups != 0:
-            raise ValueError(
-                "The number of input channels must be evenly divisible by the number "
-                "of groups. Received groups={}, but the input has {} channels "
-                "(full input shape is {}).".format(
-                    self.groups, input_channel, input_shape
-                )
-            )
         kernel_shape = self.kernel_size + (input_channel // self.groups, self.filters)
+        bias_shape = (self.filters,)
 
-        self.compute_output_shape(input_shape)
-
-        # Substitutes register_parameter and reset_parameters steps
-        for i, fixed in enumerate(self.fix_points):
-            temp_kernel_name = f"kernel_{i}"
-            temp_kernel_obj = self.add_weight(
-                name=temp_kernel_name,
-                shape=kernel_shape,
-                initializer=self.kernel_initializer,
-                regularizer=self.kernel_regularizer,
-                constraint=self.kernel_constraint,
-                trainable=not fixed,
-                dtype=self.dtype,
-            )
-            setattr(self, temp_kernel_name, temp_kernel_obj)
-
-            temp_bias_name = f"bias_{i}"
-            if self.use_bias:
-                temp_bias_obj = self.add_weight(
-                    name=temp_bias_name,
-                    shape=(self.filters,),
-                    initializer=self.bias_initializer,
-                    regularizer=self.bias_regularizer,
-                    constraint=self.bias_constraint,
-                    trainable=not fixed,
-                    dtype=self.dtype,
-                )
-                setattr(self, temp_bias_name, temp_bias_obj)
-            else:
-                setattr(self, temp_bias_name, None)
-
-        channel_axis = self._get_channel_axis()
-        self.input_spec = InputSpec(
-            min_ndim=self.rank + 2, axes={channel_axis: input_channel}
-        )
-        self.built = True
+        # Register curve kernels and biases
+        self.add_parameter_weights(kernel_shape=kernel_shape, bias_shape=bias_shape)
 
     def call(self, inputs, coeffs_t: tf.Tensor):
         self.kernel, self.bias = self.compute_weights_t(coeffs_t)
