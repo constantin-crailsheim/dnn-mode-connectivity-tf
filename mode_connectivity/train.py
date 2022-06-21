@@ -21,6 +21,7 @@ from utils import (
     load_checkpoint,
     save_checkpoint,
     save_model,
+    save_weights,
 )
 
 COLUMNS = ["ep", "lr", "tr_loss", "tr_acc", "te_nll", "te_acc", "time"]
@@ -45,6 +46,7 @@ def main():
         architecture=architecture,
         args=args,
         num_classes=num_classes,
+        input_shape=(None, 28, 28, 1),  # TODO Determine this from dataset
     )
 
     # criterion = tf.nn.sparse_softmax_cross_entropy_with_logits
@@ -100,7 +102,7 @@ def get_architecture(model_name: str):
     raise KeyError(f"Unkown model {model_name}")
 
 
-def get_model(architecture, args: Arguments, num_classes: int):
+def get_model(architecture, args: Arguments, num_classes: int, input_shape):
     # Changed method arguments to take args as input () since many of those variables needed in curve-case
 
     # If no curve is to be fit the base version of the architecture is initialised (e.g CNNBase instead of CNNCurve).
@@ -125,12 +127,16 @@ def get_model(architecture, args: Arguments, num_classes: int):
             architecture_kwargs=architecture.kwargs,
         )
 
-        base_model = None
+        base_model = architecture.base(
+            num_classes=num_classes, weight_decay=args.wd, **architecture.kwargs
+        )
+        base_model.build(input_shape=input_shape)
         if args.resume is None:
             for path, k in [(args.init_start, 0), (args.init_end, args.num_bends - 1)]:
                 if path is not None:
                     print("Loading %s as point #%d" % (path, k))
-                    base_model = tf.keras.models.load_model(path)
+                    # base_model = tf.keras.models.load_model(path)
+                    base_model.load_weights(path)
                     model.import_base_parameters(base_model, k)
             if args.init_linear:
                 print("Linear initialization.")
@@ -200,7 +206,8 @@ def train(
         )
 
         # Additionally save the final model as SavedModel.
-        save_model(directory=args.dir, epoch=epoch, model=model)
+        save_weights(directory=args.dir, epoch=epoch, model=model)
+        # save_model(directory=args.dir, epoch=epoch, model=model)
 
 
 def train_epoch(

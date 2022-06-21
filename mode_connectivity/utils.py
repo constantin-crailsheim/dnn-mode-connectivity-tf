@@ -136,4 +136,18 @@ def save_model(
     """
     model_path = os.path.join(directory, f"model-epoch{epoch}")
     logger.info(f"Saving model to {model_path}")
+    # print(model.curve_model.input_spec)
+    # print(model.call.get_concrete_function(inputs=model.curve_model.input_spec))
     model.save(model_path)
+
+
+def save_weights(
+    directory: str,
+    epoch: int,
+    model: keras.Model,
+):
+    model_path = os.path.join(directory, f"model-weights-epoch{epoch}")
+    logger.info(f"Saving model weights to {model_path}")
+    # print(model.curve_model.input_spec)
+    # print(model.call.get_concrete_function(inputs=model.curve_model.input_spec))
+    model.save_weights(model_path)
