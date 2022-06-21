@@ -101,7 +101,6 @@ def save_checkpoint(
     checkpoint.save(checkpoint_path)
 
 
-
 def split_list(list_: List[Any], size: int) -> List[List[Any]]:
     """Split a list into equal chunks of size 'size'.
 
@@ -120,7 +119,7 @@ def split_list(list_: List[Any], size: int) -> List[List[Any]]:
     """
     return list(list_[i : i + size] for i in range(0, len(list_), size))
 
-  
+
 def save_model(
     directory: str,
     epoch: int,
@@ -134,9 +133,7 @@ def save_model(
         directory (str): Directory where the checkpoint should be saved.
         epoch (int): The current train epoch.
         model (keras.Model): The trained model.
-     """
-
+    """
     model_path = os.path.join(directory, f"model-epoch{epoch}")
     logger.info(f"Saving model to {model_path}")
-    model.save(model_path)    
-
+    model.save(model_path)
