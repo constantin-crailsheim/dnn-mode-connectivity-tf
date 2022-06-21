@@ -170,3 +170,43 @@ class Conv2DCurve(CurveLayer, tf.keras.layers.Conv2D):
     def call(self, inputs, coeffs_t: tf.Tensor):
         self.kernel, self.bias = self.compute_weights_t(coeffs_t)
         return tf.keras.layers.Conv2D.call(self, inputs)
+
+
+
+
+class DenseCurve(CurveLayer, tf.keras.layers.Dense):
+    def __init__(self,
+                 units,
+                 fix_points: List[bool],
+                 **kwargs, 
+                 
+    ):
+        super(Dense, self).__init__(
+            units = units,
+            fix_points = fix_points,
+            **kwargs
+        )
+
+
+
+    def build(self, input_shape):
+        tf.keras.layers.Dense.build(self, input_shape)
+        input_shape = tf.TensorShape(input_shape)
+        last_dim = tf.compat.dimension_value(input_shape[-1])
+        kernel_shape = [last_dim, self.units]
+        bias_shape = [self.units,]
+
+       
+        if last_dim is None:
+            raise ValueError('The last dimension of the inputs to a Dense layer '
+                             'should be defined. Found None. '
+                             f'Full input shape received: {input_shape}')
+       
+        self.add_parameter_weights(kernel_shape = kernel_shape, bias_shape = bias_shape)
+
+
+    def call(self, inputs, coeffs_t: tf.Tensor):
+        self.kernel, self.bias = self.compute_weights_t(coeffs_t)   
+        return tf.keras.layers.Dense(self, inputs)
+
+                  
