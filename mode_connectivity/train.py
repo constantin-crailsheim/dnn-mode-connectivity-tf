@@ -6,6 +6,8 @@ import tensorflow as tf
 from keras.layers import Layer
 from keras.optimizers import Optimizer
 
+import curves
+
 # No mode_connectivity. needed to add before, since we are in the same folder.
 from argparser import Arguments, parse_train_arguments
 from data import data_loaders
@@ -18,9 +20,8 @@ from utils import (
     learning_rate_schedule,
     load_checkpoint,
     save_checkpoint,
-    save_model
+    save_model,
 )
-import curves
 
 COLUMNS = ["ep", "lr", "tr_loss", "tr_acc", "te_nll", "te_acc", "time"]
 
@@ -41,11 +42,10 @@ def main():
     )
     architecture = get_architecture(model_name=args.model)
     model = get_model(
-        architecture = architecture,
-        args = args,
-        num_classes = num_classes,
+        architecture=architecture,
+        args=args,
+        num_classes=num_classes,
     )
-
 
     # criterion = tf.nn.sparse_softmax_cross_entropy_with_logits
     criterion = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
@@ -71,7 +71,9 @@ def main():
         start_epoch = load_checkpoint(
             checkpoint_path=args.resume, model=model, optimizer=optimizer
         )
-    save_checkpoint(directory=args.dir, epoch=start_epoch - 1, model=model, optimizer=optimizer)
+    save_checkpoint(
+        directory=args.dir, epoch=start_epoch - 1, model=model, optimizer=optimizer
+    )
 
     train(
         args=args,
@@ -98,25 +100,28 @@ def get_architecture(model_name: str):
     raise KeyError(f"Unkown model {model_name}")
 
 
-def get_model(architecture, args, num_classes: int): 
-    #Changed method arguments to take args as input () since many of those variables needed in curve-case
+def get_model(architecture, args: Arguments, num_classes: int):
+    # Changed method arguments to take args as input () since many of those variables needed in curve-case
 
-    #If no curve is to be fit the base version of the architecture is initialised (e.g CNNBase instead of CNNCurve).
+    # If no curve is to be fit the base version of the architecture is initialised (e.g CNNBase instead of CNNCurve).
     if not args.curve:
-        model = architecture.base(num_classes=num_classes, weight_decay= args.wd, **architecture.kwargs)
+        model = architecture.base(
+            num_classes=num_classes, weight_decay=args.wd, **architecture.kwargs
+        )
         return model
 
-    #Otherwise the curve version of the architecture (e.g. CNNCurve) is initialised in the context of a CurveNet.
-    #The CurveNet additionally contains the curve (e.g. Bezier) and imports the parameters of the pre-trained base-nets that constitute the outer points of the curve.
+    # Otherwise the curve version of the architecture (e.g. CNNCurve) is initialised in the context of a CurveNet.
+    # The CurveNet additionally contains the curve (e.g. Bezier) and imports the parameters of the pre-trained base-nets that constitute the outer points of the curve.
     else:
         curve = getattr(curves, args.curve)
         model = curves.CurveNet(
-            num_classes,
-            curve,
-            architecture.curve,
-            args.num_bends,
-            args.fix_start,
-            args.fix_end,
+            num_classes=num_classes,
+            num_bends=args.num_bends,
+            weight_decay=args.wd,
+            curve=curve,
+            curve_model=architecture.curve,
+            fix_start=args.fix_start,
+            fix_end=args.fix_end,
             architecture_kwargs=architecture.kwargs,
         )
 
@@ -124,13 +129,13 @@ def get_model(architecture, args, num_classes: int):
         if args.resume is None:
             for path, k in [(args.init_start, 0), (args.init_end, args.num_bends - 1)]:
                 if path is not None:
-                    print('Loading %s as point #%d' % (path, k))
+                    print("Loading %s as point #%d" % (path, k))
                     base_model = tf.keras.models.load_model(path)
                     model.import_base_parameters(base_model, k)
             if args.init_linear:
-                print('Linear initialization.')
+                print("Linear initialization.")
                 model.init_linear()
-                
+
         return model
 
 
@@ -171,7 +176,9 @@ def train(
             )
 
         if epoch % args.save_freq == 0:
-            save_checkpoint(directory=args.dir, epoch=epoch, model=model, optimizer=optimizer)
+            save_checkpoint(
+                directory=args.dir, epoch=epoch, model=model, optimizer=optimizer
+            )
 
         time_epoch = time.time() - time_epoch
         values = [
@@ -188,7 +195,9 @@ def train(
 
     if args.epochs % args.save_freq != 0:
         # Save last checkpoint if not already saved
-        save_checkpoint(directory=args.dir, epoch=epoch, model=model, optimizer=optimizer)
+        save_checkpoint(
+            directory=args.dir, epoch=epoch, model=model, optimizer=optimizer
+        )
 
         # Additionally save the final model as SavedModel.
         save_model(directory=args.dir, epoch=epoch, model=model)
@@ -206,7 +215,7 @@ def train_epoch(
     loss_sum = 0.0
     correct = 0.0
 
-    num_iters = len(train_loader) 
+    num_iters = len(train_loader)
     # PyTorch: model.train()
 
     for iter, (input, target) in enumerate(train_loader):
@@ -229,7 +238,9 @@ def train_epoch(
 
     return {
         "loss": loss_sum / n_train,  # Add function to find length
-        "accuracy": correct * 100.0 / n_train,  # Add function to find length of dataset,
+        "accuracy": correct
+        * 100.0
+        / n_train,  # Add function to find length of dataset,
     }
 
 
@@ -301,7 +312,9 @@ def train_batch(
         loss = tf.reduce_sum(loss).numpy()
         pred = tf.math.argmax(output, axis=1, output_type=tf.dtypes.int64)
         # Is there an easier way?
-        correct = tf.math.reduce_sum(tf.cast(tf.math.equal(pred, target), tf.float32)).numpy()
+        correct = tf.math.reduce_sum(
+            tf.cast(tf.math.equal(pred, target), tf.float32)
+        ).numpy()
 
     return loss, correct  # Do we need to return the model as well?
 
@@ -332,7 +345,9 @@ def test_batch(
             loss
         ).numpy()  # What exactly are we trying to add up here, see original code? Check with PyTorch Code.
         pred = tf.math.argmax(output, axis=1, output_type=tf.dtypes.int64)
-        correct = tf.math.reduce_sum(tf.cast(tf.math.equal(pred, target), tf.float32)).numpy()
+        correct = tf.math.reduce_sum(
+            tf.cast(tf.math.equal(pred, target), tf.float32)
+        ).numpy()
 
     return nll, loss, correct
 
