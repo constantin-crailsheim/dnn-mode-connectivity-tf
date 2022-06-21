@@ -6,6 +6,7 @@ import tensorflow as tf
 from scipy.special import binom
 
 
+
 class Bezier(tf.keras.Model):
     def __init__(self, num_bends: int):
         super().__init__()
