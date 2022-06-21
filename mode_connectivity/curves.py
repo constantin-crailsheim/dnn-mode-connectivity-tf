@@ -1,17 +1,13 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Type, Union
+from typing import Any, Dict, List, Tuple, Type, Union
 
+import numpy as np
 import tensorflow as tf
+from scipy.special import binom
 
 from utils import split_list
 
 
-import numpy as np
-
-from scipy.special import binom
-
-# Proposal: Make this the parent class of all Curves (Bezier, Polychain, ...)
-# This should be considered a Layer, since we directly compute in call(), right?
 class Curve(tf.keras.layers.Layer, ABC):
     num_bends: int
 
@@ -23,6 +19,29 @@ class Curve(tf.keras.layers.Layer, ABC):
     def call(self, uniform_tensor: tf.Tensor):
         pass
 
+
+class Bezier(Curve):
+    def __init__(self, num_bends: int):
+        super().__init__()
+        self.binom = tf.Variable(
+            tf.constant(binom(num_bends - 1, np.arange(num_bends), dtype=np.float32)),
+            trainable=False,
+        )
+        self.range = tf.Variable(tf.range(0, float(num_bends)), trainable=False)
+        self.rev_range = tf.Variable(
+            tf.range(float(num_bends - 1), -1, delta=-1), trainable=False
+        )
+
+        # Not sure if this is the best way to substitute register_buffer() in PyTorch
+        # The PyTorch Buffer in this example is not considered a model parameter, not trained,
+        # part of the module's state, moved to cuda() or cpu() with the rest of the model's parameters
+
+    def call(self, t: float):
+        return (
+            self.binom
+            * tf.math.pow(t, self.range)
+            * tf.math.pow((1.0 - t), self.rev_range)
+        )
 
 
 class CurveNet(tf.keras.Model):
@@ -40,9 +59,7 @@ class CurveNet(tf.keras.Model):
         num_classes: int,
         num_bends: int,
         curve: Type[Curve],  # Bezier, Polychain
-        curve_model: Type[
-            tf.keras.Model
-        ],  # ConvFCCurve, VGGCurve -> Define CurveModel Type for Models of this kind?
+        curve_model: Type[tf.keras.Model],  # ConvFCCurve, VGGCurve
         fix_start: bool = True,
         fix_end: bool = True,
         architecture_kwargs: Union[Dict[str, Any], None] = None,
@@ -125,32 +142,6 @@ class CurveNet(tf.keras.Model):
     def weights(self, inputs: tf.Tensor):
         # Not needed for now, only called in eval_curve.py and plane.py
         raise NotImplementedError()
-
-
-
-
-class Bezier(tf.keras.Model):
-    def __init__(self, num_bends: int):
-        super().__init__()
-        self.binom = tf.Variable(
-            tf.constant(binom(num_bends - 1, np.arange(num_bends), dtype=np.float32)),
-            trainable=False,
-        )
-        self.range = tf.Variable(tf.range(0, float(num_bends)), trainable=False)
-        self.rev_range = tf.Variable(
-            tf.range(float(num_bends - 1), -1, delta=-1), trainable=False
-        )
-
-        # Not sure if this is the best way to substitute register_buffer() in PyTorch
-        # The PyTorch Buffer in this example is not considered a model parameter, not trained,
-        # part of the module's state, moved to cuda() or cpu() with the rest of the model's parameters
-
-    def call(self, t: float):
-        return (
-            self.binom
-            * tf.math.pow(t, self.range)
-            * tf.math.pow((1.0 - t), self.rev_range)
-        )
 
 
 class CurveLayer(tf.keras.layers.Layer, ABC):
@@ -294,40 +285,33 @@ class Conv2DCurve(CurveLayer, tf.keras.layers.Conv2D):
         return tf.keras.layers.Conv2D.call(self, inputs)
 
 
-
-
 class DenseCurve(CurveLayer, tf.keras.layers.Dense):
-    def __init__(self,
-                 units,
-                 fix_points: List[bool],
-                 **kwargs, 
-                 
+    def __init__(
+        self,
+        units,
+        fix_points: List[bool],
+        **kwargs,
     ):
-        super(Dense, self).__init__(
-            units = units,
-            fix_points = fix_points,
-            **kwargs
-        )
-
-
+        super().__init__(units=units, fix_points=fix_points, **kwargs)
 
     def build(self, input_shape):
         tf.keras.layers.Dense.build(self, input_shape)
         input_shape = tf.TensorShape(input_shape)
         last_dim = tf.compat.dimension_value(input_shape[-1])
         kernel_shape = [last_dim, self.units]
-        bias_shape = [self.units,]
+        bias_shape = [
+            self.units,
+        ]
 
-       
         if last_dim is None:
-            raise ValueError('The last dimension of the inputs to a Dense layer '
-                             'should be defined. Found None. '
-                             f'Full input shape received: {input_shape}')
-       
-        self.add_parameter_weights(kernel_shape = kernel_shape, bias_shape = bias_shape)
+            raise ValueError(
+                "The last dimension of the inputs to a Dense layer "
+                "should be defined. Found None. "
+                f"Full input shape received: {input_shape}"
+            )
 
+        self.add_parameter_weights(kernel_shape=kernel_shape, bias_shape=bias_shape)
 
     def call(self, inputs, coeffs_t: tf.Tensor):
-        self.kernel, self.bias = self.compute_weights_t(coeffs_t)   
+        self.kernel, self.bias = self.compute_weights_t(coeffs_t)
         return tf.keras.layers.Dense(self, inputs)
-
