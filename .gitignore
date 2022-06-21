@@ -130,3 +130,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+results/MNIST_BasicCNN/
+results/.DS_Store
+tests/test_bezier.py
+tests/conv2d_test.py
