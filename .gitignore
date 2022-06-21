@@ -131,6 +131,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 results
+tmp
 
 tests/test_bezier.py
 tests/conv2d_test.py
