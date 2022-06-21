@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 
 import tensorflow as tf
 from curves import Conv2DCurve, DenseCurve
@@ -92,9 +92,9 @@ class CNNCurve(tf.keras.Model):
         super().__init__()
 
         self.conv1 = Conv2DCurve(
-            fix_points,
             filters=32,
             kernel_size=(3, 3),
+            fix_points=fix_points,
             activation="relu",
             kernel_initializer="glorot_normal",
             bias_initializer="zeros",
@@ -102,9 +102,9 @@ class CNNCurve(tf.keras.Model):
         )
         self.pool1 = tf.keras.layers.MaxPool2D(pool_size=(2, 2))
         self.conv2 = Conv2DCurve(
-            fix_points,
             filters=64,
             kernel_size=(3, 3),
+            fix_points=fix_points,
             activation="relu",
             kernel_initializer="glorot_normal",
             bias_initializer="zeros",
@@ -112,9 +112,9 @@ class CNNCurve(tf.keras.Model):
         )
         self.pool2 = tf.keras.layers.MaxPool2D(pool_size=(2, 2))
         self.conv3 = Conv2DCurve(
-            fix_points,
             filters=64,
             kernel_size=(3, 3),
+            fix_points=fix_points,
             kernel_initializer="glorot_normal",
             bias_initializer="zeros",
             kernel_regularizer=tf.keras.regularizers.L2(weight_decay),
@@ -130,35 +130,39 @@ class CNNCurve(tf.keras.Model):
         ]
 
         self.dense1 = DenseCurve(
-            fix_points,
             units=64,
+            fix_points=fix_points,
             activation="relu",
             kernel_regularizer=tf.keras.regularizers.L2(weight_decay),
         )
         self.dense2 = DenseCurve(
-            fix_points,
             units=64,
+            fix_points=fix_points,
             activation="relu",
             kernel_regularizer=tf.keras.regularizers.L2(weight_decay),
         )
         self.dense3 = DenseCurve(
-            fix_points,
             units=num_classes,
+            fix_points=fix_points,
             kernel_regularizer=tf.keras.regularizers.L2(weight_decay),
         )
         self.fc_part = [self.dense1, self.dense2, self.dense3]
 
-    def call(self, inputs, coeffs_t, training=None, mask=None):  # TO DO: Typehints
-        x = self.conv1(inputs, coeffs_t)
+    def call(
+        self, inputs: Tuple[tf.Tensor, tf.Tensor], training=None, mask=None
+    ):  # TO DO: Typehints
+        x, coeffs_t = inputs
+
+        x = self.conv1((x, coeffs_t))
         x = self.pool1(x)
-        x = self.conv2(x, coeffs_t)
+        x = self.conv2((x, coeffs_t))
         x = self.pool2(x)
-        x = self.conv3(x, coeffs_t)
+        x = self.conv3((x, coeffs_t))
         x = self.flatten1(x)
 
-        x = self.dense1(x, coeffs_t)
-        x = self.dense2(x, coeffs_t)
-        x = self.dense3(x, coeffs_t)
+        x = self.dense1((x, coeffs_t))
+        x = self.dense2((x, coeffs_t))
+        x = self.dense3((x, coeffs_t))
         # TODO: Check if x = x.view(x.size(0), -1) necessary
 
         return x
