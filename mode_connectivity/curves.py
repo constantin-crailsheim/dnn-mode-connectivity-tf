@@ -5,7 +5,7 @@ import numpy as np
 import tensorflow as tf
 from scipy.special import binom
 
-from utils import split_list
+from .utils import split_list
 
 
 class Curve(tf.keras.layers.Layer, ABC):
@@ -22,7 +22,7 @@ class Curve(tf.keras.layers.Layer, ABC):
 
 class Bezier(Curve):
     def __init__(self, num_bends: int):
-        super().__init__()
+        super().__init__(num_bends=num_bends)
         self.binom = tf.Variable(
             tf.constant(binom(num_bends - 1, np.arange(num_bends), dtype=np.float32)),
             trainable=False,
