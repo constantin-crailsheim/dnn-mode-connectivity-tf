@@ -186,13 +186,17 @@ class CurveNet(tf.keras.Model):
 
     def call(
         self,
-        inputs: tf.Tensor,
+        inputs: tf.Tensor,  # Union[tf.Tensor, Tuple[tf.Tensor, tf.Tensor]],
         uniform_tensor: Union[tf.Tensor, None] = None,
         training=None,
         mask=None,
     ):
         # Renamed 't' to 'uniform_tensor' for clarity
         # TODO find a better name for uniform_tensor and coeffs_t
+        # if isinstance(inputs, tuple):
+        #     inputs, uniform_tensor = inputs
+        # else:
+        #     uniform_tensor = tf.random.uniform(shape=(1,), dtype=inputs.dtype)
         if uniform_tensor is None:
             uniform_tensor = tf.random.uniform(shape=(1,), dtype=inputs.dtype)
         coeffs_t = self.curve(uniform_tensor)
@@ -208,15 +212,18 @@ class CurveNet(tf.keras.Model):
         # Not needed for now, actually never used in original repo
         raise NotImplementedError()
 
-    def weights(self, inputs: tf.Tensor):
-        # Not needed for now, only called in eval_curve.py and plane.py
-        raise NotImplementedError()
+    # def weights(self, inputs: tf.Tensor):
+    #     # Not needed for now, only called in eval_curve.py and plane.py
+    #     raise NotImplementedError()
 
 
 class CurveLayer(tf.keras.layers.Layer, ABC):
     fix_points: List[bool]
     num_bends: int
     l2: float
+
+    curve_kernels: List[tf.Variable]
+    curve_biases: List[tf.Variable]
 
     def __init__(self, fix_points: List[bool], **kwargs):
         super().__init__(**kwargs)
@@ -297,7 +304,7 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
         return weights
 
     def _compute_single_weights(
-        self, weights: Dict[int, tf.Variable], coeffs_t: tf.Tensor
+        self, weights: List[tf.Variable], coeffs_t: tf.Tensor
     ) -> tf.Tensor:
         """Multiplies the given weights by the respective coefficient
         and adds them together.
@@ -314,15 +321,16 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
         Returns:
             tf.Tensor: The multiplied weights.
         """
-        if len(weights) != len(coeffs_t):
+        # TODO Make this safer
+        if len(weights) != coeffs_t.shape[0]:
             raise ValueError(
-                f"Lengths of curve weights {len(weights)} and coefficients {len(coeffs_t)} is not equal!"
-                + f"Parameters: {[w.name for w in weights.values()]}"
+                f"Lengths of curve weights {len(weights)} and coefficients {coeffs_t.shape[0]} is not equal!"
+                + f"Parameters: {[w.name for w in weights]}"
             )
 
         # I think this could also be solved by matrix multiplication.
         weight_sum = 0
-        for i in range(len(coeffs_t)):
+        for i in range(coeffs_t.shape[0]):
             weight_sum += weights[i].value() * coeffs_t[i]
 
         if weight_sum is not None:
