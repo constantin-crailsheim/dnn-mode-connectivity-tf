@@ -36,6 +36,20 @@ class TestCurveNet:
         )
         net(tf.random.uniform((128, 28, 28, 1)))
 
+    def test_save_model(self, model_dir):
+        net = CurveNet(
+            num_classes=10,
+            num_bends=3,
+            weight_decay=1e4,
+            curve=Bezier,
+            curve_model=CNN.curve,
+            fix_start=True,
+            fix_end=True,
+            architecture_kwargs=CNN.kwargs,
+        )
+        net(tf.random.uniform((128, 28, 28, 1)))
+        net.save(filepath=model_dir)
+
     def test_save_weights(self, model_dir):
         net = CurveNet(
             num_classes=10,
