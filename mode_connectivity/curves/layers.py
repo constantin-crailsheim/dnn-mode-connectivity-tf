@@ -78,11 +78,13 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
         )
         return weight
 
-    def compute_weights_t(self, coeffs_t: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
+    def compute_weighted_parameters(
+        self, curve_point_weights: tf.Tensor
+    ) -> Tuple[tf.Tensor, tf.Tensor]:
         """Compute weights for the curve kernel and bias.
 
         Args:
-            coeffs_t (tf.Tensor): Coefficients calculated from the curve.
+            curve_point_weights (tf.Tensor): Coefficients calculated from the curve.
 
         Returns:
             Tuple[tf.Tensor, tf.Tensor]: The scaled weights for kernel and bias.
@@ -90,13 +92,13 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
         if self.l2 is None:
             self.l2 = tf.Variable(0.0, trainable=False)
         weights = (
-            self._compute_single_weights(self.curve_kernels, coeffs_t),
-            self._compute_single_weights(self.curve_biases, coeffs_t),
+            self._compute_single_parameter(self.curve_kernels, curve_point_weights),
+            self._compute_single_parameter(self.curve_biases, curve_point_weights),
         )
         return weights
 
-    def _compute_single_weights(
-        self, weights: List[tf.Variable], coeffs_t: tf.Tensor
+    def _compute_single_parameter(
+        self, parameters: List[tf.Variable], curve_point_weights: tf.Tensor
     ) -> tf.Tensor:
         """Multiplies the given weights by the respective coefficient
         and adds them together.
@@ -105,22 +107,22 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
 
         Args:
             weights (Dict[int, tf.Variable]): The weights.
-            coeffs_t (tf.Tensor): Coefficients calculated from the curve.
+            curve_point_weights (tf.Tensor): Coefficients calculated from the curve.
 
         Returns:
             tf.Tensor: The multiplied weights.
         """
-        combined_weights = tf.stack([w.value() for w in weights], axis=-1)
-        weights_avgeraged = tf.linalg.matvec(combined_weights, coeffs_t)
+        combined_params = tf.stack([w.value() for w in parameters], axis=-1)
+        params_averaged = tf.linalg.matvec(combined_params, curve_point_weights)
 
         # weight_sum = 0
-        # for i in range(coeffs_t.shape[0]):
-        #     weight_sum += weights[i].value() * coeffs_t[i]
+        # for i in range(curve_point_weights.shape[0]):
+        #     weight_sum += weights[i].value() * curve_point_weights[i]
 
-        if weights_avgeraged is not None:
+        if params_averaged is not None:
             # I think this should always be called
-            self.l2.assign_add(tf.reduce_sum(weights_avgeraged**2))
-        return weights_avgeraged
+            self.l2.assign_add(tf.reduce_sum(params_averaged**2))
+        return params_averaged
 
 
 class Conv2DCurve(CurveLayer, tf.keras.layers.Conv2D):
@@ -146,9 +148,10 @@ class Conv2DCurve(CurveLayer, tf.keras.layers.Conv2D):
             kernel_shape=self.kernel.shape, bias_shape=self.bias.shape
         )
 
+    # TODO Check inputs as Tuple or seperate
     def call(self, inputs: Tuple[tf.Tensor, tf.Tensor]):
-        x, coeffs_t = inputs
-        self.kernel, self.bias = self.compute_weights_t(coeffs_t)
+        x, curve_point_weights = inputs
+        self.kernel, self.bias = self.compute_weighted_parameters(curve_point_weights)
         return tf.keras.layers.Conv2D.call(self, x)
 
 
@@ -170,6 +173,6 @@ class DenseCurve(CurveLayer, tf.keras.layers.Dense):
         )
 
     def call(self, inputs: Tuple[tf.Tensor, tf.Tensor]):
-        x, coeffs_t = inputs
-        self.kernel, self.bias = self.compute_weights_t(coeffs_t)
+        x, curve_point_weights = inputs
+        self.kernel, self.bias = self.compute_weighted_parameters(curve_point_weights)
         return tf.keras.layers.Dense.call(self, x)
