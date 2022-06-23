@@ -1,5 +1,6 @@
 import tensorflow as tf
-from mode_connectivity.curves import Bezier, Conv2DCurve, CurveLayer
+from mode_connectivity.curves.curves import Bezier
+from mode_connectivity.curves.layers import Conv2DCurve, CurveLayer
 
 
 class TestConv2DCurve:
@@ -13,7 +14,7 @@ class TestConv2DCurve:
         )
         assert isinstance(layer, CurveLayer)
         assert isinstance(layer, tf.keras.layers.Conv2D)
-        layer.build((28, 28))
+        layer.build(((28, 28), (3,)))
 
     def test_call(self):
         layer = Conv2DCurve(
@@ -22,4 +23,4 @@ class TestConv2DCurve:
         inputs = tf.random.uniform(shape=(128, 28, 28, 1))
         curve = Bezier(3)
         coeffs_t = curve(0.5)
-        layer(inputs, coeffs_t)  # layer.call()
+        layer((inputs, coeffs_t))  # layer.call()

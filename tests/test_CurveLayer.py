@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 import tensorflow as tf
-from mode_connectivity.curves import CurveLayer
+from mode_connectivity.curves.layers import CurveLayer
 
 
 class TestCurveLayer:

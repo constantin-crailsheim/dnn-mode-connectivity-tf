@@ -1,4 +1,4 @@
-from mode_connectivity.curves import Bezier, Curve
+from mode_connectivity.curves.curves import Bezier, Curve
 import numpy as np
 
 

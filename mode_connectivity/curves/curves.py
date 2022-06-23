@@ -1,12 +1,8 @@
-import logging
 from abc import ABC, abstractmethod
 
 import numpy as np
 import tensorflow as tf
 from scipy.special import binom
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 
 class Curve(tf.keras.layers.Layer, ABC):
