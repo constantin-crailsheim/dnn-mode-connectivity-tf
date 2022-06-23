@@ -1,7 +1,8 @@
 import numpy as np
 import pytest
 import tensorflow as tf
-from mode_connectivity.curves import Bezier, CurveNet
+from mode_connectivity.curves.curves import Bezier
+from mode_connectivity.curves.net import CurveNet
 from mode_connectivity.models import CNN
 
 

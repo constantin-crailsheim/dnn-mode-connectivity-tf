@@ -1,5 +1,6 @@
 import tensorflow as tf
-from mode_connectivity.curves import Bezier, Conv2DCurve, CurveLayer
+from mode_connectivity.curves.curves import Bezier
+from mode_connectivity.curves.layers import Conv2DCurve, CurveLayer
 
 
 class TestConv2DCurve:

@@ -4,8 +4,8 @@ from typing import Any, Dict, List, Type, Union
 
 import tensorflow as tf
 
-from curves import Curve
-from layers import CurveLayer
+from mode_connectivity.curves.curves import Curve
+from mode_connectivity.curves.layers import CurveLayer
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

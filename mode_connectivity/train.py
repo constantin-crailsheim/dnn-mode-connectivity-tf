@@ -6,14 +6,12 @@ import tensorflow as tf
 from keras.layers import Layer
 from keras.optimizers import Optimizer
 
-import curves
-
-# No mode_connectivity. needed to add before, since we are in the same folder.
-from argparser import Arguments, parse_train_arguments
-from data import data_loaders
-from models.cnn import CNN
-from models.mlp import MLP
-from utils import (
+import mode_connectivity.curves as curves
+from mode_connectivity.argparser import Arguments, parse_train_arguments
+from mode_connectivity.data import data_loaders
+from mode_connectivity.models.cnn import CNN
+from mode_connectivity.models.mlp import MLP
+from mode_connectivity.utils import (
     adjust_learning_rate,
     check_batch_normalization,
     l2_regularizer,
@@ -23,8 +21,6 @@ from utils import (
     save_model,
     save_weights,
 )
-
-COLUMNS = ["ep", "lr", "tr_loss", "tr_acc", "te_nll", "te_acc", "time"]
 
 
 def main():
@@ -360,6 +356,7 @@ def test_batch(
 
 
 def print_epoch_stats(values, epoch, start_epoch):
+    COLUMNS = ["ep", "lr", "tr_loss", "tr_acc", "te_nll", "te_acc", "time"]
     table = tabulate.tabulate([values], COLUMNS, tablefmt="simple", floatfmt="9.4f")
     if epoch % 40 == 1 or epoch == start_epoch:
         table = table.split("\n")

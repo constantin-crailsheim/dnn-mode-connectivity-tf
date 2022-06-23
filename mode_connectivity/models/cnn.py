@@ -1,7 +1,8 @@
 from typing import List, Tuple
 
 import tensorflow as tf
-from curves.layers import Conv2DCurve, DenseCurve
+
+from mode_connectivity.curves.layers import Conv2DCurve, DenseCurve
 
 __all__ = [
     "CNN",
