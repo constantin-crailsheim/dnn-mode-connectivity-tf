@@ -73,7 +73,9 @@ class CurveNet(tf.keras.Model):
         self.num_classes = num_classes
         self.num_bends = num_bends
         self.fix_points = [fix_start] + [False] * (self.num_bends - 2) + [fix_end]
-        self.l2 = 0.0
+        # Since we use l2 in computation late, we need to instantiate it as a tf.Variable
+        # https://www.tensorflow.org/guide/function#creating_tfvariables
+        self.l2 = None
 
         self.curve = curve(self.num_bends)
         self.curve_model = curve_model(
@@ -182,7 +184,9 @@ class CurveNet(tf.keras.Model):
 
     def _compute_l2(self) -> None:
         """Compute L2 for each of the curve modules and sum up."""
-        self.l2 = sum(module.l2 for module in self.curve_layers)
+        if self.l2 is None:
+            self.l2 = tf.Variable(0.0, trainable=False)
+        self.l2.assign(sum(module.l2 for module in self.curve_layers))
 
     def call(
         self,
@@ -229,7 +233,7 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
         super().__init__(**kwargs)
         self.fix_points = fix_points
         self.num_bends = len(self.fix_points)
-        self.l2 = 0.0
+        self.l2 = None
         self._reset_input_spec()
 
     def _reset_input_spec(self):
@@ -296,7 +300,8 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
         Returns:
             Tuple[tf.Tensor, tf.Tensor]: The scaled weights for kernel and bias.
         """
-        self.l2 = 0.0
+        if self.l2 is None:
+            self.l2 = tf.Variable(0.0, trainable=False)
         weights = (
             self._compute_single_weights(self.curve_kernels, coeffs_t),
             self._compute_single_weights(self.curve_biases, coeffs_t),
@@ -315,28 +320,20 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
             weights (Dict[int, tf.Variable]): The weights.
             coeffs_t (tf.Tensor): Coefficients calculated from the curve.
 
-        Raises:
-            ValueError: If the length of weights and coefficients does not add up.
-
         Returns:
             tf.Tensor: The multiplied weights.
         """
-        # TODO Make this safer
-        if len(weights) != coeffs_t.shape[0]:
-            raise ValueError(
-                f"Lengths of curve weights {len(weights)} and coefficients {coeffs_t.shape[0]} is not equal!"
-                + f"Parameters: {[w.name for w in weights]}"
-            )
+        combined_weights = tf.stack([w.value() for w in weights], axis=-1)
+        weights_avgeraged = tf.linalg.matvec(combined_weights, coeffs_t)
 
-        # I think this could also be solved by matrix multiplication.
-        weight_sum = 0
-        for i in range(coeffs_t.shape[0]):
-            weight_sum += weights[i].value() * coeffs_t[i]
+        # weight_sum = 0
+        # for i in range(coeffs_t.shape[0]):
+        #     weight_sum += weights[i].value() * coeffs_t[i]
 
-        if weight_sum is not None:
+        if weights_avgeraged is not None:
             # I think this should always be called
-            self.l2 += tf.reduce_sum(weight_sum**2)
-        return weight_sum
+            self.l2.assign_add(tf.reduce_sum(weights_avgeraged**2))
+        return weights_avgeraged
 
 
 class Conv2DCurve(CurveLayer, tf.keras.layers.Conv2D):
