@@ -8,7 +8,6 @@ from mode_connectivity.curves.curves import Curve
 from mode_connectivity.curves.layers import CurveLayer
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 
 class CurveNet(tf.keras.Model):

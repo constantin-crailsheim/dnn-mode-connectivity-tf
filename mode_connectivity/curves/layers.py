@@ -1,11 +1,7 @@
-import logging
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Union
 
 import tensorflow as tf
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 
 class CurveLayer(tf.keras.layers.Layer, ABC):

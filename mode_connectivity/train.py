@@ -6,8 +6,9 @@ import tensorflow as tf
 from keras.layers import Layer
 from keras.optimizers import Optimizer
 
-import mode_connectivity.curves as curves
+import mode_connectivity.curves.curves as curves
 from mode_connectivity.argparser import Arguments, parse_train_arguments
+from mode_connectivity.curves.net import CurveNet
 from mode_connectivity.data import data_loaders
 from mode_connectivity.models.cnn import CNN
 from mode_connectivity.models.mlp import MLP
@@ -112,7 +113,7 @@ def get_model(architecture, args: Arguments, num_classes: int, input_shape):
     # The CurveNet additionally contains the curve (e.g. Bezier) and imports the parameters of the pre-trained base-nets that constitute the outer points of the curve.
     else:
         curve = getattr(curves, args.curve)
-        model = curves.CurveNet(
+        model = CurveNet(
             num_classes=num_classes,
             num_bends=args.num_bends,
             weight_decay=args.wd,
