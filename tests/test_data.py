@@ -1,7 +1,7 @@
 # %%
 
 # Just for experimental purposes, can be deleted once model runs through.
-import data
+import mode_connectivity.data
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
