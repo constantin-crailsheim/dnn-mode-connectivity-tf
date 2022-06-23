@@ -157,7 +157,7 @@ def train(
 ):
     has_batch_normalization = check_batch_normalization(
         model
-    )  # Not implemented yet, returns always True
+    )  # Not implemented yet, returns always False
     test_results = {"loss": None, "accuracy": None, "nll": None}
 
     for epoch in range(start_epoch, args.epochs + 1):

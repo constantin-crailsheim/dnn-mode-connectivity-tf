@@ -10,7 +10,7 @@ from scipy.special import binom
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-
+# Why do we
 class Curve(tf.keras.layers.Layer, ABC):
     num_bends: int
 
@@ -128,6 +128,10 @@ class CurveNet(tf.keras.Model):
             parameter_index = self._find_parameter_index(name)
             if parameter_index != index:
                 # Kernel/Bias index doesn't match the curve index.
+                # What is the implication?
+                logger.debug(
+                    f"Index of {name} does not match kernel/bias index."
+                )
                 continue
 
             base_name = self._get_base_name(name, index)
@@ -171,6 +175,8 @@ class CurveNet(tf.keras.Model):
     def init_linear(self) -> None:
         """Initialize the linear inner curve weights of the model."""
         # TODO What does 'init_linear' mean? This does not initialize a linear layer.
+        # Initialize linear means the the inner points of the curve are initialized as
+        # linearly between the end points, depending on how many bends we have.
         for layer in self.curve_layers:
             self._compute_inner_weights(weights=layer.curve_kernels)
             self._compute_inner_weights(weights=layer.curve_biases)

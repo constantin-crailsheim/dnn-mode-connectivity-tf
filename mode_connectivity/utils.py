@@ -30,7 +30,7 @@ def adjust_learning_rate(optimizer, lr):
 
 
 def check_batch_normalization(model):
-    return True
+    return False
 
 
 def load_checkpoint(

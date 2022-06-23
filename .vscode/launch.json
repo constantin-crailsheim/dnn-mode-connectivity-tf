@@ -33,7 +33,7 @@
                 "--data-path=datasets/",
                 "--model=CNN",
                 "--epochs=3",
-                "--lr=0.03",
+                "--lr=0.05",
                 "--wd=5e-4",
                 "--transform=CNN",
                 "--seed=42"
