@@ -7,7 +7,7 @@ Install in development mode
 
 ```shell
 python -m venv .venv
-.venv/bin/activate
+source .venv/bin/activate
 
 pip install -e .
 ```
