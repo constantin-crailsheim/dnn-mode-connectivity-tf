@@ -5,7 +5,10 @@ Implementation of subspace inference in tensorflow based on PyTorch code..
 
 Install in development mode
 
-```console
+```shell
+python -m venv .venv
+.venv/bin/activate
+
 pip install -e .
 ```
 
@@ -13,7 +16,7 @@ pip install -e .
 
 ## Base
 
-```console
+```shell
 train --dir=results/MNIST_BasicCNN/checkpoints_model_1 \
     --dataset=mnist \
     --data-path=datasets/ \
@@ -29,7 +32,7 @@ train --dir=results/MNIST_BasicCNN/checkpoints_model_1 \
 
 You need to train the base models beforehand and match the epoch in init-start/end below.
 
-```console
+```shell
 train --dir=results/MNIST_BasicCNN/checkpoints_curve \
  --dataset=mnist \
  --data-path=datasets/ \
@@ -46,7 +49,7 @@ train --dir=results/MNIST_BasicCNN/checkpoints_curve \
 
 # Tests
 
-```console
+```shell
 pip install -r requirements-dev.txt
 pytest tests
 ```
