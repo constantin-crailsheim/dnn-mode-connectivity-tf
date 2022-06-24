@@ -84,6 +84,25 @@
                 "--fix-start",
                 "--fix-end"
             ]
+        },
+        {
+            "name": "MLP with regression data",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "--dir=results/Regression_MLP/checkpoints_curve",
+                "--dataset=regression",
+                "--data-path=datasets/",
+                "--model=MLP",
+                "--epochs=100",
+                "--lr=0.05",
+                "--wd=5e-4",
+                "--transform=MLP",
+                "--seed=1"
+            ]
         }
     ]
 }

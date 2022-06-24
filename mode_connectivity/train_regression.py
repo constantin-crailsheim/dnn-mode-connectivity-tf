@@ -39,42 +39,22 @@ def main():
         use_test=args.use_test,
     )
     architecture = get_architecture(model_name=args.model)
-    if args.dataset == "mnist":
-        model = get_model(
-            architecture=architecture,
-            args=args,
-            num_classes=num_classes,
-            input_shape=(None, 28, 28, 1),  # TODO Determine this from dataset
-        )
-    elif args.dataset == "regression":
-        model = get_model(
-            architecture=architecture,
-            args=args,
-            num_classes=num_classes,
-            input_shape=(2,)
-        )
+    model = get_model(
+        architecture=architecture,
+        args=args,
+        num_classes=num_classes,
+        input_shape=(2,)
+    )
 
-    # criterion = tf.nn.sparse_softmax_cross_entropy_with_logits
-    if args.dataset == "mnist":
-        criterion = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
-    elif args.dataset == "regression":
-        criterion = tf.keras.losses.MeanSquaredError()
+    criterion = tf.keras.losses.MeanSquaredError()
 
     # TODO: Check if correct function, takes labels of shape [nbatch, nclass], while F.cross_entropy()
     # takes labels of shape [nBatch]
     regularizer = None if not args.curve else l2_regularizer(args.wd)
     optimizer = tf.keras.optimizers.SGD(
-        # TODO how can we fit equivalent of arg params in PyTorch
-        # PyTorch: params=filter(lambda param: param.requires_grad, model.parameters()),
-        # https://pytorch.org/docs/stable/generated/torch.optim.SGD.html#torch.optim.SGD
         learning_rate=args.lr,
         momentum=args.momentum,
-        # Weight decay added into models/mlp.py
-        # https://stackoverflow.com/questions/55046234/sgd-with-weight-decay-parameter-in-tensorflow
-        # https://d2l.ai/chapter_multilayer-perceptrons/weight-decay.html
-        # PyTorch: weight_decay=args.wd if args.curve is None else 0.0,
     )
-    # https://www.tensorflow.org/api_docs/python/tf/keras/optimizers/SGD
 
     start_epoch = 1
     if args.resume:
@@ -199,9 +179,7 @@ def train(
             epoch,
             lr,
             train_results["loss"],
-            train_results["accuracy"],
             test_results["nll"],
-            test_results["accuracy"],
             time_epoch,
         ]
 
@@ -237,11 +215,9 @@ def train_epoch(
         if callable(lr_schedule):
             lr = lr_schedule(iter / num_iters)
             adjust_learning_rate(optimizer, lr)
-        loss_batch, correct_batch = train_batch(
+        loss_batch = train_batch(
             input=input,
             target=target,
-            loss_sum=loss_sum,
-            correct=correct,
             model=model,
             optimizer=optimizer,
             criterion=criterion,
@@ -249,13 +225,9 @@ def train_epoch(
             lr_schedule=lr_schedule,
         )
         loss_sum += loss_batch
-        correct += correct_batch
 
     return {
-        "loss": loss_sum / n_train,  # Add function to find length
-        "accuracy": correct
-        * 100.0
-        / n_train,  # Add function to find length of dataset,
+        "loss": loss_sum / n_train
     }
 
 
@@ -269,15 +241,12 @@ def test_epoch(
 ) -> Dict[str, float]:
     nll_sum = 0.0
     loss_sum = 0.0
-    correct = 0.0
 
     # PyTorch: model.eval()
     for input, target in test_loader:
-        nll_batch, loss_batch, correct_batch = test_batch(
+        nll_batch, loss_batch = test_batch(
             input=input,
             target=target,
-            nll_sum=nll_sum,
-            correct=correct,
             test_loader=test_loader,
             model=model,
             criterion=criterion,
@@ -286,20 +255,16 @@ def test_epoch(
         )
         nll_sum += nll_batch
         loss_sum += loss_batch
-        correct += correct_batch
 
     return {
-        "nll": nll_sum / n_test,  # Add function to find length
-        "loss": loss_sum / n_test,  # Add function to find length
-        "accuracy": correct * 100.0 / n_test,  # Add function to find length
+        "nll": nll_sum / n_test,
+        "loss": loss_sum / n_test
     }
 
 
 def train_batch(
     input: tf.Tensor,
     target: tf.Tensor,
-    loss_sum: float,
-    correct: float,
     model: Layer,
     optimizer: Optimizer,
     criterion: Callable,
@@ -325,20 +290,13 @@ def train_batch(
 
         # What exactly are we trying to add up here, see original code? Check with PyTorch Code.
         loss = tf.reduce_sum(loss).numpy()
-        pred = tf.math.argmax(output, axis=1, output_type=tf.dtypes.int64)
-        # Is there an easier way?
-        correct = tf.math.reduce_sum(
-            tf.cast(tf.math.equal(pred, target), tf.float32)
-        ).numpy()
 
-    return loss, correct  # Do we need to return the model as well?
+    return loss
 
 
 def test_batch(
     input: tf.Tensor,
     target: tf.Tensor,
-    nll_sum: float,
-    correct: float,
     test_loader: Iterable,
     model: Layer,
     criterion: Callable,
@@ -350,25 +308,19 @@ def test_batch(
     with tf.device("/cpu:0"):
         output = model(input, **kwargs)
         nll = criterion(target, output)
-        loss = tf.identity(nll)  # COrrect funtion for nll.clone() in Pytorch
+        loss = tf.identity(nll)  # Correct funtion for nll.clone() in Pytorch
         # PyTorch:
         # if regularizer is not None:
         #     loss += regularizer(model)
 
         nll = tf.reduce_sum(nll).numpy()
-        loss = tf.reduce_sum(
-            loss
-        ).numpy()  # What exactly are we trying to add up here, see original code? Check with PyTorch Code.
-        pred = tf.math.argmax(output, axis=1, output_type=tf.dtypes.int64)
-        correct = tf.math.reduce_sum(
-            tf.cast(tf.math.equal(pred, target), tf.float32)
-        ).numpy()
-
-    return nll, loss, correct
+        loss = tf.reduce_sum(loss).numpy()
+        
+    return nll, loss
 
 
 def print_epoch_stats(values, epoch, start_epoch):
-    COLUMNS = ["ep", "lr", "tr_loss", "tr_acc", "te_nll", "te_acc", "time"]
+    COLUMNS = ["ep", "lr", "tr_loss", "te_nll", "time"]
     table = tabulate.tabulate([values], COLUMNS, tablefmt="simple", floatfmt="9.4f")
     if epoch % 40 == 1 or epoch == start_epoch:
         table = table.split("\n")

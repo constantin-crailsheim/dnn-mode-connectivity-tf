@@ -10,16 +10,19 @@ class MLPBase(tf.keras.Model):  # Inherit equivalent of torch.nn
         super(MLPBase, self).__init__()
         self.fc_part = tf.keras.models.Sequential(
             [
-                tf.keras.layers.Flatten(),
-                tf.keras.layers.Dense(256, 
+                tf.keras.layers.Dense(16,
                     activation="relu",
-                    kernel_regularizer = tf.keras.regularizer.l2(weight_decay)),
-                tf.keras.layers.Dense(10,
-                kernel_regularizer = tf.keras.regularizer.l2(weight_decay)),
+                    kernel_regularizer = tf.keras.regularizers.L2(weight_decay)),
+                tf.keras.layers.Dense(8,
+                    activation="relu",
+                    kernel_regularizer = tf.keras.regularizers.L2(weight_decay)),
+                tf.keras.layers.Dense(1,
+                    activation="linear",
+                    kernel_regularizer = tf.keras.regularizers.L2(weight_decay)),
             ]
         )
 
-    def forward(self, x):
+    def call(self, x):
         x = self.fc_part(x)
         return x
 
