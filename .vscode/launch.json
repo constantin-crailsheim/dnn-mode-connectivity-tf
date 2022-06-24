@@ -84,6 +84,27 @@
                 "--fix-start",
                 "--fix-end"
             ]
+        },
+        {
+            "name": "Evalute curve BasicCNN with MNIST",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "--dir=results/MNIST_BasicCNN/evaluation_curve",
+                "--dataset=mnist",
+                "--data-path=datasets/",
+                "--model=CNN",
+                "--curve=Bezier",
+                "--transform=CNN",
+                "--num-bends=3",
+                "--wd=1e-4",
+                "--ckpt=results/MNIST_BasicCNN/checkpoints_curve/model-epoch3",
+                "--num_points=5",
+                "--init-linear-off"
+            ]
         }
     ]
 }

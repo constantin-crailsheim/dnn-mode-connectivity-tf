@@ -34,6 +34,10 @@ class Arguments:
     resume: str = None
     save_freq: int = 50
 
+    # Evaluate:
+    num_points: int = 61
+    ckpt: str = None
+
 
 def parse_train_arguments() -> Arguments:
     parser = argparse.ArgumentParser(description="DNN curve training")
@@ -46,6 +50,17 @@ def parse_train_arguments() -> Arguments:
     args = parser.parse_args()
     return Arguments(**args.__dict__)
 
+def parse_evaluate_arguments() -> Arguments:
+    parser = argparse.ArgumentParser(description="DNN evaluation")
+
+    _add_dataset_arguments(parser=parser)
+    _add_compute_arguments(parser=parser)
+    _add_model_arguments(parser=parser)
+    _add_checkpoint_arguments(parser=parser)
+    _add_evaluate_arguments(parser=parser)
+
+    args = parser.parse_args()
+    return Arguments(**args.__dict__)
 
 def _add_dataset_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
@@ -202,4 +217,20 @@ def _add_checkpoint_arguments(parser: argparse.ArgumentParser) -> None:
         default=50,
         metavar="N",
         help="save frequency (default: 50)",
+    )
+
+def _add_evaluate_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        '--num_points',
+        type=int,
+        default=61,
+        metavar='N',
+        help='number of points on the curve (default: 61)',
+    )
+    parser.add_argument(
+        '--ckpt',
+        type=str,
+        default=None,
+        metavar='CKPT',
+        help='checkpoint to eval (default: None)'
     )
