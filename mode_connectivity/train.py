@@ -2,6 +2,10 @@ from array import array
 import time
 from typing import Callable, Dict, Iterable, Tuple, Union
 
+import matplotlib.pyplot as plt
+import sklearn as sklearn
+from sklearn.metrics import ConfusionMatrixDisplay
+
 import tabulate
 import tensorflow as tf
 from keras.layers import Layer
@@ -364,17 +368,18 @@ def prediction_epoch(
     criterion: Callable,
     n_test: int,
     regularizer: Union[Callable, None] = None,
+    nll_sum = 0.0,
+    loss_sum = 0.0,
+    correct = 0.0,
     **kwargs,
 ) -> Dict[str, float]:
-    nll_sum = 0.0
-    loss_sum = 0.0
-    correct = 0.0
     pred: tf.Tensor
     output: tf.Tensor
+    target: tf.Tensor
 
     # PyTorch: model.eval()
     for input, target in test_loader:
-        nll_batch, loss_batch, correct_batch, pred_batch, output_batch = test_batch(
+        nll_batch, loss_batch, correct_batch, pred_batch, output_batch, target_batch = test_batch(
             input=input,
             target=target,
             nll_sum=nll_sum,
@@ -390,12 +395,10 @@ def prediction_epoch(
         correct += correct_batch
         pred = pred_batch
         output = output_batch
-        
+        target  = target_batch
 
-    return {
-        "pred": pred,
-        "output": output 
-    }
+    return pred, output, target
+    
 
 def prediction_batch(
     input: tf.Tensor,
@@ -427,23 +430,31 @@ def prediction_batch(
             tf.cast(tf.math.equal(pred, target), tf.float32)
         ).numpy()
 
-    return nll, loss, correct, pred, output
+    return nll, loss, correct, pred, output, target
     
 
 def get_confusion_mat_per_epoch(
-     target: tf.Tensor,
-     output: tf.Tensor,
-     threshold: float,
-     **kwargs,
+    test_loader: Iterable,
+    model: Layer,
+    criterion: Callable,
+    n_test: int,
+    regularizer: Union[Callable, None] = None,
+    **kwargs,
 ):
-    assert 0 <= threshold <= 1
-    t_map = lambda x : 1 if tf.math.reduce_max(x) > threshold else 0
-    thres = tf.map_fn(t_map, output)
+    pred, output, target = prediction_epoch(
+        test_loader = test_loader,
+        model = model,
+        criterion = criterion,
+        n_test = n_test,
+        regularizer = regularizer,
+        **kwargs,)
 
-    pred  = tf.boolean_mask(tf.argmax(output,1),thres)
-    labs  = tf.boolean_mask(tf.cast(target, tf.int64),thres)
+    ConfusionMatrixDisplay.from_predictions(
+        target, pred)
+    
+    return plt.show()
 
-    return tf.math.confusion_matrix(labs,pred)
+
 
 
 def print_epoch_stats(values, epoch, start_epoch):
