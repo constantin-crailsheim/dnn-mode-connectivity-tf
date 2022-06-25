@@ -430,7 +430,7 @@ def prediction_batch(
     return nll, loss, correct, pred, output
     
 
-def get_confusion_mat_for_epoch(
+def get_confusion_mat_per_epoch(
      target: tf.Tensor,
      output: tf.Tensor,
      threshold: float,
