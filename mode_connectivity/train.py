@@ -39,26 +39,15 @@ def main():
         use_test=args.use_test,
     )
     architecture = get_architecture(model_name=args.model)
-    if args.dataset == "mnist":
-        model = get_model(
-            architecture=architecture,
-            args=args,
-            num_classes=num_classes,
-            input_shape=(None, 28, 28, 1),  # TODO Determine this from dataset
-        )
-    elif args.dataset == "regression":
-        model = get_model(
-            architecture=architecture,
-            args=args,
-            num_classes=num_classes,
-            input_shape=(2,)
-        )
+    model = get_model(
+        architecture=architecture,
+        args=args,
+        num_classes=num_classes,
+        input_shape=(None, 28, 28, 1),  # TODO Determine this from dataset
+    )
 
     # criterion = tf.nn.sparse_softmax_cross_entropy_with_logits
-    if args.dataset == "mnist":
-        criterion = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
-    elif args.dataset == "regression":
-        criterion = tf.keras.losses.MeanSquaredError()
+    criterion = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 
     # TODO: Check if correct function, takes labels of shape [nbatch, nclass], while F.cross_entropy()
     # takes labels of shape [nBatch]
