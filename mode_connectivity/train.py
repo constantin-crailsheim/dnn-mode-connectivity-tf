@@ -1,3 +1,4 @@
+from array import array
 import time
 from typing import Callable, Dict, Iterable, Tuple, Union
 
@@ -259,6 +260,7 @@ def test_epoch(
     nll_sum = 0.0
     loss_sum = 0.0
     correct = 0.0
+    
 
     # PyTorch: model.eval()
     for input, target in test_loader:
@@ -276,6 +278,7 @@ def test_epoch(
         nll_sum += nll_batch
         loss_sum += loss_batch
         correct += correct_batch
+        
 
     return {
         "nll": nll_sum / n_test,  # Add function to find length
@@ -355,6 +358,93 @@ def test_batch(
 
     return nll, loss, correct
 
+def prediction_epoch(
+    test_loader: Iterable,
+    model: Layer,
+    criterion: Callable,
+    n_test: int,
+    regularizer: Union[Callable, None] = None,
+    **kwargs,
+) -> Dict[str, float]:
+    nll_sum = 0.0
+    loss_sum = 0.0
+    correct = 0.0
+    pred: tf.Tensor
+    output: tf.Tensor
+
+    # PyTorch: model.eval()
+    for input, target in test_loader:
+        nll_batch, loss_batch, correct_batch, pred_batch, output_batch = test_batch(
+            input=input,
+            target=target,
+            nll_sum=nll_sum,
+            correct=correct,
+            test_loader=test_loader,
+            model=model,
+            criterion=criterion,
+            regularizer=regularizer,
+            **kwargs,
+        )
+        nll_sum += nll_batch
+        loss_sum += loss_batch
+        correct += correct_batch
+        pred = pred_batch
+        output = output_batch
+        
+
+    return {
+        "pred": pred,
+        "output": output 
+    }
+
+def prediction_batch(
+    input: tf.Tensor,
+    target: tf.Tensor,
+    nll_sum: float,
+    correct: float,
+    test_loader: Iterable,
+    model: Layer,
+    criterion: Callable,
+    regularizer: Union[Callable, None] = None,
+    **kwargs,
+) -> Dict[str, float]:
+    # TODO Allocate model to GPU as well.
+
+    with tf.device("/cpu:0"):
+        output = model(input, **kwargs)
+        nll = criterion(target, output)
+        loss = tf.identity(nll)  # COrrect funtion for nll.clone() in Pytorch
+        # PyTorch:
+        # if regularizer is not None:
+        #     loss += regularizer(model)
+
+        nll = tf.reduce_sum(nll).numpy()
+        loss = tf.reduce_sum(
+            loss
+        ).numpy()  # What exactly are we trying to add up here, see original code? Check with PyTorch Code.
+        pred = tf.math.argmax(output, axis=1, output_type=tf.dtypes.int64)
+        correct = tf.math.reduce_sum(
+            tf.cast(tf.math.equal(pred, target), tf.float32)
+        ).numpy()
+
+    return nll, loss, correct, pred, output
+    
+
+def get_confusion_mat_for_epoch(
+     target: tf.Tensor,
+     output: tf.Tensor,
+     threshold: float,
+     **kwargs,
+):
+    assert 0 <= threshold <= 1
+    t_map = lambda x : 1 if tf.math.reduce_max(x) > threshold else 0
+    thres = tf.map_fn(t_map, output)
+
+    pred  = tf.boolean_mask(tf.argmax(output,1),thres)
+    labs  = tf.boolean_mask(tf.cast(target, tf.int64),thres)
+
+    return tf.math.confusion_matrix(labs,pred)
+
 
 def print_epoch_stats(values, epoch, start_epoch):
     COLUMNS = ["ep", "lr", "tr_loss", "tr_acc", "te_nll", "te_acc", "time"]
@@ -369,3 +459,5 @@ def print_epoch_stats(values, epoch, start_epoch):
 
 if __name__ == "__main__":
     main()
+
+
