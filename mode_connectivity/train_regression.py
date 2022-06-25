@@ -23,7 +23,6 @@ from mode_connectivity.utils import (
     save_weights,
 )
 
-
 def main():
     args = parse_train_arguments()
 
@@ -43,7 +42,7 @@ def main():
         architecture=architecture,
         args=args,
         num_classes=num_classes,
-        input_shape=(2,)
+        input_shape=(None,2)
     )
 
     criterion = tf.keras.losses.MeanSquaredError()

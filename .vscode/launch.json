@@ -86,22 +86,65 @@
             ]
         },
         {
-            "name": "MLP with regression data",
+            "name": "MLP with regression data (Fit base model 1)",
             "type": "python",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": [
+                "--dir=results/Regression_MLP/checkpoints_model_1",
+                "--dataset=regression",
+                "--data-path=datasets/",
+                "--model=MLP",
+                "--epochs=20",
+                "--lr=0.01",
+                "--wd=5e-4",
+                "--transform=MLP",
+                "--seed=1"
+            ]
+        },
+        {
+            "name": "MLP with regression data (Fit base model 2)",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "--dir=results/Regression_MLP/checkpoints_model_2",
+                "--dataset=regression",
+                "--data-path=datasets/",
+                "--model=MLP",
+                "--epochs=20",
+                "--lr=0.01",
+                "--wd=5e-4",
+                "--transform=MLP",
+                "--seed=42"
+            ]
+        },
+        {
+            "name": "MLP with regression data (Fit curve | pretrained)",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
                 "--dir=results/Regression_MLP/checkpoints_curve",
                 "--dataset=regression",
                 "--data-path=datasets/",
                 "--model=MLP",
-                "--epochs=100",
-                "--lr=0.05",
-                "--wd=5e-4",
+                "--curve=Bezier",
                 "--transform=MLP",
-                "--seed=1"
+                "--num-bends=3",
+                "--epochs=20",
+                "--lr=0.01",
+                "--wd=1e-4",
+                "--init-start=results/Regression_MLP/checkpoints_model_1/model-weights-epoch20",
+                "--fix-start",
+                "--init-end=results/Regression_MLP/checkpoints_model_2/model-weights-epoch20",
+                "--fix-end"
             ]
         }
     ]
