@@ -101,9 +101,11 @@
                 "--transform=CNN",
                 "--num-bends=3",
                 "--wd=1e-4",
-                "--ckpt=results/MNIST_BasicCNN/checkpoints_curve/model-epoch3",
+                "--ckpt=results/MNIST_BasicCNN/checkpoints_curve/model-weights-epoch3",
                 "--num_points=5",
-                "--init-linear-off"
+                "--init-linear-off",
+                "--fix-start",
+                "--fix-end"
             ]
         }
     ]
