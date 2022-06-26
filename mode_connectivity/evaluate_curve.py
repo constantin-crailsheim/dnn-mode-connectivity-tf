@@ -1,15 +1,15 @@
 import time
+import os
 from typing import Callable, Dict, Iterable, Tuple, Union
 
 import tabulate
 import tensorflow as tf
 import numpy as np
 from keras.layers import Layer
-from keras.optimizers import Optimizer
 
 from mode_connectivity.curves import curves, layers, net
-
 from argparser import Arguments, parse_evaluate_arguments
+from mode_connectivity.curves.net import CurveNet
 from data import data_loaders
 from models.cnn import CNN
 from models.mlp import MLP
@@ -40,17 +40,15 @@ def main():
     model = load_model(
         architecture=architecture,
         args=args,
-        num_classes=num_classes
+        num_classes=num_classes,
+        input_shape=(None, 28, 28, 1),
     )
-            
-        
-    model.compile()
 
     criterion = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
     regularizer = None if not args.curve else l2_regularizer(args.wd)
 
     T = args.num_points
-    ts = np.linspace(0.0, 1.0, T)
+    points_on_curve = np.linspace(0.0, 1.0, T)
     train_loss = np.zeros(T)
     train_nll = np.zeros(T)
     train_accuracy = np.zeros(T)
@@ -61,21 +59,24 @@ def main():
     test_error = np.zeros(T)
     dl = np.zeros(T)
 
-    # previous_weights = None
-
-    columns = ['t', 'Train loss', 'Train nll', 'Train error (%)', 'Test nll', 'Test error (%)']
-
+    previous_parameters = None
     
-    for i, t_value in enumerate(ts):
+    for i, point_on_curve in enumerate(points_on_curve):
         with tf.device("/cpu:0"):
-            curve_point = tf.constant(t_value, shape = (1,), dtype = tf.float64)
+            point_on_curve_tensor = tf.constant(point_on_curve, shape = (1,), dtype = tf.float64)
+        
+        parameters = model.get_weighted_parameters(point_on_curve_tensor)
+        if previous_parameters is not None:
+             dl[i] = np.sqrt(np.sum(np.square(parameters - previous_parameters)))
+        previous_parameters = parameters.copy()
+
         # TODO Check whether batch normilization is necessary.
         train_results = test_epoch(
                 test_loader = loaders["train"],
                 model = model,
                 criterion = criterion,
                 n_test = n_datasets["train"],
-                curve_point = curve_point,
+                point_on_curve = point_on_curve_tensor,
                 regularizer = regularizer
             )
         test_results = test_epoch(
@@ -83,7 +84,7 @@ def main():
                 model = model,
                 criterion = criterion,
                 n_test = n_datasets["test"],
-                curve_point = curve_point,
+                point_on_curve = point_on_curve_tensor,
                 regularizer = regularizer
             )
         train_loss[i] = train_results['loss']
@@ -93,17 +94,14 @@ def main():
         test_loss[i] = test_results['loss']
         test_nll[i] = test_results['nll']
         test_accuracy[i] = test_results['accuracy']
-        test_error[i] = 100.0 - test_results[i]
+        test_error[i] = 100.0 - test_accuracy[i]
 
-        values = [t_value, train_loss[i], train_nll[i], train_error[i], test_nll[i], test_error[i]]
-        table = tabulate.tabulate([values], columns, tablefmt='simple', floatfmt='10.4f')
-        if i % 40 == 0:
-            table = table.split('\n')
-            table = '\n'.join([table[1]] + table)
-        else:
-            table = table.split('\n')[2]
-        print(table)
+        values = [point_on_curve, train_loss[i], train_nll[i], train_error[i], test_nll[i], test_error[i]]
 
+        print_point_on_curve_stats(values, i)
+
+    print_and_save_summary_stats(train_loss, train_nll, train_accuracy, train_error, test_loss, test_nll, test_accuracy, test_error, points_on_curve, dl, args.dir, save=True)
+   
 
 def get_architecture(model_name: str):
     if model_name == "CNN":
@@ -112,16 +110,23 @@ def get_architecture(model_name: str):
         return MLP
     raise KeyError(f"Unkown model {model_name}")
 
-def load_model(architecture, args: Arguments, num_classes: int):
+def load_model(architecture, args: Arguments, num_classes: int, input_shape):
     curve = getattr(curves, args.curve)
-    model = tf.keras.models.load_model(args.ckpt)
-        # custom_objects = {'CurveNet': net.CurveNet(num_classes, args.num_bends, args.wd, curve = curve, curve_model = architecture.curve, architecture_kwargs=architecture.kwargs)})
-        # 'CurveLayer': layers.CurveLayer,
-            # 'Conv2DCurve': layers.Conv2DCurve,
-            # 'DenseCurve': layers.DenseCurve,
-            # 'Curve': curves.Curve,
-            # 'Bezier': curves.Bezier
-    
+    model = CurveNet(
+        num_classes=num_classes,
+        num_bends=args.num_bends,
+        weight_decay=args.wd,
+        curve=curve,
+        curve_model=architecture.curve,
+        fix_start=args.fix_start,
+        fix_end=args.fix_end,
+        architecture_kwargs=architecture.kwargs,
+    )
+
+    model.build(input_shape=input_shape)
+    model.load_weights(filepath=args.ckpt)
+    model.compile()
+
     return model
 
 def test_epoch(
@@ -129,7 +134,6 @@ def test_epoch(
     model: Layer,
     criterion: Callable,
     n_test: int,
-    #curve_point: tf.Tensor,
     regularizer: Union[Callable, None] = None,
     **kwargs,
 ) -> Dict[str, float]:
@@ -147,7 +151,6 @@ def test_epoch(
             test_loader=test_loader,
             model=model,
             criterion=criterion,
-            # curve_point = curve_point,
             regularizer=regularizer,
             **kwargs,
         )
@@ -169,7 +172,6 @@ def test_batch(
     test_loader: Iterable,
     model: Layer,
     criterion: Callable,
-    #curve_point = tf.Tensor,
     regularizer: Union[Callable, None] = None,
     **kwargs,
 ) -> Dict[str, float]:
@@ -193,6 +195,84 @@ def test_batch(
         ).numpy()
 
     return nll, loss, correct
+
+def print_point_on_curve_stats(values, i):
+    columns = ['Point on curve', 'Train loss', 'Train nll', 'Train error (%)', 'Test nll', 'Test error (%)']
+    table = tabulate.tabulate([values], columns, tablefmt='simple', floatfmt='10.4f')
+    if i % 40 == 0:
+        table = table.split('\n')
+        table = '\n'.join([table[1]] + table)
+    else:
+        table = table.split('\n')[2]
+    print(table)
+
+
+def stats(values, dl):
+    min = np.min(values)
+    max = np.max(values)
+    avg = np.mean(values)
+    int = np.sum(0.5 * (values[:-1] + values[1:]) * dl[1:]) / np.sum(dl[1:])
+    return min, max, avg, int
+
+def print_and_save_summary_stats(train_loss, train_nll, train_accuracy, train_error, test_loss, test_nll, test_accuracy, test_error, points_on_curve, dl, dir: str, save: bool = True):
+    tr_loss_min, tr_loss_max, tr_loss_avg, tr_loss_int = stats(train_loss, dl)
+    tr_nll_min, tr_nll_max, tr_nll_avg, tr_nll_int = stats(train_nll, dl)
+    tr_err_min, tr_err_max, tr_err_avg, tr_err_int = stats(train_error, dl)
+
+    te_loss_min, te_loss_max, te_loss_avg, te_loss_int = stats(test_loss, dl)
+    te_nll_min, te_nll_max, te_nll_avg, te_nll_int = stats(test_nll, dl)
+    te_err_min, te_err_max, te_err_avg, te_err_int = stats(test_error, dl)
+
+    print('Length: %.2f' % np.sum(dl))
+    print(tabulate.tabulate([
+            ['train loss', train_loss[0], train_loss[-1], tr_loss_min, tr_loss_max, tr_loss_avg, tr_loss_int],
+            ['train error (%)', train_error[0], train_error[-1], tr_err_min, tr_err_max, tr_err_avg, tr_err_int],
+            ['test nll', test_nll[0], test_nll[-1], te_nll_min, te_nll_max, te_nll_avg, te_nll_int],
+            ['test error (%)', test_error[0], test_error[-1], te_err_min, te_err_max, te_err_avg, te_err_int],
+        ], [
+            '', 'start', 'end', 'min', 'max', 'avg', 'int'
+        ], tablefmt='simple', floatfmt='10.4f'))
+
+    if save == True:
+        os.makedirs(dir, exist_ok=True)
+        np.savez(
+            os.path.join(dir, 'curve.npz'),
+            points_on_curve=points_on_curve,
+            dl=dl,
+            tr_loss=train_loss,
+            tr_loss_min=tr_loss_min,
+            tr_loss_max=tr_loss_max,
+            tr_loss_avg=tr_loss_avg,
+            tr_loss_int=tr_loss_int,
+            tr_nll=train_nll,
+            tr_nll_min=tr_nll_min,
+            tr_nll_max=tr_nll_max,
+            tr_nll_avg=tr_nll_avg,
+            tr_nll_int=tr_nll_int,
+            tr_acc=train_accuracy,
+            tr_err=train_error,
+            tr_err_min=tr_err_min,
+            tr_err_max=tr_err_max,
+            tr_err_avg=tr_err_avg,
+            tr_err_int=tr_err_int,
+            te_loss=test_loss,
+            te_loss_min=te_loss_min,
+            te_loss_max=te_loss_max,
+            te_loss_avg=te_loss_avg,
+            te_loss_int=te_loss_int,
+            te_nll=test_nll,
+            te_nll_min=te_nll_min,
+            te_nll_max=te_nll_max,
+            te_nll_avg=te_nll_avg,
+            te_nll_int=te_nll_int,
+            te_acc=test_accuracy,
+            te_err=test_error,
+            te_err_min=te_err_min,
+            te_err_max=te_err_max,
+            te_err_avg=te_err_avg,
+            te_err_int=te_err_int,
+        )
+
 
 if __name__ == "__main__":
     main()
