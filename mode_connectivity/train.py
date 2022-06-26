@@ -312,7 +312,6 @@ def train_batch(
         # https://medium.com/analytics-vidhya/3-different-ways-to-perform-gradient-descent-in-tensorflow-2-0-and-ms-excel-ffc3791a160a
         # https://d2l.ai/chapter_multilayer-perceptrons/weight-decay.html (4.5.4)
 
-        # What exactly are we trying to add up here, see original code? Check with PyTorch Code.
         loss = tf.reduce_sum(loss).numpy()
         pred = tf.math.argmax(output, axis=1, output_type=tf.dtypes.int64)
         # Is there an easier way?
@@ -345,9 +344,7 @@ def test_batch(
         #     loss += regularizer(model)
 
         nll = tf.reduce_sum(nll).numpy()
-        loss = tf.reduce_sum(
-            loss
-        ).numpy()  # What exactly are we trying to add up here, see original code? Check with PyTorch Code.
+        loss = tf.reduce_sum(loss).numpy() 
         pred = tf.math.argmax(output, axis=1, output_type=tf.dtypes.int64)
         correct = tf.math.reduce_sum(
             tf.cast(tf.math.equal(pred, target), tf.float32)
