@@ -161,14 +161,13 @@ def train(
         time_epoch = time.time()
 
         lr = learning_rate_schedule(args.lr, epoch, args.epochs)
-        # Not implemented yet:
         adjust_learning_rate(optimizer, lr)
 
         train_results = train_epoch(
             loaders["train"],
             model,
             optimizer,
-            criterion,
+            criterion, 
             n_datasets["train"],
             regularizer,
         )

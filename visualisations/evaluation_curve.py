@@ -31,4 +31,23 @@ plt.title(title + " for points on curve", fontsize=12)
 plt.xlabel("Point on curve")
 plt.ylabel(title)
 
+
 # %%
+
+stat = "te_nll"
+title = "Test NLL"
+
+plt.plot(stats["points_on_curve"], stats[stat])
+plt.title(title + " for points on curve", fontsize=12)
+plt.xlabel("Point on curve")
+plt.ylabel(title)
+
+# %%
+
+stat = "te_acc"
+title = "Test accuracy"
+
+plt.plot(stats["points_on_curve"], stats[stat])
+plt.title(title + " for points on curve", fontsize=12)
+plt.xlabel("Point on curve")
+plt.ylabel(title)
