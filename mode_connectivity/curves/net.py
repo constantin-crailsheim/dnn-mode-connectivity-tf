@@ -3,6 +3,7 @@ import re
 from typing import Any, Dict, List, Type, Union
 
 import tensorflow as tf
+import numpy as np
 
 from mode_connectivity.curves.curves import Curve
 from mode_connectivity.curves.layers import CurveLayer
@@ -142,6 +143,13 @@ class CurveNet(tf.keras.Model):
             self._compute_inner_weights(weights=layer.curve_kernels)
             self._compute_inner_weights(weights=layer.curve_biases)
 
+    def get_weighted_parameters(self, point_on_curve):
+        point_on_curve_weights = self.curve(point_on_curve)
+        parameters = []
+        for module in self.curve_layers:
+            parameters.extend([w for w in module.compute_weighted_parameters(point_on_curve_weights) if w is not None])
+        return np.concatenate([tf.stop_gradient(w).numpy().ravel() for w in parameters]) # .cpu() missing
+
     def _compute_inner_weights(self, weights: List[tf.Variable]) -> None:
         # Is this procedure mentioned somewhere in the paper?
         first_weight, last_weight = weights[0].value(), weights[-1].value()
@@ -158,7 +166,7 @@ class CurveNet(tf.keras.Model):
     def call(
         self,
         inputs: tf.Tensor,  # Union[tf.Tensor, Tuple[tf.Tensor, tf.Tensor]],
-        uniform_tensor: Union[tf.Tensor, None] = None,
+        point_on_curve: Union[tf.Tensor, None] = None,
         training=None,
         mask=None,
     ):
@@ -168,10 +176,10 @@ class CurveNet(tf.keras.Model):
         #     inputs, uniform_tensor = inputs
         # else:
         #     uniform_tensor = tf.random.uniform(shape=(1,), dtype=inputs.dtype)
-        if uniform_tensor is None:
-            uniform_tensor = tf.random.uniform(shape=(1,), dtype=inputs.dtype)
-        coeffs_t = self.curve(uniform_tensor)
-        output = self.curve_model((inputs, coeffs_t))
+        if point_on_curve is None:
+            point_on_curve = tf.random.uniform(shape=(1,), dtype=inputs.dtype)
+        point_on_curve_weights = self.curve(point_on_curve)
+        output = self.curve_model((inputs, point_on_curve_weights))
         self._compute_l2()
         return output
 
