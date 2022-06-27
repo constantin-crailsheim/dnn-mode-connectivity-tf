@@ -93,3 +93,9 @@ class TestBezier:
         output1 = bezier(curve_point)
         output2 = bezier(curve_point)
         assert np.allclose(output1, output2)
+
+    def test_call_reverseable(self, bezier, curve_point):
+        output_regular = bezier(curve_point)
+        output_reversed = bezier(1 - curve_point)
+        # [::-1] -> reverse the tensor elements
+        assert np.allclose(output_regular, output_reversed[::-1])
