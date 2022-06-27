@@ -211,7 +211,7 @@ def stats(values, dl):
     min = np.min(values)
     max = np.max(values)
     avg = np.mean(values)
-    int = np.sum(0.5 * (values[:-1] + values[1:]) * dl[1:]) / np.sum(dl[1:])
+    int = np.sum(0.5 * (values[:-1] + values[1:]) * dl[1:]) / np.sum(dl[1:]) # What does this stats mean?
     return min, max, avg, int
 
 def print_and_save_summary_stats(train_loss, train_nll, train_accuracy, train_error, test_loss, test_nll, test_accuracy, test_error, points_on_curve, dl, dir: str, save: bool = True):
