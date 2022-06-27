@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # %%
-
+# Execute only first time running the notebook.
 os.chdir("..")
- 
+
 # %%
 path = "results/MNIST_BasicCNN/evaluation_curve/curve.npz"
 stats = np.load(path)
