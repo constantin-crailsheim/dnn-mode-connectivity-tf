@@ -33,7 +33,7 @@ def bezier(request) -> Bezier:
 
 
 @pytest.fixture(params=list(np.arange(0.0, 1.0, 0.1)))
-def curve_point(request) -> float:
+def point_on_curve(request) -> float:
     return request.param
 
 
@@ -59,43 +59,51 @@ class TestBezier:
         with pytest.raises(ValueError):
             Bezier(num_bends=num_bends)
 
-    def test_call_float(self, bezier, curve_point):
-        output_1 = bezier(curve_point)
-        output_2 = bezier(curve_point)
-        output_3 = bezier(curve_point)
+    def test_call_float(self, bezier, point_on_curve):
+        output_1 = bezier(point_on_curve)
+        output_2 = bezier(point_on_curve)
+        output_3 = bezier(point_on_curve)
         assert np.allclose(output_1, output_2, output_3)
         assert np.allclose(sum(output_1), sum(output_2), sum(output_3), 1)
         assert output_1.shape == output_2.shape == output_3.shape == bezier.num_bends
 
-    @pytest.mark.parametrize("num_bends, curve_point, expected_output", testdata_output)
-    def test_call_float_specific_output(self, num_bends, curve_point, expected_output):
+    @pytest.mark.parametrize(
+        "num_bends, point_on_curve, expected_output", testdata_output
+    )
+    def test_call_float_specific_output(
+        self, num_bends, point_on_curve, expected_output
+    ):
         bezier = Bezier(num_bends=num_bends)
-        output = bezier(curve_point)
+        output = bezier(point_on_curve)
         assert output.shape == num_bends
         assert np.allclose(output, expected_output)
 
-    def test_call_tensor(self, bezier, curve_point):
-        output_1 = bezier(tf.constant(curve_point))
-        output_2 = bezier(tf.constant(curve_point))
-        output_3 = bezier(tf.constant(curve_point))
+    def test_call_tensor(self, bezier, point_on_curve):
+        output_1 = bezier(tf.constant(point_on_curve))
+        output_2 = bezier(tf.constant(point_on_curve))
+        output_3 = bezier(tf.constant(point_on_curve))
         assert np.allclose(output_1, output_2, output_3)
         assert np.allclose(sum(output_1), sum(output_2), sum(output_3), 1)
         assert output_1.shape == output_2.shape == output_3.shape == bezier.num_bends
 
-    @pytest.mark.parametrize("num_bends, curve_point, expected_output", testdata_output)
-    def test_call_tensor_specific_output(self, num_bends, curve_point, expected_output):
+    @pytest.mark.parametrize(
+        "num_bends, point_on_curve, expected_output", testdata_output
+    )
+    def test_call_tensor_specific_output(
+        self, num_bends, point_on_curve, expected_output
+    ):
         bezier = Bezier(num_bends=num_bends)
-        output = bezier(tf.constant(curve_point))
+        output = bezier(tf.constant(point_on_curve))
         assert output.shape == num_bends
         assert np.allclose(output, expected_output)
 
-    def test_call_deterministic(self, bezier, curve_point):
-        output1 = bezier(curve_point)
-        output2 = bezier(curve_point)
+    def test_call_deterministic(self, bezier, point_on_curve):
+        output1 = bezier(point_on_curve)
+        output2 = bezier(point_on_curve)
         assert np.allclose(output1, output2)
 
-    def test_call_reverseable(self, bezier, curve_point):
-        output_regular = bezier(curve_point)
-        output_reversed = bezier(1 - curve_point)
+    def test_call_reverseable(self, bezier, point_on_curve):
+        output_regular = bezier(point_on_curve)
+        output_reversed = bezier(1 - point_on_curve)
         # [::-1] -> reverse the tensor elements
         assert np.allclose(output_regular, output_reversed[::-1])
