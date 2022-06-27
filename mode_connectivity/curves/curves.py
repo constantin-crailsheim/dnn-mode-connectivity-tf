@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Union
 
 import numpy as np
 import tensorflow as tf
@@ -10,6 +11,11 @@ class Curve(tf.keras.layers.Layer, ABC):
 
     def __init__(self, num_bends: int):
         super().__init__()
+
+        if num_bends < 1:
+            raise ValueError(
+                f"Number of bends ({num_bends=}) needs to be greater than 0."
+            )
         self.num_bends = num_bends
 
     @abstractmethod
@@ -33,9 +39,9 @@ class Bezier(Curve):
         # The PyTorch Buffer in this example is not considered a model parameter, not trained,
         # part of the module's state, moved to cuda() or cpu() with the rest of the model's parameters
 
-    def call(self, t: float):
+    def call(self, curve_point: Union[float, tf.Tensor]) -> tf.Tensor:
         return (
             self.binom
-            * tf.math.pow(t, self.range)
-            * tf.math.pow((1.0 - t), self.rev_range)
+            * tf.math.pow(curve_point, self.range)
+            * tf.math.pow((1.0 - curve_point), self.rev_range)
         )
