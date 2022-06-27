@@ -1,5 +1,9 @@
 import os
 
+import numpy as np
+import random
+import math
+
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
@@ -73,34 +77,53 @@ def data_loaders(
             as_supervised=True,
             with_info=True,
         )
-        train_set = train_set
 
         standardization = lambda input, label: (tf.cast(input, tf.float32) / 255, label)
-    else:
-        if use_test:
-            print("You are going to run models on the test set. Are you sure?")
-            pass
 
-        else:
-            print("Using train (45000) + validation (5000)")
+        train_set_loader = train_set.map(standardization).shuffle(ds_info.splits["train"].num_examples)
+        test_set_loader = test_set.map(standardization).shuffle(ds_info.splits["test"].num_examples)
 
-            pass
+        num_classes = 10 # TODO Find number of train labels in train_set object
+
+        n_train = ds_info.splits["train"].num_examples
+        n_test = ds_info.splits["test"].num_examples
+    
+    elif dataset == "regression":
+        data = np.load("datasets/data.npy")
+        n = data.shape[0]
+        x, y = data[:, 0], data[:, 1]
+        y = y[:, None]
+        f = features(x)
+
+        index_train = random.sample(range(n), math.floor(0.8*n))
+        index_test = list(set(range(n)).difference(set(index_train)))
+
+        train_dataset = tf.data.Dataset.from_tensor_slices((f[index_train,:], y[index_train]))
+        test_dataset = tf.data.Dataset.from_tensor_slices((f[index_test,:], y[index_test]))
+
+        train_set_loader = train_dataset.shuffle(100).batch(batch_size)
+        test_set_loader = test_dataset.batch(batch_size)
+
+        num_classes = 10 # How to deal with regression data for classification model
+
+        n_train = len(index_train)
+        n_test = len(index_test)
 
     return (
         {
-            "train": train_set.map(standardization).shuffle(
-                ds_info.splits["train"].num_examples
-            ),
-            "test": test_set.map(standardization).shuffle(
-                ds_info.splits["test"].num_examples
-            ),
+            "train": train_set_loader,
+            "test": test_set_loader,
         },
-        10,
+        num_classes, 
         {
-            "train": ds_info.splits["train"].num_examples,
-            "test": ds_info.splits["test"].num_examples,
+            "train": n_train,
+            "test": n_test,
         },
-    )  # TODO Find number of train labels in train_set object
+    ) 
+
+def features(x):
+    return np.hstack([x[:, None] / 2.0, (x[:, None] / 2.0) ** 2])
+
 
     # Questions:
     # Do we need to augment the data?
