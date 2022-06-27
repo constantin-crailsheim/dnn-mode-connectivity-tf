@@ -140,9 +140,9 @@ class TestConv2DCurveLayer(CurveLayerTest):
         assert isinstance(conv2d_curve_layer, tf.keras.layers.Conv2D)
 
     def check_output_size(self, output):
-        output_shape_x = self.input_shape[1] - self.kernel_size[0] + 1
-        output_shape_y = self.input_shape[2] - self.kernel_size[1] + 1
-        assert output.shape == (128, output_shape_x, output_shape_y, 32)
+        output_shape_h = self.input_shape[1] - self.kernel_size[0] + 1
+        output_shape_w = self.input_shape[2] - self.kernel_size[1] + 1
+        assert output.shape == (128, output_shape_h, output_shape_w, 32)
 
 
 class TestDenseCurveLayer(CurveLayerTest):
