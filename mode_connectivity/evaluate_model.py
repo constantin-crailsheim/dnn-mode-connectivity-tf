@@ -1,9 +1,14 @@
+import time
+import os
+from typing import Callable, Dict, Iterable, Tuple, Union
+
 import matplotlib.pyplot as plt
 import sklearn as sklearn
 from sklearn.metrics import ConfusionMatrixDisplay
 
 import tabulate
 import tensorflow as tf
+import numpy as np
 from keras.layers import Layer
 from keras.optimizers import Optimizer
 
@@ -61,12 +66,15 @@ def load_model_and_save_plots(model: str):
         input_shape=(None, 28, 28, 1),
     )
 
-    test_predictions = prediction_epoch(
+    criterion = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+    regularizer = None if not args.curve else l2_regularizer(args.wd)
+
+    test_predictions = evaluation_epoch(
                 test_loader = loaders["test"],
                 model = model,
                 criterion = criterion,
                 n_test = n_datasets["test"],
-                point_on_curve = point_on_curve_tensor,
+                point_on_curve = args.point_on_curve,
                 regularizer = regularizer
             )
 
@@ -74,11 +82,16 @@ def load_model_and_save_plots(model: str):
     output = test_predictions['output']  
     target = test_predictions['target'] 
 
-    print_and_save_model_predictions_and_plots(pred, output, target, dir = args.dir, save: bool = True)
+    save_predictions(pred, output, target, dir = args.dir)
+
+def get_architecture(model_name: str):
+    if model_name == "CNN":
+        return CNN
+    if model_name == "MLP":
+        return MLP
+    raise KeyError(f"Unkown model {model_name}")
 
 def load_model(architecture, args: Arguments, num_classes: int, input_shape):
-    # Changed method arguments to take args as input () since many of those variables needed in curve-case
-
     # If no curve is to be fit the base version of the architecture is initialised (e.g CNNBase instead of CNNCurve).
     if not args.curve:
         model = architecture.base(
@@ -113,7 +126,7 @@ def load_model(architecture, args: Arguments, num_classes: int, input_shape):
         return model
 
 
-def prediction_epoch(
+def evaluation_epoch(
     test_loader: Iterable,
     model: Layer,
     dir: str,
@@ -131,7 +144,7 @@ def prediction_epoch(
 
     # PyTorch: model.eval()
     for input, target in test_loader:
-        nll_batch, loss_batch, correct_batch, pred_batch, output_batch, target_batch = prediction_batch(
+        nll_batch, loss_batch, correct_batch, pred_batch, output_batch, target_batch = evaluation_batch(
             input=input,
             target=target,
             nll_sum=nll_sum,
@@ -145,20 +158,18 @@ def prediction_epoch(
         nll_sum += nll_batch
         loss_sum += loss_batch
         correct += correct_batch
-        pred = pred_batch
-        output = output_batch
-        target  = target_batch
+        pred.append(pred_batch)
+        output.append(output_batch)
+        target.append(target_batch)
 
-     return {
+    return {
         "pred": pred,  
         "output": output,  
         "target": target, 
     }
    
 
-    
-
-def prediction_batch(
+def evaluation_batch(
     input: tf.Tensor,
     target: tf.Tensor,
     nll_sum: float,
@@ -191,32 +202,12 @@ def prediction_batch(
     return nll, loss, correct, pred, output, target
     
 
-def print_and_save_model_predictions_and_plots(pred, output, target, dir : str, save: bool = True):
+def save_predictions(pred, output, target, dir: str):
+    os.makedirs(dir, exist_ok=True)
+    np.savez(
+        os.path.join(dir, 'predictions.npz'),
+        pred=pred,
+        output=output,
+        target=target,
+    )
 
-    get_confusion_mat_per_epoch(pred = pred, target = target, dir = dir)
-
-    if save == True:
-        os.makedirs(dir, exist_ok=True)
-        np.savez(
-            os.path.join(dir, 'predictions.npz'),
-            pred=pred,
-            output=output,
-            target=target,
-        )
-
-
-def get_confusion_mat_per_epoch(
-    pred: tf.Tensor,
-    target: tf.Tensor,
-    dir: str,
-    save: bool = True,
-):
-    ConfusionMatrixDisplay.from_predictions(
-        target, pred)
-    
-    if save == True:
-        os.makedirs(dir, exist_ok=True)
-        plt.savefig(
-            os.path.join(dir, 'confusion_mat.png')
-        )
-    return plt.show()
