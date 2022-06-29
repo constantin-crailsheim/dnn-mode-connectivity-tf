@@ -100,11 +100,35 @@
                 "--curve=Bezier",
                 "--transform=CNN",
                 "--num-bends=3",
-                "--wd=1e-4",
+                "--wd=5e-4",
                 "--ckpt=results/MNIST_BasicCNN/checkpoints_curve/model-weights-epoch11",
                 "--num_points=11",
                 "--init-linear-off",
-                "--fix-start"
+                "--fix-start",
+                "--fix-end"
+            ]
+        },
+        {
+            "name": "Evalute model BasicCNN with MNIST",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "--dir=results/MNIST_BasicCNN/evaluation_model",
+                "--dataset=mnist",
+                "--data-path=datasets/",
+                "--model=CNN",
+                "--curve=Bezier",
+                "--transform=CNN",
+                "--num-bends=3",
+                "--wd=5e-4",
+                "--ckpt=results/MNIST_BasicCNN/checkpoints_curve/model-weights-epoch11",
+                "--point_on_curve=0.0",
+                "--init-linear-off",
+                "--fix-start",
+                "--fix-end"
             ]
         },
         {

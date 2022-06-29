@@ -37,6 +37,7 @@ class Arguments:
     # Evaluate:
     num_points: int = 61
     ckpt: str = None
+    point_on_curve: float = 0.0
 
 
 def parse_train_arguments() -> Arguments:
@@ -233,4 +234,11 @@ def _add_evaluate_arguments(parser: argparse.ArgumentParser) -> None:
         default=None,
         metavar='CKPT',
         help='checkpoint to eval (default: None)'
+    )
+    parser.add_argument(
+        '--point_on_curve',
+        type=float,
+        default=0.0,
+        metavar='CKPT',
+        help='point on curve to be evaluated (default: 0.0)'
     )
