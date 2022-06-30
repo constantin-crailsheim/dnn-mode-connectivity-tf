@@ -9,6 +9,11 @@ from tensorflow.python.framework.errors import NotFoundError
 logger = logging.getLogger(__name__)
 
 
+def set_seeds(seed: int):
+    tf.random.set_seed(seed)
+    # TODO torch.cuda.manual_seed(args.seed)
+
+
 def learning_rate_schedule(base_lr, epoch, total_epochs):
     alpha = epoch / total_epochs
     if alpha <= 0.5:
