@@ -34,14 +34,18 @@ class CurveNet(tf.keras.Model):
         architecture_kwargs: Union[Dict[str, Any], None] = None,
     ):
         super().__init__()
+        if num_bends < 0:
+            raise ValueError(
+                f"Number of bends of the curve need to be at least 0 (found {num_bends=})."
+            )
         self.num_classes = num_classes
         self.num_bends = num_bends
-        self.fix_points = [fix_start] + [False] * (self.num_bends - 2) + [fix_end]
+        self.fix_points = [fix_start] + [False] * self.num_bends + [fix_end]
         # Since we use l2 in computation late, we need to instantiate it as a tf.Variable
         # https://www.tensorflow.org/guide/function#creating_tfvariables
         self.l2 = None
 
-        self.curve = curve(self.num_bends)
+        self.curve = curve(degree=self.num_bends + 1)
         self.curve_model = curve_model(
             num_classes=num_classes,
             fix_points=self.fix_points,
@@ -147,14 +151,23 @@ class CurveNet(tf.keras.Model):
         point_on_curve_weights = self.curve(point_on_curve)
         parameters = []
         for module in self.curve_layers:
-            parameters.extend([w for w in module.compute_weighted_parameters(point_on_curve_weights) if w is not None])
-        return np.concatenate([tf.stop_gradient(w).numpy().ravel() for w in parameters]) # .cpu() missing
+            parameters.extend(
+                [
+                    w
+                    for w in module.compute_weighted_parameters(point_on_curve_weights)
+                    if w is not None
+                ]
+            )
+        return np.concatenate(
+            [tf.stop_gradient(w).numpy().ravel() for w in parameters]
+        )  # .cpu() missing
 
     def _compute_inner_weights(self, weights: List[tf.Variable]) -> None:
         # Is this procedure mentioned somewhere in the paper?
         first_weight, last_weight = weights[0].value(), weights[-1].value()
-        for i in range(1, self.num_bends - 1):
-            alpha = i * 1.0 / (self.num_bends - 1)
+        n_weights = len(weights)
+        for i in range(1, n_weights - 1):
+            alpha = i * 1.0 / (n_weights - 1)
             weights[i].assign(alpha * first_weight + (1.0 - alpha) * last_weight)
 
     def _compute_l2(self) -> None:
@@ -165,13 +178,11 @@ class CurveNet(tf.keras.Model):
 
     def call(
         self,
-        inputs: tf.Tensor,  # Union[tf.Tensor, Tuple[tf.Tensor, tf.Tensor]],
+        inputs: tf.Tensor,
         point_on_curve: Union[tf.Tensor, None] = None,
         training=None,
         mask=None,
     ):
-        # Renamed 't' to 'uniform_tensor' for clarity
-        # TODO find a better name for uniform_tensor and coeffs_t
         # if isinstance(inputs, tuple):
         #     inputs, uniform_tensor = inputs
         # else:
@@ -179,9 +190,9 @@ class CurveNet(tf.keras.Model):
         if point_on_curve is None:
             point_on_curve = tf.random.uniform(shape=(1,), dtype=inputs.dtype)
         point_on_curve_weights = self.curve(point_on_curve)
-        output = self.curve_model((inputs, point_on_curve_weights))
+        outputs = self.curve_model((inputs, point_on_curve_weights))
         self._compute_l2()
-        return output
+        return outputs
 
     def import_base_buffers(self, base_model: tf.keras.Model) -> None:
         # Not needed for now, only used in test_curve.py
