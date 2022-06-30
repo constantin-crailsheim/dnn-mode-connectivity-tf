@@ -51,6 +51,39 @@ class TestCurveNet:
         net(tf.random.uniform((128, 28, 28, 1)))
         net.save(filepath=model_dir)
 
+    def test_load_model_and_call(self, model_dir):
+        net = CurveNet(
+            num_classes=10,
+            num_bends=3,
+            weight_decay=1e4,
+            curve=Bezier,
+            curve_model=CNN.curve,
+            fix_start=True,
+            fix_end=True,
+            architecture_kwargs=CNN.kwargs,
+        )
+        net(tf.random.uniform((128, 28, 28, 1)))
+        net.compile()
+        net.save(filepath=model_dir)
+
+        net2 = tf.keras.models.load_model(filepath=model_dir)
+        x = tf.random.uniform((10, 28, 28, 1))
+        assert np.allclose(net.predict(x), net2.predict(x))
+
+        net2(tf.random.uniform((128, 28, 28, 1)))
+        net2.point_on_curve = net2.generate_point_on_curve()
+        net2(tf.random.uniform((128, 28, 28, 1)), training=False)
+
+        for layer_net, layer_net2 in zip(net.curve_layers, net2.curve_layers):
+            assert all(
+                np.allclose(k1.value(), k2.value())
+                for k1, k2 in zip(layer_net.curve_kernels, layer_net2.curve_kernels)
+            )
+            assert all(
+                np.allclose(b1.value(), b2.value())
+                for b1, b2 in zip(layer_net.curve_biases, layer_net2.curve_biases)
+            )
+
     def test_save_weights(self, model_dir):
         net = CurveNet(
             num_classes=10,
