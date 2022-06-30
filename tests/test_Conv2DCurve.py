@@ -21,6 +21,6 @@ class TestConv2DCurve:
             filters=32, kernel_size=(3, 3), fix_points=[True, False, True]
         )
         inputs = tf.random.uniform(shape=(128, 28, 28, 1))
-        curve = Bezier(3)
+        curve = Bezier(2)
         coeffs_t = curve(0.5)
         layer((inputs, coeffs_t))  # layer.call()
