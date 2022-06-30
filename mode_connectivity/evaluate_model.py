@@ -70,14 +70,15 @@ def main():
     regularizer = None if not args.curve else l2_regularizer(args.wd)
 
     with tf.device("/cpu:0"):
-        point_on_curve_tensor = tf.constant(args.point_on_curve, shape = (1,), dtype = tf.float64)
+        point_on_curve_tensor = tf.constant(args.point_on_curve, shape = (), dtype = tf.float32)
+    model.point_on_curve.assign(point_on_curve_tensor)
+
 
     train_results = evaluation_epoch(
             test_loader = loaders["train"],
             model = model,
             criterion = criterion,
             n_test = n_datasets["train"],
-            point_on_curve = point_on_curve_tensor,
             regularizer = regularizer
         )
 
@@ -86,7 +87,6 @@ def main():
             model = model,
             criterion = criterion,
             n_test = n_datasets["test"],
-            point_on_curve = point_on_curve_tensor,
             regularizer = regularizer
         )
 
@@ -208,7 +208,7 @@ def evaluation_batch(
     # TODO Allocate model to GPU as well.
 
     with tf.device("/cpu:0"):
-        output = model(input, **kwargs)
+        output = model(input, training=False, **kwargs)
         nll = criterion(target, output)
         loss = tf.identity(nll)  # COrrect funtion for nll.clone() in Pytorch
         # PyTorch:

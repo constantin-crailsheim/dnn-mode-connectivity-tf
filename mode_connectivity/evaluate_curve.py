@@ -63,8 +63,8 @@ def main():
     
     for i, point_on_curve in enumerate(points_on_curve):
         with tf.device("/cpu:0"):
-            point_on_curve_tensor = tf.constant(point_on_curve, shape = (), dtype = tf.float64)
-        model.point_on_curve = point_on_curve_tensor
+            point_on_curve_tensor = tf.constant(point_on_curve, shape = (), dtype = tf.float32)
+        model.point_on_curve.assign(point_on_curve_tensor)
 
         parameters = model.get_weighted_parameters(point_on_curve_tensor)
         if previous_parameters is not None:
