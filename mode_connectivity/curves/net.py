@@ -38,6 +38,11 @@ class CurveNet(tf.keras.Model):
             raise ValueError(
                 f"Number of bends of the curve need to be at least 0 (found {num_bends=})."
             )
+        if num_bends == 0 and fix_start and fix_end:
+            logger.warning(
+                "You specified no bends for the curve, but fixed both start and end point. "
+                "Training this model will give no results if all weights are fixed!"
+            )
         self.num_classes = num_classes
         self.num_bends = num_bends
         self.fix_points = [fix_start] + [False] * self.num_bends + [fix_end]
