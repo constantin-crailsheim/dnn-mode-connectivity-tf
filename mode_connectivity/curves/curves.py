@@ -30,12 +30,12 @@ class Bezier(Curve):
     def __init__(self, degree: int):
         super().__init__(degree=degree)
         self.binom = tf.Variable(
-            tf.constant(binom(degree - 1, np.arange(degree), dtype=np.float32)),
+            tf.constant(binom(degree, np.arange(degree + 1), dtype=np.float32)),
             trainable=False,
         )
-        self.range = tf.Variable(tf.range(0, float(degree)), trainable=False)
+        self.range = tf.Variable(tf.range(0, float(degree + 1)), trainable=False)
         self.rev_range = tf.Variable(
-            tf.range(float(degree - 1), -1, delta=-1), trainable=False
+            tf.range(float(degree), -1, delta=-1), trainable=False
         )
 
         # Not sure if this is the best way to substitute register_buffer() in PyTorch
