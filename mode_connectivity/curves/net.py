@@ -50,7 +50,7 @@ class CurveNet(tf.keras.Model):
         # https://www.tensorflow.org/guide/function#creating_tfvariables
         self.l2 = None
 
-        self.curve = curve(degree=self.num_bends + 1)
+        self.curve = curve(self.num_bends)
         self.curve_model = curve_model(
             num_classes=num_classes,
             fix_points=self.fix_points,
@@ -123,10 +123,10 @@ class CurveNet(tf.keras.Model):
     def _build_from_base_model(self, base_model: tf.keras.Model):
         """Build the model to initialize weights."""
         base_input_shape = base_model.layers[0].input_shape
-        coeffs_t_input_shape = (self.num_bends,)
+        point_on_curve_weights_input_shape = (len(self.fix_points),)
         input_shape = [
             tf.TensorShape(base_input_shape),
-            tf.TensorShape(coeffs_t_input_shape),
+            tf.TensorShape(point_on_curve_weights_input_shape),
         ]
         self.curve_model.build(input_shape)
 

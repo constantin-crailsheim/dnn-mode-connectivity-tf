@@ -28,7 +28,7 @@ testdata_output = [
 
 @pytest.fixture(params=list(range(1, 5)))
 def bezier(request) -> Bezier:
-    return Bezier(degree=request.param)
+    return Bezier(num_bends=request.param - 1)
 
 
 @pytest.fixture(params=list(np.arange(0.0, 1.0, 0.1)))
@@ -39,7 +39,7 @@ def point_on_curve(request) -> float:
 class TestBezier:
     @pytest.mark.parametrize("degree, expected_binom", testdata_init)
     def test_init(self, degree, expected_binom):
-        curve = Bezier(degree=degree)
+        curve = Bezier(num_bends=degree - 1)
         assert isinstance(curve, Bezier)
         assert isinstance(curve, Curve)
 
@@ -56,7 +56,7 @@ class TestBezier:
     @pytest.mark.parametrize("degree", [0, -1])
     def test_init_smaller_1(self, degree):
         with pytest.raises(ValueError):
-            Bezier(degree=degree)
+            Bezier(num_bends=degree - 1)
 
     def test_call_float(self, bezier, point_on_curve):
         output_1 = bezier(point_on_curve)
@@ -68,7 +68,7 @@ class TestBezier:
 
     @pytest.mark.parametrize("degree, point_on_curve, expected_output", testdata_output)
     def test_call_float_specific_output(self, degree, point_on_curve, expected_output):
-        bezier = Bezier(degree=degree)
+        bezier = Bezier(num_bends=degree - 1)
         output = bezier(point_on_curve)
         assert output.shape == degree + 1
         assert np.allclose(output, expected_output)
@@ -83,7 +83,7 @@ class TestBezier:
 
     @pytest.mark.parametrize("degree, point_on_curve, expected_output", testdata_output)
     def test_call_tensor_specific_output(self, degree, point_on_curve, expected_output):
-        bezier = Bezier(degree=degree)
+        bezier = Bezier(num_bends=degree - 1)
         output = bezier(tf.constant(point_on_curve))
         assert output.shape == degree + 1
         assert np.allclose(output, expected_output)
