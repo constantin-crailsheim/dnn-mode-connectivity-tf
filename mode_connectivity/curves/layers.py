@@ -14,17 +14,23 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
     def __init__(
         self, fix_points: List[bool], base_layer: Type[tf.keras.layers.Layer], **kwargs
     ):
+        if len(fix_points) < 2:
+            raise ValueError(
+                f"You need to specify at least two points (found {len(fix_points)})!"
+            )
+
         super().__init__(**kwargs)
         self.base_layer = base_layer
         self.fix_points = fix_points
-        self.num_bends = len(self.fix_points)
+        self.num_bends = len(self.fix_points) - 2
+        self.l2 = None
         self._reset_input_spec()
 
     def _reset_input_spec(self):
         """Modify the input specification to take in the curve coefficients as well."""
         self.input_spec = [
             self.input_spec,
-            tf.keras.layers.InputSpec(shape=((self.num_bends,))),
+            tf.keras.layers.InputSpec(shape=((len(self.fix_points),))),
         ]
 
     def build(self, input_shape):

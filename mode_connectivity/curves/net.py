@@ -33,13 +33,22 @@ class CurveNet(tf.keras.Model):
         architecture_kwargs: Union[Dict[str, Any], None] = None,
     ):
         super().__init__()
+        if num_bends < 0:
+            raise ValueError(
+                f"Number of bends of the curve need to be at least 0 (found {num_bends=})."
+            )
+        if num_bends == 0 and fix_start and fix_end:
+            logger.warning(
+                "You specified no bends for the curve, but fixed both start and end point. "
+                "Training this model will give no results if all weights are fixed!"
+            )
         self.num_classes = num_classes
         self.num_bends = num_bends
-        self.fix_points = [fix_start] + [False] * (self.num_bends - 2) + [fix_end]
         self.point_on_curve = tf.Variable(0.0, trainable=False, name="point_on_curve")
         self.in_fit = False
+        self.fix_points = [fix_start] + [False] * self.num_bends + [fix_end]
 
-        self.curve = curve(self.num_bends)
+        self.curve = curve(degree=self.num_bends + 1)
         self.curve_model = curve_model(
             num_classes=num_classes,
             fix_points=self.fix_points,
@@ -159,8 +168,9 @@ class CurveNet(tf.keras.Model):
     def _compute_inner_weights(self, weights: List[tf.Variable]) -> None:
         # Is this procedure mentioned somewhere in the paper?
         first_weight, last_weight = weights[0].value(), weights[-1].value()
-        for i in range(1, self.num_bends - 1):
-            alpha = i * 1.0 / (self.num_bends - 1)
+        n_weights = len(weights)
+        for i in range(1, n_weights - 1):
+            alpha = i * 1.0 / (n_weights - 1)
             weights[i].assign(alpha * first_weight + (1.0 - alpha) * last_weight)
 
     def generate_point_on_curve(self, dtype=tf.float32):
