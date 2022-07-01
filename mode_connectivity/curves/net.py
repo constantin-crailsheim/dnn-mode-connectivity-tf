@@ -48,7 +48,7 @@ class CurveNet(tf.keras.Model):
         self.in_fit = False
         self.fix_points = [fix_start] + [False] * self.num_bends + [fix_end]
 
-        self.curve = curve(degree=self.num_bends + 1)
+        self.curve = curve(self.num_bends)
         self.curve_model = curve_model(
             num_classes=num_classes,
             fix_points=self.fix_points,
@@ -115,16 +115,16 @@ class CurveNet(tf.keras.Model):
             assigned_weights.append(f"{base_name} -> {name}")
 
         logger.info(
-            f"Assigned weights for point #{index}: {', '.join(assigned_weights)}"
+            f"Assigned {len(assigned_weights)} weights for point #{index}: {', '.join(assigned_weights)}"
         )
 
     def _build_from_base_model(self, base_model: tf.keras.Model):
         """Build the curve model to initialize weights."""
         base_input_shape = base_model.layers[0].input_shape
-        coeffs_t_input_shape = (self.num_bends,)
+        curve_point_weights_input_shape = (len(self.fix_points),)
         input_shape = [
             tf.TensorShape(base_input_shape),
-            tf.TensorShape(coeffs_t_input_shape),
+            tf.TensorShape(curve_point_weights_input_shape),
         ]
         self.curve_model.build(input_shape)
 

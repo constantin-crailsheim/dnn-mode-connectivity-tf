@@ -23,7 +23,6 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
         self.base_layer = base_layer
         self.fix_points = fix_points
         self.num_bends = len(self.fix_points) - 2
-        self.l2 = None
         self._reset_input_spec()
 
     def _reset_input_spec(self):

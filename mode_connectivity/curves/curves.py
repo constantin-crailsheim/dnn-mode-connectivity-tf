@@ -54,16 +54,18 @@ class Bezier(Curve):
     https://en.wikipedia.org/wiki/B%C3%A9zier_curve
     """
 
-    def __init__(self, degree: int):
-        super().__init__(num_bends=degree - 1)
-        self.degree = degree
+    def __init__(self, num_bends: int):
+        super().__init__(num_bends=num_bends)
+        self.degree = num_bends + 1
         self.binom = tf.Variable(
-            tf.constant(binom(degree, np.arange(degree + 1), dtype=np.float32)),
+            tf.constant(
+                binom(self.degree, np.arange(self.degree + 1), dtype=np.float32)
+            ),
             trainable=False,
         )
-        self.range = tf.Variable(tf.range(0, float(degree + 1)), trainable=False)
+        self.range = tf.Variable(tf.range(0, float(self.degree + 1)), trainable=False)
         self.rev_range = tf.Variable(
-            tf.range(float(degree), -1, delta=-1), trainable=False
+            tf.range(float(self.degree), -1, delta=-1), trainable=False
         )
 
     def call(self, point_on_curve: Union[float, tf.Tensor]) -> tf.Tensor:

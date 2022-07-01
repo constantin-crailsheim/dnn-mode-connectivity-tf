@@ -153,7 +153,7 @@ def get_model(architecture, args: Arguments, num_classes: int, input_shape):
     )
 
     if args.ckpt:
-        logger.info(f"Restoring model from checkpoint {args.cpkt} for evaluation")
+        logger.info(f"Restoring model from checkpoint {args.ckpt} for evaluation")
         # Evalutate the model from Checkpoint
         # expect_partial()
         # -> silence Value in checkpoint could not be found in the restored object: (root).optimizer. ..
@@ -177,7 +177,7 @@ def get_model(architecture, args: Arguments, num_classes: int, input_shape):
         )
         load_base_weights(
             path=args.init_end,
-            index=args.num_bends + 2,
+            index=args.num_bends + 1,
             model=model,
             base_model=base_model,
         )
@@ -194,5 +194,5 @@ def load_base_weights(
     if not path:
         return None
     logger.info(f"Loading {path} as point #{index}")
-    base_model.load_weights(path)
+    base_model.load_weights(path).expect_partial()
     model.import_base_parameters(base_model, index)
