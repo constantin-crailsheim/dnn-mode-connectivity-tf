@@ -15,31 +15,19 @@ from mode_connectivity.models.mlp import MLP
 from mode_connectivity.utils import (
     AlphaSchedule,
     load_checkpoint,
-    save_model,
+    save_checkpoint,
     save_weights,
     set_seeds,
 )
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 def train(args: Arguments):
+    logger.info("Starting train")
     set_seeds(seed=args.seed)
-    loaders, num_classes, _ = data_loaders(
-        dataset=args.dataset,
-        path=args.data_path,
-        batch_size=args.batch_size,
-        num_workers=args.num_workers,
-        transform_name=args.transform,
-        use_test=args.use_test,
-    )
-    architecture = get_architecture(model_name=args.model)
-    model = get_model(
-        architecture=architecture,
-        args=args,
-        num_classes=num_classes,
-        input_shape=(None, 28, 28, 1),  # TODO Determine this from dataset
-    )
+    loaders, model = get_model_and_loaders(args)
 
     loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
     optimizer = tf.keras.optimizers.SGD(
@@ -52,6 +40,12 @@ def train(args: Arguments):
             checkpoint_path=args.resume, model=model, optimizer=optimizer
         )
 
+    model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
+        filepath=args.dir,
+        save_weights_only=True,
+        save_freq=args.save_freq,
+    )
+
     model.compile(optimizer=optimizer, loss=loss, metrics=["accuracy"])
     model.fit(
         loaders["train"],
@@ -59,12 +53,15 @@ def train(args: Arguments):
         epochs=args.epochs,
         initial_epoch=start_epoch,
         workers=args.num_workers,
+        callbacks=[model_checkpoint_callback],
     )
 
-    # TODO Add save checkpoints
-
-    save_weights(directory=args.dir, epoch=start_epoch + args.epochs, model=model)
-    save_model(directory=args.dir, epoch=start_epoch + args.epochs, model=model)
+    end_epoch = start_epoch + args.epochs
+    # TODO is this double call necessary, or does checkpoint save weights as well?
+    save_weights(directory=args.dir, epoch=end_epoch, model=model)
+    save_checkpoint(
+        directory=args.dir, epoch=end_epoch, model=model, optimizer=optimizer
+    )
 
 
 def train_cli():
@@ -73,23 +70,9 @@ def train_cli():
 
 
 def evaluate(args: Arguments):
+    logger.info("Starting evaluate")
     set_seeds(seed=args.seed)
-    loaders, num_classes, _ = data_loaders(
-        dataset=args.dataset,
-        path=args.data_path,
-        batch_size=args.batch_size,
-        num_workers=args.num_workers,
-        transform_name=args.transform,
-        use_test=args.use_test,
-    )
-
-    architecture = get_architecture(model_name=args.model)
-    model = get_model(
-        architecture=architecture,
-        args=args,
-        num_classes=num_classes,
-        input_shape=(None, 28, 28, 1),  # TODO Determine this from dataset
-    )
+    loaders, model = get_model_and_loaders(args)
 
     loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 
@@ -111,6 +94,27 @@ def evaluate(args: Arguments):
         return_dict=True,
     )
     print(r)
+
+
+def get_model_and_loaders(args: Arguments):
+    loaders, num_classes, _ = data_loaders(
+        dataset=args.dataset,
+        path=args.data_path,
+        batch_size=args.batch_size,
+        num_workers=args.num_workers,
+        transform_name=args.transform,
+        use_test=args.use_test,
+    )
+
+    architecture = get_architecture(model_name=args.model)
+    model = get_model(
+        architecture=architecture,
+        args=args,
+        num_classes=num_classes,
+        input_shape=(None, 28, 28, 1),  # TODO Determine this from dataset
+    )
+
+    return loaders, model
 
 
 def evaluate_cli():
@@ -149,13 +153,17 @@ def get_model(architecture, args: Arguments, num_classes: int, input_shape):
     )
 
     if args.ckpt:
+        logger.info(f"Restoring model from checkpoint {args.cpkt} for evaluation")
+        # Evalutate the model from Checkpoint
         # expect_partial()
         # -> silence Value in checkpoint could not be found in the restored object: (root).optimizer. ..
         # https://stackoverflow.com/questions/58289342/tf2-0-translation-model-error-when-restoring-the-saved-model-unresolved-objec
         model.load_weights(args.ckpt).expect_partial()
+        # .expect_partial()
         return model
         # return tf.keras.models.load_model(args.ckpt)
 
+    # Build model from 0, 1 or 2 base_models
     base_model = architecture.base(
         num_classes=num_classes, weight_decay=args.wd, **architecture.kwargs
     )
