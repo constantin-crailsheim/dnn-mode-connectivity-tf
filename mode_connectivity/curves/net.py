@@ -173,6 +173,7 @@ class CurveNet(tf.keras.Model):
             alpha = i * 1.0 / (n_weights - 1)
             weights[i].assign(alpha * first_weight + (1.0 - alpha) * last_weight)
 
+    @tf.function
     def generate_point_on_curve(self, dtype=tf.float32):
         return tf.random.uniform(shape=(), dtype=dtype)
 
