@@ -35,9 +35,9 @@ class Arguments:
     save_freq: int = 50
 
     # Evaluate:
-    num_points: int = 61
+    num_points: int = None
     ckpt: str = None
-    point_on_curve: float = 0.0
+    point_on_curve: float = None
 
 
 def parse_train_arguments() -> Arguments:
@@ -51,6 +51,7 @@ def parse_train_arguments() -> Arguments:
     args = parser.parse_args()
     return Arguments(**args.__dict__)
 
+
 def parse_evaluate_arguments() -> Arguments:
     parser = argparse.ArgumentParser(description="DNN evaluation")
 
@@ -62,6 +63,7 @@ def parse_evaluate_arguments() -> Arguments:
 
     args = parser.parse_args()
     return Arguments(**args.__dict__)
+
 
 def _add_dataset_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
@@ -184,7 +186,7 @@ def _add_checkpoint_arguments(parser: argparse.ArgumentParser) -> None:
         type=str,
         default=None,
         help="path to SavedModel of init start point (default: None)",
-        #metavar="CKPT", #Since we use the SavedModel instead of the checkpoint now, this term is not suitable anymore
+        # metavar="CKPT", #Since we use the SavedModel instead of the checkpoint now, this term is not suitable anymore
     )
     parser.add_argument(
         "--fix-start",
@@ -197,7 +199,7 @@ def _add_checkpoint_arguments(parser: argparse.ArgumentParser) -> None:
         type=str,
         default=None,
         help="path to SavedModel of init end point (default: None)",
-        #metavar="CKPT", #Since we use the SavedModel instead of the checkpoint now, this term is not suitable anymore
+        # metavar="CKPT", #Since we use the SavedModel instead of the checkpoint now, this term is not suitable anymore
     )
     parser.add_argument(
         "--fix-end",
@@ -220,25 +222,26 @@ def _add_checkpoint_arguments(parser: argparse.ArgumentParser) -> None:
         help="save frequency (default: 50)",
     )
 
+
 def _add_evaluate_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
-        '--num_points',
+        "--num-points",
         type=int,
-        default=61,
-        metavar='N',
-        help='number of points on the curve (default: 61)',
+        default=None,
+        metavar="N",
+        help="number of points on the curve (default: None)",
     )
     parser.add_argument(
-        '--ckpt',
+        "--point-on-curve",
+        type=float,
+        default=None,
+        metavar="CKPT",
+        help="point on curve to be evaluated (default: None)",
+    )
+    parser.add_argument(
+        "--ckpt",
         type=str,
         default=None,
-        metavar='CKPT',
-        help='checkpoint to eval (default: None)'
-    )
-    parser.add_argument(
-        '--point_on_curve',
-        type=float,
-        default=0.0,
-        metavar='CKPT',
-        help='point on curve to be evaluated (default: 0.0)'
+        metavar="CKPT",
+        help="checkpoint to eval (default: None)",
     )
