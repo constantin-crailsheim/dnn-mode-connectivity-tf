@@ -25,6 +25,31 @@ def learning_rate_schedule(base_lr, epoch, total_epochs):
     return factor * base_lr
 
 
+class AlphaSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
+    def __init__(self, initial_learning_rate: float, max_steps: int):
+        self.initial_learning_rate = initial_learning_rate
+        self.max_steps = max_steps
+
+    def __call__(self, step: int) -> float:
+        alpha = step / self.max_steps
+        factor = tf.cond(
+            tf.math.less_equal(alpha, 0.5),
+            lambda: 1.0,
+            lambda: tf.cond(
+                tf.math.less_equal(alpha, 0.9),
+                lambda: 1.0 - (alpha - 0.5) / 0.4 * 0.99,
+                lambda: 0.01,
+            ),
+        )
+        return factor * self.initial_learning_rate
+
+    def get_config(self):
+        return {
+            "initial_learning_rate": self.initial_learning_rate,
+            "max_steps": self.max_steps,
+        }
+
+
 def l2_regularizer(weight_decay):
     return lambda model: 0.5 * weight_decay * model.l2
 
