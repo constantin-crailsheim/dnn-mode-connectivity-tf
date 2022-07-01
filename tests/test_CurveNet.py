@@ -40,9 +40,6 @@ class TestCurveNet:
         built_curve_net= initialized_curve_net
         return built_curve_net
 
-        #OLD:
-        #initialized_curve_net(tf.random.uniform((128, 28, 28, 1)))
-
     # Same for MLP.curve
 
     def test_init(self, initialized_curve_net):
@@ -77,8 +74,8 @@ class TestCurveNet:
             if parameter_index == index:
                 base_param_name= curve_net._get_base_name(curve_param_name, index)
                 base_param = base_weights.get(base_param_name)
-                # if base_param is None:
-                #     continue
+                if base_param is None:
+                    continue
 
                 #Ensure that params at index are updated and not as before
                 assert tf.experimental.numpy.allclose(base_param, curve_param)
