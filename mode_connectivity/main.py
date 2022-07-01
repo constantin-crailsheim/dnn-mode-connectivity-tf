@@ -12,14 +12,20 @@ from mode_connectivity.curves.net import CurveNet
 from mode_connectivity.data import data_loaders
 from mode_connectivity.models.cnn import CNN
 from mode_connectivity.models.mlp import MLP
-from mode_connectivity.utils import load_checkpoint, save_model, save_weights, set_seeds
+from mode_connectivity.utils import (
+    AlphaSchedule,
+    load_checkpoint,
+    save_model,
+    save_weights,
+    set_seeds,
+)
 
 logger = logging.getLogger(__name__)
 
 
 def train(args: Arguments):
     set_seeds(seed=args.seed)
-    loaders, num_classes, n_datasets = data_loaders(
+    loaders, num_classes, _ = data_loaders(
         dataset=args.dataset,
         path=args.data_path,
         batch_size=args.batch_size,
@@ -36,7 +42,9 @@ def train(args: Arguments):
     )
 
     loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
-    optimizer = tf.keras.optimizers.SGD(learning_rate=args.lr, momentum=args.momentum)
+    optimizer = tf.keras.optimizers.SGD(
+        learning_rate=AlphaSchedule(args.lr, args.epochs), momentum=args.momentum
+    )
 
     start_epoch = 0
     if args.resume:
@@ -66,7 +74,7 @@ def train_cli():
 
 def evaluate(args: Arguments):
     set_seeds(seed=args.seed)
-    loaders, num_classes, n_datasets = data_loaders(
+    loaders, num_classes, _ = data_loaders(
         dataset=args.dataset,
         path=args.data_path,
         batch_size=args.batch_size,
@@ -74,6 +82,35 @@ def evaluate(args: Arguments):
         transform_name=args.transform,
         use_test=args.use_test,
     )
+
+    architecture = get_architecture(model_name=args.model)
+    model = get_model(
+        architecture=architecture,
+        args=args,
+        num_classes=num_classes,
+        input_shape=(None, 28, 28, 1),  # TODO Determine this from dataset
+    )
+
+    loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+
+    model.compile(loss=loss, metrics=["accuracy"])
+    # TODO Do we really want to evaluate on the train set?
+    r = model.evaluate(
+        loaders["train"],
+        num_points=args.num_points,
+        point_on_curve=args.point_on_curve,
+        verbose=True,
+        return_dict=True,
+    )
+    print(r)
+    r = model.evaluate(
+        loaders["test"],
+        num_points=args.num_points,
+        point_on_curve=args.point_on_curve,
+        verbose=True,
+        return_dict=True,
+    )
+    print(r)
 
 
 def evaluate_cli():
@@ -110,6 +147,14 @@ def get_model(architecture, args: Arguments, num_classes: int, input_shape):
         fix_end=args.fix_end,
         architecture_kwargs=architecture.kwargs,
     )
+
+    if args.ckpt:
+        # expect_partial()
+        # -> silence Value in checkpoint could not be found in the restored object: (root).optimizer. ..
+        # https://stackoverflow.com/questions/58289342/tf2-0-translation-model-error-when-restoring-the-saved-model-unresolved-objec
+        model.load_weights(args.ckpt).expect_partial()
+        return model
+        # return tf.keras.models.load_model(args.ckpt)
 
     base_model = architecture.base(
         num_classes=num_classes, weight_decay=args.wd, **architecture.kwargs
