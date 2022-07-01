@@ -10,30 +10,30 @@ class Curve(tf.keras.layers.Layer, ABC):
     """Base class for Curve Layers.
 
     Args:
-            degree (int): Degree of the Curve. Needs to be greater than 0.
-                1: Linear
-                2: Quadratic
-                3: Cubic
+            num_bends (int): Degree of the Curve. Needs to be greater than 0.
+                0: Linear
+                1: Quadratic
+                2: Cubic
                 ...
     """
 
-    degree: int
+    num_bends: int
 
-    def __init__(self, degree: int):
+    def __init__(self, num_bends: int):
         """Initialize the Curve Layer."""
         super().__init__()
-        if degree < 1:
+        if num_bends < 0:
             raise ValueError(
-                f"Degree ({degree=}) of the curve needs to be greater than 0."
+                f"Number of bends ({num_bends=}) of the curve needs to be greater or equal to 0."
             )
-        self.degree = degree
+        self.num_bends = num_bends
 
     @abstractmethod
     def call(self, point_on_curve: Union[float, tf.Tensor]) -> tf.Tensor:
         pass
 
     def __repr__(self):
-        return f"<{self.__class__.__name__}(Curve): degree={self.degree}>"
+        return f"<{self.__class__.__name__}(Curve): num_bends={self.num_bends}>"
 
 
 class Bezier(Curve):
@@ -55,7 +55,8 @@ class Bezier(Curve):
     """
 
     def __init__(self, degree: int):
-        super().__init__(degree=degree)
+        super().__init__(num_bends=degree - 1)
+        self.degree = degree
         self.binom = tf.Variable(
             tf.constant(binom(degree, np.arange(degree + 1), dtype=np.float32)),
             trainable=False,
