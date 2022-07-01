@@ -11,13 +11,17 @@ import pytest
 class CurveLayerTest:
     fix_points = [True, False, True]
 
-
-    @pytest.fixture
     def curve_point_weights(self):
         num_bends= len(self.fix_points)
         bezier_curve= Bezier(num_bends)
         rand_t= tf.random.uniform(shape=(1,))
         return bezier_curve(rand_t)
+
+    @pytest.fixture(name="curve_point_weights")
+    def curve_point_weights_fixture(self):
+        # Implemented as a directly callable fixture in order to ensure update of curve_point_weights
+        # https://docs.pytest.org/en/stable/deprecations.html#calling-fixtures-directly
+        return self.curve_point_weights()
 
     @abstractmethod
     @pytest.fixture
@@ -26,13 +30,15 @@ class CurveLayerTest:
 
     @pytest.fixture
     def built_layer(self, initialized_layer, curve_point_weights):
+        print(curve_point_weights)
         output= initialized_layer([tf.random.uniform(shape=self.input_shape), curve_point_weights])
-        return initialized_layer
+        built_layer= initialized_layer
+        return built_layer
 
-    def call_layer(self, layer, curve_point_weights= curve_point_weights):
-        #Attention: We do not want a new layer here, hence we call the variable layer and not as one of the fixtures
-        output= layer([tf.random.uniform(shape=self.input_shape), curve_point_weights])
-        return output, curve_point_weights
+    # def call_layer(self, layer, curve_point_weights):
+    #     #Attention: We do not want a new layer here, hence we call the variable layer and not as one of the fixtures
+    #     output= layer([tf.random.uniform(shape=self.input_shape), curve_point_weights])
+    #     return output, curve_point_weights
 
 
     @abstractmethod
@@ -59,13 +65,31 @@ class CurveLayerTest:
                 if param != "bias":
                     assert tf.math.count_nonzero(temp_param[i]) != 0 #Check if initialized
 
-    def test_call(self, built_layer):
+    def test_call(self, built_layer, curve_point_weights):
+    #def test_call(self):
+        # num_bends= len(3)
+        # bezier_curve= Bezier(num_bends)
+        # rand_t= tf.random.uniform(shape=(1,))
+        # curve_point_weights= bezier_curve(rand_t)
+
+        # built_layer= Conv2DCurve(32, (3, 3), (128, 28, 28, 1))
+        # output= built_layer([tf.random.uniform(shape=(128, 28, 28, 1)), curve_point_weights])
+
+        # rand_t= tf.random.uniform(shape=(1,))
+        # curve_point_weights= bezier_curve(rand_t)
+        #Jetzt sollte CPW anders sein
+
+        curve_point_weights= self.curve_point_weights()
+
+        print(curve_point_weights)
+
         # Even without optimization of the networks parameters, the params should be updated since we change the location on the curve.
-        old_kernel= built_layer.kernel
-        old_bias= built_layer.bias
-        output, curve_point_weights= self.call_layer(built_layer)
-        new_kernel= built_layer.kernel
-        new_bias= built_layer.bias
+        old_kernel= tf.Variable(built_layer.kernel)
+        old_bias= tf.Variable(built_layer.bias)
+        #output, curve_point_weights= self.call_layer(built_layer)
+        output= built_layer([tf.random.uniform(shape=self.input_shape), curve_point_weights])
+        new_kernel= tf.Variable(built_layer.kernel)
+        new_bias= tf.Variable(built_layer.bias)
 
         assert not tf.experimental.numpy.allclose(old_kernel, new_kernel)
         assert not tf.experimental.numpy.allclose(old_bias, new_bias)
@@ -77,9 +101,10 @@ class CurveLayerTest:
         pass
 
 
-    def test_compute_weighted_parameters(self, built_layer):
+    def test_compute_weighted_parameters(self, built_layer, curve_point_weights):
         #Call() calls compute_weighted_parameters()
-        output, curve_point_weights= self.call_layer(built_layer)
+        #output, curve_point_weights= self.call_layer(built_layer)
+        output= built_layer([tf.random.uniform(shape=self.input_shape), curve_point_weights])
 
         #Alternative calculation of weighted params
         alt_kernel= None
@@ -146,4 +171,52 @@ class TestDenseCurveLayer(CurveLayerTest):
         assert output.shape == (self.input_shape[0], self.units)
 
 
-# If we add regularizer, test whether correct kernel is optimized.
+# def temp_test_cnn():
+#     num_bends= 3
+#     bezier_curve= Bezier(num_bends)
+#     rand_t= tf.random.uniform(shape=(1,))
+#     curve_point_weights= bezier_curve(rand_t)
+
+#     built_layer= Conv2DCurve(32, (3, 3), [True, False, True])
+#     output= built_layer([tf.random.uniform(shape=(128, 28, 28, 1)), curve_point_weights])
+
+#     rand_t= tf.random.uniform(shape=(1,))
+#     curve_point_weights= bezier_curve(rand_t)
+#     #Jetzt sollte CPW anders sein
+
+#     # Even without optimization of the networks parameters, the params should be updated since we change the location on the curve.
+#     old_kernel= tf.Variable(built_layer.kernel)
+#     old_bias= tf.Variable(built_layer.bias)
+#     #output, curve_point_weights= self.call_layer(built_layer)
+#     output= built_layer([tf.random.uniform(shape=(128, 28, 28, 1)), curve_point_weights])
+#     new_kernel= tf.Variable(built_layer.kernel)
+#     new_bias= tf.Variable(built_layer.bias)
+
+#     assert not tf.experimental.numpy.allclose(old_kernel, new_kernel)
+#     assert not tf.experimental.numpy.allclose(old_bias, new_bias)
+
+# def temp_test_dense():
+#     num_bends= 3
+#     bezier_curve= Bezier(num_bends)
+#     rand_t= tf.random.uniform(shape=(1,))
+#     curve_point_weights= bezier_curve(rand_t)
+
+#     built_layer= DenseCurve(32, [True, False, True])
+#     output= built_layer([tf.random.uniform(shape=(128, 32)), curve_point_weights])
+
+#     rand_t= tf.random.uniform(shape=(1,))
+#     curve_point_weights= bezier_curve(rand_t)
+#     #Jetzt sollte CPW anders sein
+
+#     # Even without optimization of the networks parameters, the params should be updated since we change the location on the curve.
+#     old_kernel= tf.Variable(built_layer.kernel)
+#     old_bias= tf.Variable(built_layer.bias)
+#     #output, curve_point_weights= self.call_layer(built_layer)
+#     output= built_layer([tf.random.uniform(shape=(128, 32)), curve_point_weights])
+#     new_kernel= tf.Variable(built_layer.kernel)
+#     new_bias= tf.Variable(built_layer.bias)
+
+#     assert not tf.experimental.numpy.allclose(old_kernel, new_kernel)
+#     assert not tf.experimental.numpy.allclose(old_bias, new_bias)
+
+# temp_test_dense()
