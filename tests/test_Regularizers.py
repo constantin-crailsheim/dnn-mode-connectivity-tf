@@ -59,23 +59,23 @@ def fix_points(request):
     return request.param
 
 
-@pytest.fixture(params=[None, "ones"])
-def kernel_initializer(request):
-    return request.param
-
-
 @pytest.fixture(params=[None, tf.keras.regularizers.L2(0.5)])
 def kernel_regularizer(request):
     return request.param
 
 
+@pytest.fixture(params=[None, tf.keras.regularizers.L2(0.5)])
+def bias_regularizer(request):
+    return request.param
+
+
 @pytest.fixture
-def initialized_curve_layer(units, fix_points, kernel_initializer, kernel_regularizer):
+def initialized_curve_layer(units, fix_points, kernel_regularizer, bias_regularizer):
     return DenseCurve(
         units=units,
         fix_points=fix_points,
-        kernel_initializer=kernel_initializer,
         kernel_regularizer=kernel_regularizer,
+        bias_regularizer=bias_regularizer,
     )
 
 
@@ -97,7 +97,8 @@ def model_dense(initialized_curve_layer) -> tf.keras.Model:
 
 
 class TestRegularizer:
-    def test_fit_loss_correct(self, model_dense):
+    def test_fit_loss_correct(self, model_dense: tf.keras.Model):
+        """Test if the losses of .fit() and a custom loop are equivalent."""
         shape = (model_dense.dense.units, model_dense.dense.units)
         loss = tf.keras.losses.MeanAbsoluteError()
         model_dense.compile(
