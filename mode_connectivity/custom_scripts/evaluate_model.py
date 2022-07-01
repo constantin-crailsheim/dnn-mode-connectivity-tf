@@ -16,8 +16,8 @@ from argparser import Arguments, parse_evaluate_arguments
 from data import data_loaders
 
 import mode_connectivity.curves.curves as curves
-from mode_connectivity.train import test_epoch
-from mode_connectivity.train import test_batch
+from mode_connectivity.custom_scripts.train import test_epoch
+from mode_connectivity.custom_scripts.train import test_batch
 from mode_connectivity.argparser import Arguments, parse_train_arguments
 from mode_connectivity.curves.net import CurveNet
 from mode_connectivity.data import data_loaders
