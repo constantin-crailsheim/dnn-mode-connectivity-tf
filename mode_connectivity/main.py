@@ -17,7 +17,7 @@ from mode_connectivity.data import data_loaders
 from mode_connectivity.models.cnn import CNN
 from mode_connectivity.models.mlp import MLP
 from mode_connectivity.utils import (
-    AlphaSchedule,
+    AlphaLearningRateSchedule,
     load_checkpoint,
     save_checkpoint,
     save_weights,
@@ -35,15 +35,14 @@ def train(args: Arguments):
     loaders, model = get_model_and_loaders(args)
 
     loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
-    optimizer = tf.keras.optimizers.SGD(
-        learning_rate=AlphaSchedule(args.lr, args.epochs), momentum=args.momentum
-    )
+    optimizer = tf.keras.optimizers.SGD(learning_rate=args.lr, momentum=args.momentum)
 
     start_epoch = 0
     if args.resume:
         start_epoch = load_checkpoint(
             checkpoint_path=args.resume, model=model, optimizer=optimizer
         )
+        start_epoch -= 1  # tf epoch is 0-indexed, load_checkpoint's min return is 1
 
     model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
         filepath=args.dir,
@@ -51,25 +50,21 @@ def train(args: Arguments):
         save_freq=args.save_freq,
     )
 
-    model.compile(
-        optimizer=optimizer,
-        loss=loss,
-        metrics=[tf.keras.metrics.SparseCategoricalAccuracy()],
-    )
+    model.compile(optimizer=optimizer, loss=loss, metrics=["accuracy"])
+    learning_rate_scheduler = AlphaLearningRateSchedule(model, total_epochs=args.epochs)
     model.fit(
         loaders["train"],
         validation_data=loaders["test"],
         epochs=args.epochs,
         initial_epoch=start_epoch,
         workers=args.num_workers,
-        callbacks=[model_checkpoint_callback],
+        callbacks=[model_checkpoint_callback, learning_rate_scheduler],
     )
 
-    end_epoch = start_epoch + args.epochs
     # TODO is this double call necessary, or does checkpoint save weights as well?
-    save_weights(directory=args.dir, epoch=end_epoch, model=model)
+    save_weights(directory=args.dir, epoch=args.epochs, model=model)
     save_checkpoint(
-        directory=args.dir, epoch=end_epoch, model=model, optimizer=optimizer
+        directory=args.dir, epoch=args.epochs, model=model, optimizer=optimizer
     )
 
 
@@ -90,7 +85,7 @@ def evaluate(args: Arguments):
 
     loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 
-    model.compile(loss=loss, metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
+    model.compile(loss=loss, metrics=["accuracy"])
     # TODO Do we really want to evaluate on the train set?
     results = model.evaluate_points(
         loaders["test"],
@@ -104,7 +99,7 @@ def evaluate(args: Arguments):
 
 def print_evaluation_results(results: List[Dict[str, float]]):
     headers = ["Point on curve", "Loss", "Accuracy"]
-    metrics = ["point_on_curve", "loss", "sparse_categorical_accuracy"]
+    metrics = ["point_on_curve", "loss", "accuracy"]
     d = [list(f"{r[m]:.4f}" for m in metrics) for r in results]
 
     table = tabulate.tabulate(

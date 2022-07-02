@@ -1,5 +1,6 @@
 import logging
 import os
+from functools import partial
 from typing import Any, List
 
 import keras
@@ -25,29 +26,31 @@ def learning_rate_schedule(base_lr, epoch, total_epochs):
     return factor * base_lr
 
 
-class AlphaSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
-    def __init__(self, initial_learning_rate: float, max_steps: int):
-        self.initial_learning_rate = initial_learning_rate
-        self.max_steps = max_steps
-
-    def __call__(self, step: int) -> float:
-        alpha = step / self.max_steps
-        factor = tf.cond(
-            tf.math.less_equal(alpha, 0.5),
-            lambda: 1.0,
-            lambda: tf.cond(
-                tf.math.less_equal(alpha, 0.9),
-                lambda: 1.0 - (alpha - 0.5) / 0.4 * 0.99,
-                lambda: 0.01,
-            ),
+class AlphaLearningRateSchedule(tf.keras.callbacks.Callback):
+    def __init__(self, model: tf.keras.Model, total_epochs: int, verbose: bool = True):
+        self.model = model
+        self.total_epochs = total_epochs
+        self.verbose = verbose
+        self.base_lr = self.get_current_lr()
+        self.schedule = partial(
+            learning_rate_schedule, base_lr=self.base_lr, total_epochs=self.total_epochs
         )
-        return factor * self.initial_learning_rate
 
-    def get_config(self):
-        return {
-            "initial_learning_rate": self.initial_learning_rate,
-            "max_steps": self.max_steps,
-        }
+    def get_current_lr(self) -> float:
+        return float(tf.keras.backend.get_value(self.model.optimizer.lr))
+
+    def on_epoch_begin(self, epoch: int, logs=None):
+        lr = self.get_current_lr()
+        # tf epoch is 0-indexed, so we need to add 1 to get the
+        # same behaviour as in original implementation.
+        new_lr = self.schedule(epoch=epoch + 1)
+
+        if lr != new_lr:
+            lr = new_lr
+            tf.keras.backend.set_value(self.model.optimizer.lr, lr)
+
+        if self.verbose:
+            print(f" lr: {lr:.4f}", end=" - ")
 
 
 def l2_regularizer(weight_decay):
