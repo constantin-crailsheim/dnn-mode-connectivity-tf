@@ -1,6 +1,8 @@
 import argparse
 from dataclasses import dataclass
 
+import toml
+
 
 @dataclass
 class Arguments:
@@ -38,6 +40,20 @@ class Arguments:
     num_points: int = None
     ckpt: str = None
     point_on_curve: float = None
+
+
+def parse_config() -> Arguments:
+    parser = argparse.ArgumentParser(description="DNN curve training")
+    parser.add_argument(
+        "config", nargs="?", type=str, default=None, help="Configuration to load"
+    )
+    args = parser.parse_args()
+    data = toml.load("config.toml")
+    model_config = data.get(args.config, None)
+    if not model_config:
+        raise KeyError(f"Unknown model config {args.config}")
+    model_config = {k.replace("-", "_"): v for k, v in model_config.items()}
+    return Arguments(**model_config)
 
 
 def parse_train_arguments() -> Arguments:

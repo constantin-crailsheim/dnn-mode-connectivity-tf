@@ -1,10 +1,13 @@
 import logging
+import os
 
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import tensorflow as tf
 
 import mode_connectivity.curves.curves as curves
 from mode_connectivity.argparser import (
     Arguments,
+    parse_config,
     parse_evaluate_arguments,
     parse_train_arguments,
 )
@@ -46,7 +49,11 @@ def train(args: Arguments):
         save_freq=args.save_freq,
     )
 
-    model.compile(optimizer=optimizer, loss=loss, metrics=["accuracy"])
+    model.compile(
+        optimizer=optimizer,
+        loss=loss,
+        metrics=[tf.keras.metrics.SparseCategoricalAccuracy()],
+    )
     model.fit(
         loaders["train"],
         validation_data=loaders["test"],
@@ -69,6 +76,11 @@ def train_cli():
     train(args=args)
 
 
+def train_from_config():
+    args = parse_config()
+    train(args=args)
+
+
 def evaluate(args: Arguments):
     logger.info("Starting evaluate")
     set_seeds(seed=args.seed)
@@ -76,17 +88,17 @@ def evaluate(args: Arguments):
 
     loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 
-    model.compile(loss=loss, metrics=["accuracy"])
+    model.compile(loss=loss, metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
     # TODO Do we really want to evaluate on the train set?
-    r = model.evaluate(
-        loaders["train"],
-        num_points=args.num_points,
-        point_on_curve=args.point_on_curve,
-        verbose=True,
-        return_dict=True,
-    )
-    print(r)
-    r = model.evaluate(
+    # r = model.evaluate_points(
+    #     loaders["train"],
+    #     num_points=args.num_points,
+    #     point_on_curve=args.point_on_curve,
+    #     verbose=True,
+    #     return_dict=True,
+    # )
+    # print(r)
+    r = model.evaluate_points(
         loaders["test"],
         num_points=args.num_points,
         point_on_curve=args.point_on_curve,
@@ -119,6 +131,11 @@ def get_model_and_loaders(args: Arguments):
 
 def evaluate_cli():
     args = parse_evaluate_arguments()
+    evaluate(args=args)
+
+
+def evaluate_from_config():
+    args = parse_config()
     evaluate(args=args)
 
 
@@ -159,9 +176,7 @@ def get_model(architecture, args: Arguments, num_classes: int, input_shape):
         # -> silence Value in checkpoint could not be found in the restored object: (root).optimizer. ..
         # https://stackoverflow.com/questions/58289342/tf2-0-translation-model-error-when-restoring-the-saved-model-unresolved-objec
         model.load_weights(args.ckpt).expect_partial()
-        # .expect_partial()
         return model
-        # return tf.keras.models.load_model(args.ckpt)
 
     # Build model from 0, 1 or 2 base_models
     base_model = architecture.base(
