@@ -45,7 +45,6 @@ class CurveNet(tf.keras.Model):
         self.num_classes = num_classes
         self.num_bends = num_bends
         self.point_on_curve = tf.Variable(0.0, trainable=False, name="point_on_curve")
-        self.in_fit = False
         self.fix_points = [fix_start] + [False] * self.num_bends + [fix_end]
 
         self.curve = curve(self.num_bends)
@@ -192,24 +191,13 @@ class CurveNet(tf.keras.Model):
         outputs = self.curve_model((inputs, point_on_curve_weights))
         return outputs
 
-    def fit(self, *args, **kwargs):
-        # Workaround to distinguish between .evaluate() in .fit() and outside
-        self.in_fit = True
-        r = super().fit(*args, **kwargs)
-        self.in_fit = False
-        return r
-
-    def evaluate(
+    def evaluate_points(
         self,
         *args,
         num_points: Union[int, None] = None,
         point_on_curve: Union[float, None] = None,
         **kwargs,
     ):
-        if self.in_fit is True:
-            # We are in model.fit() --> return plain .evaluate()
-            return super().evaluate(*args, **kwargs)
-
         if not (num_points is None or point_on_curve is None):
             raise AttributeError(
                 "Cannot specify both 'num_points' and 'point_on_curve'. "
