@@ -8,55 +8,25 @@ import tensorflow as tf
 from mode_connectivity.curves.layers import DenseCurve
 
 
-@pytest.fixture(params=[2, 4])
+@pytest.fixture(params=[4])
 def units(request):
     return request.param
 
 
-def bool_combinations(
-    lengths: List[int], pick: float = 1.0, at_least_one: bool = True
-) -> List[Tuple[bool]]:
-    """Returns all possible combinations of booleans in a list.
-
-    Allows to pick only a certain percentage of elements.
-    This allows to test lots of possible combinations, but not all,
-    since this can be computationally expensive.
-
-    Args:
-        lengths (List[int]): List lengths to generate.
-        pick (float, optional): Allows to only pick some elements. Defaults to 1.0.
-        at_least_one (bool): Pick at least one combination for each length.
-
-    Returns:
-        List[Tuple[bool]]: List of Tuples with bool combinations.
-
-    Example:
-
-    >>> bool_combinations([2])
-     [(False, False), (True, False), (False, True), (True, True)]
-    >>> bool_combinations([2, 3])
-     [(False, False), (True, False), ...,
-      (False, False, False), (True, False, False), ..., (True, True, True)]
-
-    >>> bool_combinations([2], pick=0.5)
-     [(True, False), (True, True)]
-    """
-    combinations = []
-    for l in lengths:
-        combs = list(itertools.product([True, False], repeat=l))
-        samples = combs
-        if pick != 1.0:
-            n_samples = int(pick * len(combs))
-            samples = random.sample(combs, n_samples)
-        if at_least_one and not samples:
-            samples = random.sample(combs, 1)
-        combinations += samples
-    return combinations
-
-
-@pytest.fixture(params=bool_combinations([2, 3, 4, 5, 6], pick=0.05))
-def fix_points(request):
+@pytest.fixture(params=[True, False])
+def fix_start(request):
     return request.param
+
+
+@pytest.fixture(params=[True, False])
+def fix_end(request):
+    return request.param
+
+
+@pytest.fixture(params=[0, 1, 2])
+def fix_points(request, fix_start, fix_end):
+    """Returns all possible combinations of fixed points of different lengths."""
+    return [fix_start] + [False] * request.param + [fix_end]
 
 
 @pytest.fixture(params=[None, tf.keras.regularizers.L2(0.5)])
