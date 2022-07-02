@@ -71,7 +71,7 @@ def main():
 
     with tf.device("/cpu:0"):
         point_on_curve_tensor = tf.constant(args.point_on_curve, shape = (), dtype = tf.float32)
-    model.point_on_curve.assign(point_on_curve_tensor)
+        model.point_on_curve.assign(point_on_curve_tensor)
 
 
     train_results = evaluation_epoch(
@@ -176,7 +176,6 @@ def evaluation_epoch(
             model=model,
             criterion=criterion,
             regularizer=regularizer,
-            **kwargs,
         )
         nll_sum += nll_batch
         loss_sum += loss_batch
@@ -203,12 +202,11 @@ def evaluation_batch(
     model: Layer,
     criterion: Callable,
     regularizer: Union[Callable, None] = None,
-    **kwargs,
 ) -> Dict[str, float]:
     # TODO Allocate model to GPU as well.
 
     with tf.device("/cpu:0"):
-        output = model(input, training=False, **kwargs)
+        output = model(input, training=False)
         nll = criterion(target, output)
         loss = tf.identity(nll)  # COrrect funtion for nll.clone() in Pytorch
         # PyTorch:
