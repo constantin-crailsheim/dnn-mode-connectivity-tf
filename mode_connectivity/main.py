@@ -1,5 +1,6 @@
 import logging
 import os
+from typing import Dict, List
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import tensorflow as tf
@@ -22,6 +23,7 @@ from mode_connectivity.utils import (
     save_weights,
     set_seeds,
 )
+import tabulate
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -90,22 +92,27 @@ def evaluate(args: Arguments):
 
     model.compile(loss=loss, metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
     # TODO Do we really want to evaluate on the train set?
-    # r = model.evaluate_points(
-    #     loaders["train"],
-    #     num_points=args.num_points,
-    #     point_on_curve=args.point_on_curve,
-    #     verbose=True,
-    #     return_dict=True,
-    # )
-    # print(r)
-    r = model.evaluate_points(
+    results = model.evaluate_points(
         loaders["test"],
         num_points=args.num_points,
         point_on_curve=args.point_on_curve,
         verbose=True,
         return_dict=True,
     )
-    print(r)
+    print_evaluation_results(results)
+
+
+def print_evaluation_results(results: List[Dict[str, float]]):
+    headers = ["Point on curve", "Loss", "Accuracy"]
+    metrics = ["point_on_curve", "loss", "sparse_categorical_accuracy"]
+    d = [list(f"{r[m]:.4f}" for m in metrics) for r in results]
+
+    table = tabulate.tabulate(
+        d,
+        headers=headers,
+        tablefmt="pretty",
+    )
+    print(table)
 
 
 def get_model_and_loaders(args: Arguments):
@@ -150,6 +157,7 @@ def get_architecture(model_name: str):
 def get_model(architecture, args: Arguments, num_classes: int, input_shape):
     # If no curve is to be fit the base version of the architecture is initialised (e.g CNNBase instead of CNNCurve).
     if not args.curve:
+        logger.info(f"Loading Regular Model {architecture.__name__}")
         model = architecture.base(
             num_classes=num_classes, weight_decay=args.wd, **architecture.kwargs
         )
@@ -158,6 +166,9 @@ def get_model(architecture, args: Arguments, num_classes: int, input_shape):
     # Otherwise the curve version of the architecture (e.g. CNNCurve) is initialised in the context of a CurveNet.
     # The CurveNet additionally contains the curve (e.g. Bezier) and imports the parameters of the pre-trained base-nets that constitute the outer points of the curve.
     curve = getattr(curves, args.curve)
+    logger.info(
+        f"Loading CurveNet with CurveModel {architecture.__name__} and Curve {curve.__name__}"
+    )
     model = CurveNet(
         num_classes=num_classes,
         num_bends=args.num_bends,

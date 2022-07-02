@@ -216,15 +216,15 @@ class CurveNet(tf.keras.Model):
             points_on_curve += list(np.linspace(0.0, 1.0, num_points))
 
         print(f"Evaluating CurveNet for {[f'{p:.3f}' for p in points_on_curve]}")
-        # return_dict = kwargs.pop("return_dict", True)
-        # kwargs["return_dict"] = return_dict
-        results = {}
-        for i, point_on_curve in enumerate(points_on_curve):
+        results = []
+        for point_on_curve in points_on_curve:
             print(f"{point_on_curve=:.3f}")
             self.point_on_curve.assign(
                 tf.constant(point_on_curve, shape=(), dtype=tf.float32)
             )
-            results[point_on_curve] = super().evaluate(*args, **kwargs)
+            result = super().evaluate(*args, **kwargs)
+            result["point_on_curve"] = point_on_curve
+            results.append(result)
         return results
 
     def import_base_buffers(self, base_model: tf.keras.Model) -> None:
