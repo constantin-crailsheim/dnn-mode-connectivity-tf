@@ -9,7 +9,8 @@ import pytest
 
 
 class CurveLayerTest:
-    fix_points = [True, False, True]
+    testparams_description= "filters,units,kernel_size,input_shape,fix_points"
+    testparams= []
 
     def curve_point_weights(self):
         num_bends= len(self.fix_points)
@@ -29,17 +30,26 @@ class CurveLayerTest:
         pass
 
     @pytest.fixture
-    def built_layer(self, initialized_layer, curve_point_weights):
-        output= initialized_layer([tf.random.uniform(shape=self.input_shape), curve_point_weights])
+    def built_layer(self, request, initialized_layer, curve_point_weights):
+        filters, units, kernel_size, input_shape, fix_points = request.param
+        output= initialized_layer([tf.random.uniform(shape=input_shape), curve_point_weights])
         built_layer= initialized_layer
         return built_layer
+
+    @pytest.fixture
+    def parameters(self, request):
+        return request.param
 
 
     @abstractmethod
     def test_init(self, *args, **kwargs):
         pass
 
-    def test_build(self, built_layer):
+    @pytest.mark.parametrize("built_layer,parameters", [(param, param) for param in testparams], indirect=True) 
+    #Repeat the parameters of each test once for each fixture that is called
+    def test_build(self, built_layer, parameters):
+        filters, units, kernel_size, input_shape, fix_points = parameters
+
         # Build in parent class tf.keras.layers... should add kernel and bias parameters 
         # (Even though they won't be used directly)        
         assert built_layer.kernel != None
@@ -53,36 +63,42 @@ class CurveLayerTest:
             temp_param= getattr(built_layer, curve_param)
             temp_curve_param= getattr(built_layer, param)
 
-            assert len(temp_param) == len(self.fix_points)
-            for i in range(len(self.fix_points)): #Fix points
+            assert len(temp_param) == len(fix_points)
+            for i in range(len(fix_points)): #Fix points
                 assert temp_param[i].shape == temp_curve_param.shape
                 if param != "bias":
                     assert tf.math.count_nonzero(temp_param[i]) != 0 #Check if initialized
 
-    def test_call(self, built_layer):
+    @pytest.mark.parametrize("built_layer,parameters", [(param, param) for param in testparams], indirect=True) 
+    def test_call(self, built_layer, parameters):
+        filters, units, kernel_size, input_shape, fix_points = parameters
+
         #curve_point_weights() has to be called directly in order to ensure that the curve_point_weights are different from the ones used to build the model.
         curve_point_weights= self.curve_point_weights() 
 
         # Even without optimization of the networks parameters, the params should be updated since we change the location on the curve.
         old_kernel= tf.Variable(built_layer.kernel)
         old_bias= tf.Variable(built_layer.bias)
-        output= built_layer([tf.random.uniform(shape=self.input_shape), curve_point_weights])
+        output= built_layer([tf.random.uniform(shape=input_shape), curve_point_weights])
         new_kernel= tf.Variable(built_layer.kernel)
         new_bias= tf.Variable(built_layer.bias)
 
         assert not tf.experimental.numpy.allclose(old_kernel, new_kernel)
         assert not tf.experimental.numpy.allclose(old_bias, new_bias)
 
-        self.check_output_size(output)
+        self.check_output_size(output, parameters)
 
     @abstractmethod
     def check_output_size(self, output):
         pass
 
+    @pytest.mark.parametrize("built_layer,curve_point_weights_fixture,parameters", [(param, param, param) for param in testparams], indirect=True) 
+    def test_compute_weighted_parameters(self, built_layer, curve_point_weights_fixture, parameters):
+        filters, units, kernel_size, input_shape, fix_points = parameters
+        curve_point_weights= curve_point_weights_fixture
 
-    def test_compute_weighted_parameters(self, built_layer, curve_point_weights):
         #Call() calls compute_weighted_parameters()
-        output= built_layer([tf.random.uniform(shape=self.input_shape), curve_point_weights])
+        output= built_layer([tf.random.uniform(shape=input_shape), curve_point_weights])
 
         #Check if alternative calculation of weighted params leads to the same kernels and biases
         for param_type, curve_param_type in [("kernel", "curve_kernels"), ("bias", "curve_biases")]:
@@ -106,35 +122,52 @@ class CurveLayerTest:
 
 
 class TestConv2DCurveLayer(CurveLayerTest):
-    filters = 32
-    kernel_size=(3, 3)
-    input_shape= (128, 28, 28, 1)
+    testparams = [
+        (32, None, (3, 3), (128, 28, 28, 1), [True, False, True])
+        #Conv2D does not have the parameter "units". Hence it is set to None.
+    ]
+
+    # filters = 32
+    # kernel_size=(3, 3)
+    # input_shape= (128, 28, 28, 1)
 
     @pytest.fixture
-    def initialized_layer(self):
-        return Conv2DCurve(self.filters, self.kernel_size, self.fix_points)
+    def initialized_layer(self, request):
+        filters, units, kernel_size, input_shape, fix_points= request.param
+        return Conv2DCurve(filters, kernel_size, fix_points)
 
+
+    @pytest.mark.parametrize("initialized_layer", testparams, indirect=True)
     def test_init(self, initialized_layer):    
         assert isinstance(initialized_layer, CurveLayer)
         assert isinstance(initialized_layer, tf.keras.layers.Conv2D)
 
-    def check_output_size(self, output):
-        output_shape_h = self.input_shape[1] - self.kernel_size[0] + 1
-        output_shape_w = self.input_shape[2] - self.kernel_size[1] + 1
-        assert output.shape == (self.input_shape[0], output_shape_h, output_shape_w, self.filters)
+    def check_output_size(self, output, parameters):
+        filters, units, kernel_size, input_shape, fix_points = parameters
+        output_shape_h = input_shape[1] - kernel_size[0] + 1
+        output_shape_w = input_shape[2] - kernel_size[1] + 1
+        assert output.shape == (input_shape[0], output_shape_h, output_shape_w, filters)
 
 
 class TestDenseCurveLayer(CurveLayerTest):
-    units = 16
-    input_shape= (128, 32)  
+    testparams = [
+        (None, 16, None, (128, 32), [True, False, True])
+        #Conv2D does not have the parameters "filters" and "kernel_size". Hence they are set to None.
+    ]
+
+    # units = 16
+    # input_shape= (128, 32)  
 
     @pytest.fixture
-    def initialized_layer(self):
-        return DenseCurve(self.units, self.fix_points)
+    def initialized_layer(self, request):
+        filters, units, kernel_size, input_shape, fix_points= request.param
+        return DenseCurve(units, fix_points)
 
+    @pytest.mark.parametrize("initialized_layer", testparams, indirect=True)
     def test_init(self, initialized_layer):
         assert isinstance(initialized_layer, CurveLayer)
         assert isinstance(initialized_layer, tf.keras.layers.Dense)   
 
-    def check_output_size(self, output):
-        assert output.shape == (self.input_shape[0], self.units)
+    def check_output_size(self, output, parameters):
+        filters, units, kernel_size, input_shape, fix_points = parameters
+        assert output.shape == (input_shape[0], units)
