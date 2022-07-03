@@ -10,19 +10,24 @@ import pytest
 
 class CurveLayerTest:
     testparams_description= "filters,units,kernel_size,input_shape,fix_points"
-    testparams= []
+    #testparams= []
 
-    def curve_point_weights(self):
-        num_bends= len(self.fix_points)
+    def curve_point_weights(self, fix_points):
+        num_bends= len(fix_points)
         bezier_curve= Bezier(num_bends)
         rand_t= tf.random.uniform(shape=(1,))
         return bezier_curve(rand_t)
 
     @pytest.fixture(name="curve_point_weights")
-    def curve_point_weights_fixture(self):
+    def curve_point_weights_fixture(self, request):
         # Implemented as a directly callable fixture in order to ensure update of curve_point_weights
         # https://docs.pytest.org/en/stable/deprecations.html#calling-fixtures-directly
-        return self.curve_point_weights()
+        try:
+            filters, units, kernel_size, input_shape, fix_points= request.param
+        except:
+            filters, units, kernel_size, input_shape, fix_points= request._parent_request.param
+
+        return self.curve_point_weights(fix_points)
 
     @abstractmethod
     @pytest.fixture
@@ -45,8 +50,8 @@ class CurveLayerTest:
     def test_init(self, *args, **kwargs):
         pass
 
-    @pytest.mark.parametrize("built_layer,parameters", [(param, param) for param in testparams], indirect=True) 
     #Repeat the parameters of each test once for each fixture that is called
+    #@pytest.mark.parametrize("built_layer,parameters", [(param, param) for param in testparams], indirect=True) 
     def test_build(self, built_layer, parameters):
         filters, units, kernel_size, input_shape, fix_points = parameters
 
@@ -69,12 +74,13 @@ class CurveLayerTest:
                 if param != "bias":
                     assert tf.math.count_nonzero(temp_param[i]) != 0 #Check if initialized
 
-    @pytest.mark.parametrize("built_layer,parameters", [(param, param) for param in testparams], indirect=True) 
+    #@pytest.mark.parametrize("built_layer,parameters", [(param, param) for param in testparams], indirect=True) 
     def test_call(self, built_layer, parameters):
         filters, units, kernel_size, input_shape, fix_points = parameters
 
         #curve_point_weights() has to be called directly in order to ensure that the curve_point_weights are different from the ones used to build the model.
-        curve_point_weights= self.curve_point_weights() 
+        curve_point_weights= self.curve_point_weights(fix_points) 
+        #Shouldnt it work with this architecture anyways?
 
         # Even without optimization of the networks parameters, the params should be updated since we change the location on the curve.
         old_kernel= tf.Variable(built_layer.kernel)
@@ -92,10 +98,9 @@ class CurveLayerTest:
     def check_output_size(self, output):
         pass
 
-    @pytest.mark.parametrize("built_layer,curve_point_weights_fixture,parameters", [(param, param, param) for param in testparams], indirect=True) 
-    def test_compute_weighted_parameters(self, built_layer, curve_point_weights_fixture, parameters):
+    #@pytest.mark.parametrize("built_layer,curve_point_weights,parameters", [(param, param, param) for param in testparams], indirect=True) 
+    def test_compute_weighted_parameters(self, built_layer, curve_point_weights, parameters):
         filters, units, kernel_size, input_shape, fix_points = parameters
-        curve_point_weights= curve_point_weights_fixture
 
         #Call() calls compute_weighted_parameters()
         output= built_layer([tf.random.uniform(shape=input_shape), curve_point_weights])
@@ -133,8 +138,25 @@ class TestConv2DCurveLayer(CurveLayerTest):
 
     @pytest.fixture
     def initialized_layer(self, request):
-        filters, units, kernel_size, input_shape, fix_points= request.param
+        try:
+            filters, units, kernel_size, input_shape, fix_points= request.param
+        except:
+            filters, units, kernel_size, input_shape, fix_points= request._parent_request.param
         return Conv2DCurve(filters, kernel_size, fix_points)
+
+####
+    @pytest.fixture
+    def built_layer(self, request, initialized_layer, curve_point_weights):
+        filters, units, kernel_size, input_shape, fix_points = request.param
+        output= initialized_layer([tf.random.uniform(shape=input_shape), curve_point_weights])
+        built_layer= initialized_layer
+        return built_layer
+
+    @pytest.fixture
+    def parameters(self, request):
+        return request.param
+
+###
 
 
     @pytest.mark.parametrize("initialized_layer", testparams, indirect=True)
@@ -142,11 +164,24 @@ class TestConv2DCurveLayer(CurveLayerTest):
         assert isinstance(initialized_layer, CurveLayer)
         assert isinstance(initialized_layer, tf.keras.layers.Conv2D)
 
+    #Repeat the parameters of each test once for each fixture that is called
+    @pytest.mark.parametrize("built_layer,parameters", [(param, param) for param in testparams], indirect=True) 
+    def test_build(self, built_layer, parameters):
+        super().test_build(built_layer, parameters)
+
+    @pytest.mark.parametrize("built_layer,parameters", [(param, param) for param in testparams], indirect=True) 
+    def test_call(self, built_layer, parameters):
+        super().test_call(built_layer, parameters)
+
     def check_output_size(self, output, parameters):
         filters, units, kernel_size, input_shape, fix_points = parameters
         output_shape_h = input_shape[1] - kernel_size[0] + 1
         output_shape_w = input_shape[2] - kernel_size[1] + 1
         assert output.shape == (input_shape[0], output_shape_h, output_shape_w, filters)
+
+    @pytest.mark.parametrize("built_layer,curve_point_weights,parameters", [(param, param, param) for param in testparams], indirect=True) 
+    def test_compute_weighted_parameters(self, built_layer, curve_point_weights, parameters):
+        super().test_compute_weighted_parameters(built_layer, curve_point_weights, parameters)
 
 
 class TestDenseCurveLayer(CurveLayerTest):
@@ -160,14 +195,35 @@ class TestDenseCurveLayer(CurveLayerTest):
 
     @pytest.fixture
     def initialized_layer(self, request):
-        filters, units, kernel_size, input_shape, fix_points= request.param
+        try:
+            filters, units, kernel_size, input_shape, fix_points= request.param
+        except:
+            print("hi")
+            print(request._parent_request.param)
+            filters, units, kernel_size, input_shape, fix_points= request._parent_request.param
+
+        #filters, units, kernel_size, input_shape, fix_points= request.param
         return DenseCurve(units, fix_points)
+
 
     @pytest.mark.parametrize("initialized_layer", testparams, indirect=True)
     def test_init(self, initialized_layer):
         assert isinstance(initialized_layer, CurveLayer)
         assert isinstance(initialized_layer, tf.keras.layers.Dense)   
 
+    #Repeat the parameters of each test once for each fixture that is called
+    @pytest.mark.parametrize("built_layer,parameters", [(param, param) for param in testparams], indirect=True) 
+    def test_build(self, built_layer, parameters):
+        super().test_build(built_layer, parameters)
+
+    @pytest.mark.parametrize("built_layer,parameters", [(param, param) for param in testparams], indirect=True) 
+    def test_call(self, built_layer, parameters):
+        super().test_call(built_layer, parameters)
+
     def check_output_size(self, output, parameters):
         filters, units, kernel_size, input_shape, fix_points = parameters
         assert output.shape == (input_shape[0], units)
+
+    @pytest.mark.parametrize("built_layer,curve_point_weights,parameters", [(param, param, param) for param in testparams], indirect=True) 
+    def test_compute_weighted_parameters(self, built_layer, curve_point_weights, parameters):
+        super().test_compute_weighted_parameters(built_layer, curve_point_weights, parameters)
