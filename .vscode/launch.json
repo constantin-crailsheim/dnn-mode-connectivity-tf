@@ -116,7 +116,7 @@
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": [
-                "--dir=results/MNIST_BasicCNN/evaluation_metrics",
+                "--dir=results/MNIST_BasicCNN/metrics_curve",
                 "--dataset=mnist",
                 "--data-path=datasets/",
                 "--model=CNN",
