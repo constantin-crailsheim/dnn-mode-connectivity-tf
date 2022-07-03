@@ -49,8 +49,6 @@ class Bezier(Curve):
             * tf.math.pow((1.0 - point_on_curve), self.rev_range)
         )
 
-
-# num_bends still needs to be changed to new logic, but different needs to be adjusted in model as well.
 class PolyChain(Curve):
     def __init__(self, num_bends: int):
         super().__init__(num_bends=num_bends)
@@ -59,7 +57,7 @@ class PolyChain(Curve):
 
     def call(self, point_on_curve: Union[float, tf.Tensor]) -> tf.Tensor:
         t_n = point_on_curve * (self.num_bends + 1) # Better name for t_n
-        tensor_of_zeros = tf.Variable(tf.repeat(input = 0.0, repeats = self.num_bends + 2), trainable=False)
+        tensor_of_zeros = tf.Variable(tf.zeros(self.num_bends + 2), trainable=False)
         point_on_curve_weight_tmp = 1.0 - tf.math.abs(t_n - self.range) # Find better name
         return (
             tf.math.maximum(tensor_of_zeros, point_on_curve_weight_tmp)
