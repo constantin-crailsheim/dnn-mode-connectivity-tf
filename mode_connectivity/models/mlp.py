@@ -14,12 +14,12 @@ class MLPBase(tf.keras.Model):  # Inherit equivalent of torch.nn
         super(MLPBase, self).__init__()
         self.fc_part = tf.keras.models.Sequential(
             [
+                # tf.keras.layers.Dense(
+                #     units=16,
+                #     activation="relu",
+                #     kernel_regularizer = tf.keras.regularizers.L2(weight_decay)),
                 tf.keras.layers.Dense(
-                    units=16,
-                    activation="relu",
-                    kernel_regularizer = tf.keras.regularizers.L2(weight_decay)),
-                tf.keras.layers.Dense(
-                    units=8,
+                    units=4,
                     activation="relu",
                     kernel_regularizer = tf.keras.regularizers.L2(weight_decay)),
                 tf.keras.layers.Dense(
@@ -38,35 +38,35 @@ class MLPCurve(tf.keras.Model):  # Inherit equivalent of torch.nn
     def __init__(self, num_classes: int, fix_points: List[bool], weight_decay: float):
         super(MLPCurve, self).__init__()
 
+        # self.dense1 = DenseCurve(
+        #     units=16,
+        #     fix_points=fix_points,
+        #     activation="relu",
+        #     kernel_regularizer = tf.keras.regularizers.L2(weight_decay)
+        # )
         self.dense1 = DenseCurve(
-            units=16,
+            units=4,
             fix_points=fix_points,
             activation="relu",
             kernel_regularizer = tf.keras.regularizers.L2(weight_decay)
         )
         self.dense2 = DenseCurve(
-            units=8,
-            fix_points=fix_points,
-            activation="relu",
-            kernel_regularizer = tf.keras.regularizers.L2(weight_decay)
-        )
-        self.dense3 = DenseCurve(
             units=1,
             fix_points=fix_points,
             activation="linear",
             kernel_regularizer = tf.keras.regularizers.L2(weight_decay)
         )
 
-        self.fc_part = [self.dense1, self.dense2, self.dense3]
+        self.fc_part = [self.dense1, self.dense2] # , self.dense3
 
     def call(
         self, inputs: Tuple[tf.Tensor, tf.Tensor], training=None, mask=None
     ):
-        x, coeffs_t = inputs
+        x, point_on_curve_weights = inputs
 
-        x = self.dense1((x, coeffs_t))
-        x = self.dense2((x, coeffs_t))
-        x = self.dense3((x, coeffs_t))
+        x = self.dense1((x, point_on_curve_weights))
+        x = self.dense2((x, point_on_curve_weights))
+        # x = self.dense3((x, point_on_curve_weights))
 
         return x
 

@@ -152,18 +152,18 @@ class CNNCurve(tf.keras.Model):
     def call(
         self, inputs: Tuple[tf.Tensor, tf.Tensor], training=None, mask=None
     ):  # TO DO: Typehints
-        x, coeffs_t = inputs
+        x, point_on_curve_weights = inputs
 
-        x = self.conv1((x, coeffs_t))
+        x = self.conv1((x, point_on_curve_weights))
         x = self.pool1(x)
-        x = self.conv2((x, coeffs_t))
+        x = self.conv2((x, point_on_curve_weights))
         x = self.pool2(x)
-        x = self.conv3((x, coeffs_t))
+        x = self.conv3((x, point_on_curve_weights))
         x = self.flatten1(x)
 
-        x = self.dense1((x, coeffs_t))
-        x = self.dense2((x, coeffs_t))
-        x = self.dense3((x, coeffs_t))
+        x = self.dense1((x, point_on_curve_weights))
+        x = self.dense2((x, point_on_curve_weights))
+        x = self.dense3((x, point_on_curve_weights))
         # TODO: Check if x = x.view(x.size(0), -1) necessary
 
         return x
