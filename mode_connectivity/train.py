@@ -30,7 +30,7 @@ def main():
     # TODO: Set backends cudnnn
     set_seeds(seed=args.seed)
 
-    loaders, num_classes, n_datasets = data_loaders(
+    loaders, num_classes, n_datasets, input_shape = data_loaders(
         dataset=args.dataset,
         path=args.data_path,
         batch_size=args.batch_size,
@@ -43,7 +43,7 @@ def main():
         architecture=architecture,
         args=args,
         num_classes=num_classes,
-        input_shape=(None, 28, 28, 1),  # TODO Determine this from dataset
+        input_shape=input_shape,  # TODO Determine this from dataset
     )
 
     # criterion = tf.nn.sparse_softmax_cross_entropy_with_logits

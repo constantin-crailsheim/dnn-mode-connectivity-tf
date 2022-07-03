@@ -87,6 +87,8 @@ def data_loaders(
 
         n_train = ds_info.splits["train"].num_examples
         n_test = ds_info.splits["test"].num_examples
+
+        input_shape = (None, 28, 28, 1)
     
     elif dataset == "regression":
         data = np.load("datasets/data.npy")
@@ -109,6 +111,8 @@ def data_loaders(
         n_train = len(index_train)
         n_test = len(index_test)
 
+        input_shape = (None, f.shape[1])
+
     return (
         {
             "train": train_set_loader,
@@ -118,12 +122,18 @@ def data_loaders(
         {
             "train": n_train,
             "test": n_test,
-        },
+        }, 
+        input_shape
     ) 
 
-def features(x):
-    return np.hstack([x[:, None] / 2.0, (x[:, None] / 2.0) ** 2])
+# def features(x):
+#     return np.hstack([x[:, None] / 2.0, (x[:, None] / 2.0) ** 2])
 
+def features(x):
+    return np.hstack([x[:, None] / 2.0, (x[:, None] / 2.0) ** 2, (x[:, None] / 2.0) ** 3, (x[:, None] / 2.0) ** 4])
+
+# def features(x):
+#     return np.hstack([x[:, None], x[:, None] ** 2, x[:, None] ** 3, x[:, None] ** 4])
 
     # Questions:
     # Do we need to augment the data?

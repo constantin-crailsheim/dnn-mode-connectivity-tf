@@ -49,7 +49,7 @@ from utils import (
 def main():
     args = parse_evaluate_arguments()
 
-    loaders, num_classes, n_datasets = data_loaders(
+    loaders, num_classes, n_datasets, input_shape = data_loaders(
         dataset=args.dataset,
         path=args.data_path,
         batch_size=args.batch_size,
@@ -63,7 +63,7 @@ def main():
         architecture=architecture,
         args=args,
         num_classes=num_classes,
-        input_shape=(None, 28, 28, 1),
+        input_shape=input_shape,
     )
 
     criterion = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)

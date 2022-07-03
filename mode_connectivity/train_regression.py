@@ -12,6 +12,7 @@ from mode_connectivity.curves.net import CurveNet
 from mode_connectivity.data import data_loaders
 from mode_connectivity.models.cnn import CNN
 from mode_connectivity.models.mlp import MLP
+from mode_connectivity.models.linreg import LinReg
 from mode_connectivity.utils import (
     adjust_learning_rate,
     check_batch_normalization,
@@ -29,7 +30,7 @@ def main():
     # TODO: Set backends cudnnn
     set_seeds(seed=args.seed)
 
-    loaders, num_classes, n_datasets = data_loaders(
+    loaders, num_classes, n_datasets, input_shape = data_loaders(
         dataset=args.dataset,
         path=args.data_path,
         batch_size=args.batch_size,
@@ -42,7 +43,7 @@ def main():
         architecture=architecture,
         args=args,
         num_classes=num_classes,
-        input_shape=(None,2)
+        input_shape=input_shape
     )
 
     criterion = tf.keras.losses.MeanSquaredError()
@@ -63,6 +64,7 @@ def main():
     save_checkpoint(
         directory=args.dir, epoch=start_epoch - 1, model=model, optimizer=optimizer
     )
+    save_weights(directory=args.dir, epoch=start_epoch - 1, model=model)
 
     train(
         args=args,
@@ -86,6 +88,8 @@ def get_architecture(model_name: str):
         return CNN
     if model_name == "MLP":
         return MLP
+    if model_name == "LinReg":
+        return LinReg
     raise KeyError(f"Unkown model {model_name}")
 
 
@@ -172,6 +176,7 @@ def train(
             save_checkpoint(
                 directory=args.dir, epoch=epoch, model=model, optimizer=optimizer
             )
+            
 
         time_epoch = time.time() - time_epoch
         values = [
