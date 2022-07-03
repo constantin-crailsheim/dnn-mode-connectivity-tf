@@ -8,12 +8,17 @@ import tensorflow as tf
 import seaborn as sns
 
 from mode_connectivity.models.mlp import MLP
+from mode_connectivity.models.linreg import LinReg
 from mode_connectivity.curves import curves
 from mode_connectivity.curves.net import CurveNet
 
 # %%
+# def features(x):
+#     return np.hstack([x[:, None] / 2.0, (x[:, None] / 2.0) ** 2])
+
 def features(x):
-    return np.hstack([x[:, None] / 2.0, (x[:, None] / 2.0) ** 2])
+    return np.hstack([x[:, None] / 2.0, (x[:, None] / 2.0) ** 2, (x[:, None] / 2.0) ** 3, (x[:, None] / 2.0) ** 4])
+
 
 def load_model(path, architecture, curve, num_bends, wd, fix_start, fix_end, num_classes: int, input_shape):
     curve = getattr(curves, curve)
@@ -35,10 +40,7 @@ def load_model(path, architecture, curve, num_bends, wd, fix_start, fix_end, num
     return model
 
 # %%
-os.chdir("..")
-
-# %%
-path = "results/Regression_MLP/checkpoints_curve/model-weights-epoch20"
+path = "../results/Regression_MLP/checkpoints_curve/model-weights-epoch20"
 
 model = load_model(
     path=path,
@@ -51,9 +53,25 @@ model = load_model(
     num_classes=10,
     input_shape=(None, 2)
 )
+# %%
+
+path = "../results/Regression_LinReg/checkpoints_curve/model-weights-epoch10"
+
+model = load_model(
+    path=path,
+    architecture = LinReg,
+    curve = "Bezier",
+    num_bends=3,
+    wd=5e-4,
+    fix_start=True,
+    fix_end=True,
+    num_classes=10,
+    input_shape=(None, 4)
+)
+
 
 # %%
-data = np.load("datasets/data.npy")
+data = np.load("../datasets/data.npy")
 
 x = data[:, 0]
 x_lin = np.linspace(min(x), max(x), 100)
@@ -62,7 +80,7 @@ dataset = tf.constant(f_lin)
 
 # %%
 # Single curve
-point_on_curve = 0.5
+point_on_curve = 0.3
 
 with tf.device("/cpu:0"):
     point_on_curve_tensor = tf.constant(point_on_curve, shape = (1,), dtype = tf.float64)
@@ -94,3 +112,8 @@ for i, point_on_curve in enumerate(points_on_curve):
         point_on_curve_tensor = tf.constant(point_on_curve, shape = (1,), dtype = tf.float64)
     prediction = model(dataset, point_on_curve).numpy()
     plt.plot(x_lin, prediction, color=blue)
+
+# %%
+
+f_lin.shape[1]
+# %%
