@@ -1,3 +1,4 @@
+from this import d
 import tensorflow as tf
 import numpy as np
 
@@ -12,56 +13,86 @@ from mode_connectivity.models.cnn import CNNCurve
 
 
 class TestCurveNet:
-    @pytest.fixture
-    def model_dir(tmpdir):
-        return tmpdir.mkdir("model")
+    testdata_description= "model,num_classes,weight_decay,curve,fix_start,fix_end,num_bends,input_shape,index"
+    testdata = [
+        (CNN, 10, 1e5, Bezier, True, True, 3, (128, 28, 28, 1), 0),
+        (CNN, 3, 1e4, Bezier, True, False, 5, (256, 28, 28, 1), 5-1)
+        #(MLP, 1, 1e5, Bezier, True, True, 2, (128, 32), 0)
+        #(MLP, 1, 1e4, Bezier, Flase, False, 7, (64, 64), 7-1)
+    ]
 
-    @pytest.fixture
-    def initialized_curve_net(self):
+    @pytest.fixture(params= testdata)
+    def initialized_curve_net(self, request):
+        model, num_classes, weight_decay, curve, fix_start, fix_end, num_bends, input_shape, index = request.param
         return CurveNet(
-            num_classes=10,
-            num_bends=3,
-            weight_decay=1e4,
-            curve=Bezier,
-            curve_model=CNN.curve,
-            fix_start=True,
-            fix_end=True,
-            architecture_kwargs=CNN.kwargs,
+            num_classes,
+            num_bends,
+            weight_decay,
+            curve,
+            model.curve,
+            fix_start,
+            fix_end,
+            model.kwargs
         )
-    # Same for MLP.curve
 
-    @pytest.fixture
-    def built_curve_net(self, initialized_curve_net):
-        input_shape = [
-            tf.TensorShape((128, 28, 28, 1)),
-            tf.TensorShape((3)),
+    # def initialized_curve_net(self, request):
+    #     model,num_classes,weight_decay,curve,fix_start,fix_end,num_bends,input_shape= request.param
+    #     return CurveNet(
+    #         request.param["num_classes"],
+    #         request.param["num_bends"],
+    #         request.param["weight_decay"],
+    #         request.param["curve"],
+    #         request.param["model"].curve,
+    #         request.param["fix_start"],
+    #         request.param["fix_end"],
+    #         request.param["model"].kwargs,
+    #     )
+    #https://stackoverflow.com/questions/42228895/how-to-parametrize-a-pytest-fixture mit Dict
+
+    @pytest.fixture(params= testdata)
+    def built_curve_net(self, request, initialized_curve_net):
+        model, num_classes, weight_decay, curve, fix_start, fix_end, num_bends, input_shape, index = request.param
+
+        combined_input_shape = [
+            tf.TensorShape(input_shape), #input shape
+            tf.TensorShape((num_bends)), #num bends
         ]
-        initialized_curve_net.curve_model.build(input_shape)
-        built_curve_net= initialized_curve_net
+        built_curve_net= initialized_curve_net.copy()
+        built_curve_net.curve_model.build(combined_input_shape)
         return built_curve_net
 
-    # Same for MLP.curve
+    @pytest.fixture(params= testdata)
+    def base_model(self, request):
+        model, num_classes, weight_decay, curve, fix_start, fix_end, num_bends, input_shape, index = request.param
 
+        base_model= model.base(num_classes, weight_decay)
+        base_model.build(input_shape= input_shape)
+        return base_model
+
+
+    #https://docs.pytest.org/en/6.2.x/example/parametrize.html#paramexamples
     def test_init(self, initialized_curve_net):
         assert isinstance(initialized_curve_net.curve, Curve)
         assert isinstance(initialized_curve_net.curve_model, tf.keras.Model)
         for layer in initialized_curve_net.curve_layers:
             assert isinstance(layer, CurveLayer)
 
-    def test_call(self, initialized_curve_net):
-        output= initialized_curve_net(inputs= tf.random.uniform((128, 28, 28, 1)))
+    @pytest.mark.parametrize(testdata_description, testdata)
+    def test_call(self, initialized_curve_net, model, num_classes, weight_decay, curve, fix_start, fix_end, num_bends, input_shape, index):
+        output= initialized_curve_net(inputs= tf.random.uniform(input_shape))
 
-        assert output.shape == (128, 10) #(input_size[0], num_classes)
+        assert output.shape == (input_shape[0], num_classes)
 
-    def test_import_base_parameters(self, initialized_curve_net):
+    @pytest.mark.parametrize(testdata_description, testdata)
+    @pytest.mark.parametrize()
+    def test_import_base_parameters(self, initialized_curve_net, base_model, model, num_classes, weight_decay, curve, fix_start, fix_end, num_bends, input_shape, index):
        #TO DO: Als Fixture mit anderen Parametrisierungen, zb index letzter
 
         curve_net = initialized_curve_net
-        base_model= CNN.base(10, 1e4)
-        base_model.build(input_shape=(None, 28, 28, 1))
+        # base_model= CNN.base(10, 1e4) #analoges base model
+        # base_model.build(input_shape=(None, 28, 28, 1)) #input shape
         curve_net._build_from_base_model(base_model)
         curve_weights_old = {w.name: tf.Variable(w) for w in curve_net.curve_model.variables} #tf.Variable creates a fixed copy
-        index= 0
         curve_net.import_base_parameters(base_model, index)
 
         curve_weights = {w.name: w for w in curve_net.curve_model.variables}
@@ -85,13 +116,10 @@ class TestCurveNet:
                 #Ensure that all other params remain as before
                 assert tf.experimental.numpy.allclose(curve_param_old, curve_param)
 
-
-    def test_init_linear(self, initialized_curve_net):
+    @pytest.mark.parametrize(testdata_description, testdata)
+    def test_init_linear(self, initialized_curve_net, base_model, model, num_classes, weight_decay, curve, fix_start, fix_end, num_bends, input_shape, index):
         curve_net = initialized_curve_net
-        base_model= CNN.base(10, 1e4)
-        base_model.build(input_shape=(None, 28, 28, 1))
         curve_net._build_from_base_model(base_model)
-        index= 0
         curve_net.import_base_parameters(base_model, index)
         
         curve_net.init_linear()
