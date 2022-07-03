@@ -175,7 +175,7 @@ def evaluation_epoch(
         nll_sum += nll_batch
         loss_sum += loss_batch
         correct += correct_batch
-        pred += pred_batch # Concatanate two lists
+        pred += pred_batch
         output += output_batch
         target_list += target_batch
 
@@ -241,7 +241,6 @@ def save_preds_and_probs(train_predictions, train_probabilities, train_target, t
             te_acc=test_accuracy_score_values,
             te_pr=test_precision_score_values
         )
-
 
 if __name__ == "__main__":
     main()

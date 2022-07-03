@@ -109,6 +109,29 @@
             ]
         },
         {
+            "name": "Evalute metrics of curve BasicCNN with MNIST",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "--dir=results/MNIST_BasicCNN/evaluation_metrics",
+                "--dataset=mnist",
+                "--data-path=datasets/",
+                "--model=CNN",
+                "--curve=Bezier",
+                "--transform=CNN",
+                "--num-bends=3",
+                "--wd=5e-4",
+                "--ckpt=results/MNIST_BasicCNN/checkpoints_curve/model-weights-epoch10",
+                "--num_points=11",
+                "--init-linear-off",
+                "--fix-start",
+                "--fix-end"
+            ]
+        },
+        {
             "name": "Evalute model BasicCNN with MNIST",
             "type": "python",
             "request": "launch",
