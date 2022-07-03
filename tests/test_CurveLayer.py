@@ -163,7 +163,6 @@ class TestConv2DCurveLayer(CurveLayerTest):
         super().test_compute_weighted_parameters(built_layer, curve_point_weights, parameters)
 
 
-
 class TestDenseCurveLayer(CurveLayerTest):
     testparams = [
         (None, 16, None, (128, 32), [True, True, True]),
