@@ -122,9 +122,9 @@ class CurveLayerTest:
 
 class TestConv2DCurveLayer(CurveLayerTest):
     testparams = [
-        (32, None, (3, 3), (128, 28, 28, 1), [True, True, True]),
-        (64, None, (3, 5), (256, 28, 28, 1), [True, False, True]),
-        (16, None, (1, 1), (256, 28, 28, 1), [False, False, False])
+        (32, None, (3, 3), (128, 28, 28, 1), [True, True, True], PolyChain),
+        (64, None, (3, 5), (256, 28, 28, 1), [True, False, True], Bezier),
+        (16, None, (1, 1), (256, 28, 28, 1), [False, False, False], PolyChain)
     ]
     #Conv2D does not have the parameter "units". Hence it is set to None.
 
@@ -163,9 +163,9 @@ class TestConv2DCurveLayer(CurveLayerTest):
 
 class TestDenseCurveLayer(CurveLayerTest):
     testparams = [
-        (None, 16, None, (128, 32), [True, True, True]),
-        (None, 32, None, (128, 64), [True, False, True]),
-        (None, 8, None, (128, 16), [False, False, False])
+        (None, 16, None, (128, 32), [True, True, True], Bezier),
+        (None, 32, None, (128, 64), [True, False, True], PolyChain),
+        (None, 8, None, (128, 16), [False, False, False], Bezier)
     ]
     #Conv2D does not have the parameters "filters" and "kernel_size". Hence they are set to None.
 
