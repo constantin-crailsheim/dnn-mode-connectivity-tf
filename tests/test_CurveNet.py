@@ -10,6 +10,11 @@ from mode_connectivity.models import CNN, MLP
 import pytest
 
 
+@pytest.fixture(params=list(range(0, 4)))
+def num_bends(request) -> int:
+    return request.param
+
+
 class TestCurveNet:
     testparams_description= "model,num_classes,weight_decay,curve,fix_start,fix_end,num_bends,input_shape,index"
     testparams = [

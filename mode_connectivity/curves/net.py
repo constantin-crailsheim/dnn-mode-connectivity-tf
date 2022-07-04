@@ -14,13 +14,12 @@ logger = logging.getLogger(__name__)
 class CurveNet(tf.keras.Model):
     num_classes: int
     num_bends: int
-    l2: float
 
     fix_points: List[bool]
 
     curve: Curve
     curve_model: tf.keras.Model
-    curve_layers: List[tf.keras.layers.Layer]  # CurveLayer
+    curve_layers: List[CurveLayer]
 
     def __init__(
         self,
@@ -34,12 +33,19 @@ class CurveNet(tf.keras.Model):
         architecture_kwargs: Union[Dict[str, Any], None] = None,
     ):
         super().__init__()
+        if num_bends < 0:
+            raise ValueError(
+                f"Number of bends of the curve need to be at least 0 (found {num_bends=})."
+            )
+        if num_bends == 0 and fix_start and fix_end:
+            logger.warning(
+                "You specified no bends for the curve, but fixed both start and end point. "
+                "Training this model will give no results if all weights are fixed!"
+            )
         self.num_classes = num_classes
         self.num_bends = num_bends
-        self.fix_points = [fix_start] + [False] * (self.num_bends - 2) + [fix_end]
-        # Since we use l2 in computation late, we need to instantiate it as a tf.Variable
-        # https://www.tensorflow.org/guide/function#creating_tfvariables
-        self.l2 = None
+        self.point_on_curve = tf.Variable(0.0, trainable=False, name="point_on_curve")
+        self.fix_points = [fix_start] + [False] * self.num_bends + [fix_end]
 
         self.curve = curve(self.num_bends)
         self.curve_model = curve_model(
@@ -108,16 +114,16 @@ class CurveNet(tf.keras.Model):
             assigned_weights.append(f"{base_name} -> {name}")
 
         logger.info(
-            f"Assigned weights for point #{index}: {', '.join(assigned_weights)}"
+            f"Assigned {len(assigned_weights)} weights for point #{index}: {', '.join(assigned_weights)}"
         )
 
     def _build_from_base_model(self, base_model: tf.keras.Model):
-        """Build the model to initialize weights."""
+        """Build the curve model to initialize weights."""
         base_input_shape = base_model.layers[0].input_shape
-        coeffs_t_input_shape = (self.num_bends,)
+        point_on_curve_weights_input_shape = (len(self.fix_points),)
         input_shape = [
             tf.TensorShape(base_input_shape),
-            tf.TensorShape(coeffs_t_input_shape),
+            tf.TensorShape(point_on_curve_weights_input_shape),
         ]
         self.curve_model.build(input_shape)
 
@@ -147,41 +153,79 @@ class CurveNet(tf.keras.Model):
         point_on_curve_weights = self.curve(point_on_curve)
         parameters = []
         for module in self.curve_layers:
-            parameters.extend([w for w in module.compute_weighted_parameters(point_on_curve_weights) if w is not None])
-        return np.concatenate([tf.stop_gradient(w).numpy().ravel() for w in parameters]) # .cpu() missing
+            parameters.extend(
+                [
+                    w
+                    for w in module.compute_weighted_parameters(point_on_curve_weights)
+                    if w is not None
+                ]
+            )
+        return np.concatenate(
+            [tf.stop_gradient(w).numpy().ravel() for w in parameters]
+        )  # .cpu() missing
 
     def _compute_inner_weights(self, weights: List[tf.Variable]) -> None:
         # Is this procedure mentioned somewhere in the paper?
         first_weight, last_weight = weights[0].value(), weights[-1].value()
-        for i in range(1, self.num_bends - 1):
-            alpha = i * 1.0 / (self.num_bends - 1)
+        n_weights = len(weights)
+        for i in range(1, n_weights - 1):
+            alpha = i * 1.0 / (n_weights - 1)
             weights[i].assign(alpha * first_weight + (1.0 - alpha) * last_weight)
 
-    def _compute_l2(self) -> None:
-        """Compute L2 for each of the curve modules and sum up."""
-        if self.l2 is None:
-            self.l2 = tf.Variable(0.0, trainable=False)
-        self.l2.assign(sum(module.l2 for module in self.curve_layers))
+    @tf.function
+    def generate_point_on_curve(self, dtype=tf.float32):
+        return tf.random.uniform(shape=(), dtype=dtype)
 
     def call(
         self,
-        inputs: tf.Tensor,  # Union[tf.Tensor, Tuple[tf.Tensor, tf.Tensor]],
-        point_on_curve: Union[tf.Tensor, None] = None,
+        inputs: tf.Tensor,
         training=None,
         mask=None,
     ):
-        # Renamed 't' to 'uniform_tensor' for clarity
-        # TODO find a better name for uniform_tensor and coeffs_t
-        # if isinstance(inputs, tuple):
-        #     inputs, uniform_tensor = inputs
-        # else:
-        #     uniform_tensor = tf.random.uniform(shape=(1,), dtype=inputs.dtype)
-        if point_on_curve is None:
-            point_on_curve = tf.random.uniform(shape=(1,), dtype=inputs.dtype)
-        point_on_curve_weights = self.curve(point_on_curve)
-        output = self.curve_model((inputs, point_on_curve_weights))
-        self._compute_l2()
-        return output
+        if training is not False:
+            # If training is False, we are in evaluation.
+            # The point_on_curve needs to be set beforehand, or is
+            # generated by .evaluate()
+            self.point_on_curve.assign(self.generate_point_on_curve(inputs.dtype))
+        point_on_curve_weights = self.curve(self.point_on_curve)
+        outputs = self.curve_model((inputs, point_on_curve_weights))
+        return outputs
+
+    def evaluate_points(
+        self,
+        *args,
+        num_points: Union[int, None] = None,
+        point_on_curve: Union[float, None] = None,
+        **kwargs,
+    ):
+        if not (num_points is None or point_on_curve is None):
+            raise AttributeError(
+                "Cannot specify both 'num_points' and 'point_on_curve'. "
+                f"Got values {num_points=}, {point_on_curve=}"
+            )
+        if num_points is None and point_on_curve is None:
+            raise AttributeError(
+                "Need to specify one of 'num_points' or 'point_on_curve'. "
+                f"Got values {num_points=}, {point_on_curve=}"
+            )
+
+        points_on_curve = []
+        if point_on_curve is not None:
+            points_on_curve.append(point_on_curve)
+        if num_points is not None:
+            points_on_curve += list(np.linspace(0.0, 1.0, num_points))
+
+        print(f"Evaluating CurveNet for {[f'{p:.3f}' for p in points_on_curve]}")
+        results = []
+        for point_on_curve in points_on_curve:
+            print(f"{point_on_curve=:.3f}")
+            self.point_on_curve.assign(
+                tf.constant(point_on_curve, shape=(), dtype=tf.float32)
+            )
+            result = super().evaluate(*args, **kwargs)
+            result["point_on_curve"] = point_on_curve
+            results.append(result)
+        return results
 
     def import_base_buffers(self, base_model: tf.keras.Model) -> None:
         # Not needed for now, only used in test_curve.py

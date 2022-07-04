@@ -1,5 +1,6 @@
 import logging
 import os
+from functools import partial
 from typing import Any, List
 
 import keras
@@ -7,6 +8,11 @@ import tensorflow as tf
 from tensorflow.python.framework.errors import NotFoundError
 
 logger = logging.getLogger(__name__)
+
+
+def set_seeds(seed: int):
+    tf.random.set_seed(seed)
+    # TODO torch.cuda.manual_seed(args.seed)
 
 
 def learning_rate_schedule(base_lr, epoch, total_epochs):
@@ -18,6 +24,33 @@ def learning_rate_schedule(base_lr, epoch, total_epochs):
     else:
         factor = 0.01
     return factor * base_lr
+
+
+class AlphaLearningRateSchedule(tf.keras.callbacks.Callback):
+    def __init__(self, model: tf.keras.Model, total_epochs: int, verbose: bool = True):
+        self.model = model
+        self.total_epochs = total_epochs
+        self.verbose = verbose
+        self.base_lr = self.get_current_lr()
+        self.schedule = partial(
+            learning_rate_schedule, base_lr=self.base_lr, total_epochs=self.total_epochs
+        )
+
+    def get_current_lr(self) -> float:
+        return float(tf.keras.backend.get_value(self.model.optimizer.lr))
+
+    def on_epoch_begin(self, epoch: int, logs=None):
+        lr = self.get_current_lr()
+        # tf epoch is 0-indexed, so we need to add 1 to get the
+        # same behaviour as in original implementation.
+        new_lr = self.schedule(epoch=epoch + 1)
+
+        if lr != new_lr:
+            lr = new_lr
+            tf.keras.backend.set_value(self.model.optimizer.lr, lr)
+
+        if self.verbose:
+            print(f" lr: {lr:.4f}", end=" - ")
 
 
 def l2_regularizer(weight_decay):

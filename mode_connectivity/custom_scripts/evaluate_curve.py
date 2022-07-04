@@ -63,8 +63,9 @@ def main():
     
     for i, point_on_curve in enumerate(points_on_curve):
         with tf.device("/cpu:0"):
-            point_on_curve_tensor = tf.constant(point_on_curve, shape = (1,), dtype = tf.float64)
-        
+            point_on_curve_tensor = tf.constant(point_on_curve, shape = (), dtype = tf.float32)
+            model.point_on_curve.assign(point_on_curve_tensor)
+
         parameters = model.get_weighted_parameters(point_on_curve_tensor)
         if previous_parameters is not None:
              dl[i] = np.sqrt(np.sum(np.square(parameters - previous_parameters)))
@@ -76,7 +77,6 @@ def main():
                 model = model,
                 criterion = criterion,
                 n_test = n_datasets["train"],
-                point_on_curve = point_on_curve_tensor,
                 regularizer = regularizer
             )
         test_results = test_epoch(
@@ -84,7 +84,6 @@ def main():
                 model = model,
                 criterion = criterion,
                 n_test = n_datasets["test"],
-                point_on_curve = point_on_curve_tensor,
                 regularizer = regularizer
             )
         train_loss[i] = train_results['loss']
@@ -99,7 +98,7 @@ def main():
         values = [point_on_curve, train_loss[i], train_nll[i], train_error[i], test_nll[i], test_error[i]]
 
         print_point_on_curve_stats(values, i)
-
+    
     print_and_save_summary_stats(train_loss, train_nll, train_accuracy, train_error, test_loss, test_nll, test_accuracy, test_error, points_on_curve, dl, args.dir, save=True)
    
 
@@ -135,7 +134,6 @@ def test_epoch(
     criterion: Callable,
     n_test: int,
     regularizer: Union[Callable, None] = None,
-    **kwargs,
 ) -> Dict[str, float]:
     nll_sum = 0.0
     loss_sum = 0.0
@@ -152,7 +150,6 @@ def test_epoch(
             model=model,
             criterion=criterion,
             regularizer=regularizer,
-            **kwargs,
         )
         nll_sum += nll_batch
         loss_sum += loss_batch
@@ -173,12 +170,11 @@ def test_batch(
     model: Layer,
     criterion: Callable,
     regularizer: Union[Callable, None] = None,
-    **kwargs,
 ) -> Dict[str, float]:
     # TODO Allocate model to GPU as well.
 
     with tf.device("/cpu:0"):
-        output = model(inputs = input, **kwargs)
+        output = model(inputs = input, training=False)
         nll = criterion(target, output)
         loss = tf.identity(nll)  # Correct funtion for nll.clone() in Pytorch
         # PyTorch:
@@ -236,7 +232,7 @@ def print_and_save_summary_stats(train_loss, train_nll, train_accuracy, train_er
     if save == True:
         os.makedirs(dir, exist_ok=True)
         np.savez(
-            os.path.join(dir, 'curve.npz'),
+            os.path.join(dir, 'summary_stats_curve.npz'),
             points_on_curve=points_on_curve,
             dl=dl,
             tr_loss=train_loss,
