@@ -5,13 +5,6 @@ from mode_connectivity.curves.layers import CurveLayer
 
 
 class TestCurveLayer:
-    def test_init_direct(self):
-        with pytest.raises(
-            TypeError,
-            match="Can't instantiate abstract class CurveLayer with abstract methods build, call",
-        ):
-            CurveLayer([True, False, True])
-
     def test_compute_weights(self):
         shape = (3, 3, 1, 32)
         num_bends = 3
