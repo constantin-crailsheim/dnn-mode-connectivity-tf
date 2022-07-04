@@ -62,7 +62,7 @@ dataset = tf.constant(f_lin)
 
 # %%
 # Single curve
-point_on_curve = 0.1
+point_on_curve = 0.5
 
 with tf.device("/cpu:0"):
     point_on_curve_tensor = tf.constant(point_on_curve, shape = (1,), dtype = tf.float64)

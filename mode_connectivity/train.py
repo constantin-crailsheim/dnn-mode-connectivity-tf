@@ -70,9 +70,11 @@ def main():
         start_epoch = load_checkpoint(
             checkpoint_path=args.resume, model=model, optimizer=optimizer
         )
+    # Is save_checkpoint still needed?
     save_checkpoint(
         directory=args.dir, epoch=start_epoch - 1, model=model, optimizer=optimizer
     )
+    save_weights(directory=args.dir, epoch=start_epoch - 1, model=model)
 
     train(
         args=args,

@@ -99,7 +99,7 @@ def main():
         values = [point_on_curve, train_loss[i], train_nll[i], train_error[i], test_nll[i], test_error[i]]
 
         print_point_on_curve_stats(values, i)
-
+    
     print_and_save_summary_stats(train_loss, train_nll, train_accuracy, train_error, test_loss, test_nll, test_accuracy, test_error, points_on_curve, dl, args.dir, save=True)
    
 
@@ -236,7 +236,7 @@ def print_and_save_summary_stats(train_loss, train_nll, train_accuracy, train_er
     if save == True:
         os.makedirs(dir, exist_ok=True)
         np.savez(
-            os.path.join(dir, 'curve.npz'),
+            os.path.join(dir, 'summary_stats_curve.npz'),
             points_on_curve=points_on_curve,
             dl=dl,
             tr_loss=train_loss,
