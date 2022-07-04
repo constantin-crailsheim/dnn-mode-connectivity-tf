@@ -102,7 +102,7 @@
                 "--num-bends=3",
                 "--wd=5e-4",
                 "--ckpt=results/MNIST_BasicCNN/checkpoints_curve/model-weights-epoch10",
-                "--num_points=11",
+                "--num-points=11",
                 "--init-linear-off",
                 "--fix-start",
                 "--fix-end"
