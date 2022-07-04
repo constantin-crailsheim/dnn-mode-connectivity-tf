@@ -11,10 +11,10 @@ class CurveLayerTest:
     testparams_description= "filters,units,kernel_size,input_shape,fix_points"
 
     def curve_point_weights(self, fix_points, curve):
-        num_bends= len(fix_points)
-        curve= curve(num_bends)
+        num_bends= len(fix_points)-2
+        temp_curve= curve(num_bends)
         rand_t= tf.random.uniform(shape=(1,))
-        return curve(rand_t)
+        return temp_curve(rand_t)
 
     @pytest.fixture(name="curve_point_weights")
     def curve_point_weights_fixture(self, request):
@@ -51,9 +51,9 @@ class CurveLayerTest:
     def test_build(self, built_layer, parameters):
         filters, units, kernel_size, input_shape, fix_points, curve = parameters
 
-        # Build in parent class tf.keras.layers... should add kernel and bias parameters and set them to None.      
-        assert built_layer.kernel == None
-        assert built_layer.bias == None
+        # # Build in parent class tf.keras.layers... should add kernel and bias parameters and set them to None.      
+        # assert built_layer.kernel == None
+        # assert built_layer.bias == None
 
         # Conv2DCurve build() should add curve_kernels and curve_biases parameters    
         assert built_layer.curve_kernels != None
@@ -75,7 +75,7 @@ class CurveLayerTest:
         filters, units, kernel_size, input_shape, fix_points, curve = parameters
 
         #curve_point_weights() has to be called directly in order to ensure that the curve_point_weights are different from the ones used to build the model.
-        curve_point_weights= self.curve_point_weights(fix_points) 
+        curve_point_weights= self.curve_point_weights(fix_points, curve) 
 
         # Even without optimization of the networks parameters, the params should be updated since we change the location on the curve.
         old_kernel= tf.Variable(built_layer.kernel)
@@ -124,7 +124,7 @@ class TestConv2DCurveLayer(CurveLayerTest):
     testparams = [
         (32, None, (3, 3), (128, 28, 28, 1), [True, True, True], PolyChain),
         (64, None, (3, 5), (256, 28, 28, 1), [True, False, True], Bezier),
-        (16, None, (1, 1), (256, 28, 28, 1), [False, False, False], PolyChain)
+        (16, None, (1, 1), (256, 28, 28, 1), [False, False, False],Bezier)
     ]
     #Conv2D does not have the parameter "units". Hence it is set to None.
 
@@ -151,7 +151,7 @@ class TestConv2DCurveLayer(CurveLayerTest):
         super().test_call(built_layer, parameters)
 
     def check_output_size(self, output, parameters):
-        filters, units, kernel_size, input_shape, fix_points = parameters
+        filters, units, kernel_size, input_shape, fix_points, curve = parameters
         output_shape_h = input_shape[1] - kernel_size[0] + 1
         output_shape_w = input_shape[2] - kernel_size[1] + 1
         assert output.shape == (input_shape[0], output_shape_h, output_shape_w, filters)
