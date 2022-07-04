@@ -2,7 +2,7 @@ from this import d
 import tensorflow as tf
 import numpy as np
 
-from mode_connectivity.curves.curves import Curve, Bezier
+from mode_connectivity.curves.curves import Curve, Bezier, PolyChain
 from mode_connectivity.curves.net import CurveNet
 from mode_connectivity.curves.layers import CurveLayer
 from mode_connectivity.models import CNN, MLP
@@ -13,12 +13,12 @@ import pytest
 class TestCurveNet:
     testparams_description= "model,num_classes,weight_decay,curve,fix_start,fix_end,num_bends,input_shape,index"
     testparams = [
-        (CNN, 10, 1e5, Bezier, True, True, 3, (128, 28, 28, 1), 0),
-        (CNN, 3, 1e4, Bezier, True, False, 5, (256, 28, 28, 1), 5-1),
-        (CNN, 6, 1e3, Bezier, False, False, 7, (64, 28, 28, 1), 4),
-        (MLP, 1, 1e5, Bezier, True, True, 2, (128, 32), 0),
-        (MLP, 1, 1e3, Bezier, True, False, 3, (128, 32), 3),
-        (MLP, 1, 1e4, Bezier, False, False, 7, (64, 64), 7-1)
+        (CNN, 10, 1e5, Bezier, True, True, 1, (128, 28, 28, 1), 0),
+        (CNN, 3, 1e4, PolyChain, True, False, 3, (256, 28, 28, 1), 5-1),
+        (CNN, 6, 1e3, Bezier, False, False, 5, (64, 28, 28, 1), 4),
+        (MLP, 1, 1e5, Bezier, True, True, 3, (128, 32), 0),
+        (MLP, 1, 1e3, PolyChain, True, False, 1, (128, 32), 3),
+        (MLP, 1, 1e4, Bezier, False, False, 5, (64, 64), 7-1)
     ]
 
     @pytest.fixture
