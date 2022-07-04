@@ -29,11 +29,11 @@ def load_probabilities(set, point_on_curve):
 
 set = "train" # "train" or "test"
 
-point_on_curve = 0.4
+point_on_curve = 0.2
 
 target_to_evaluate = [1, 7] # Choose from [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
-clip_min = 0.99 # Minimum of x-axis (probabilites)
+clip_min = 0.0 # Minimum of x-axis (probabilites)
 clip_max = 1 # Maximsum of x-axis (probabilites)
 
 bandwidth = 0.01 # Bandwidth of kernel for densities
@@ -45,10 +45,12 @@ data_subset = data[data["Target"].isin(target_to_evaluate)]
 
 # Plot density plot
 sns.kdeplot(data = data_subset, x = "output_prob_of_pred", hue = "Target", bw_method=bandwidth, clip = (clip_min, clip_max))
-plt.xlabel('Probalities of predictions', fontsize=10)
+plt.xlabel('Probabilities of predictions', fontsize=10)
 
 # Ideally we would see:
 # Very high density for probabilites close to 1
 # Very low density for probabilities lower than 1
 # Not much deviation in probabilites between different targets
 
+
+# %%
