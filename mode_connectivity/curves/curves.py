@@ -7,19 +7,29 @@ from scipy.special import binom
 
 
 class Curve(tf.keras.layers.Layer, ABC):
+    """Base class for Curve Layers.
+
+    Args:
+            num_bends (int): Degree of the Curve. Needs to be greater than 0.
+                0: Linear
+                1: Quadratic
+                2: Cubic
+                ...
+    """
+
     num_bends: int
 
     def __init__(self, num_bends: int):
+        """Initialize the Curve Layer."""
         super().__init__()
-
-        if num_bends < 1:
+        if num_bends < 0:
             raise ValueError(
-                f"Number of bends ({num_bends=}) needs to be greater than 0."
+                f"Number of bends ({num_bends=}) of the curve needs to be greater or equal to 0."
             )
         self.num_bends = num_bends
 
     @abstractmethod
-    def call(self, uniform_tensor: tf.Tensor):
+    def call(self, point_on_curve: Union[float, tf.Tensor]) -> tf.Tensor:
         pass
 
     def __repr__(self):
@@ -27,20 +37,36 @@ class Curve(tf.keras.layers.Layer, ABC):
 
 
 class Bezier(Curve):
+    """Implementation of the Bezier Curve in a Layer context.
+
+    Args:
+            degree (int): Degree of the Curve. Needs to be greater than 0.
+                1: Linear
+                2: Quadratic
+                3: Cubic
+                ...
+
+    Calling this layer returns a Tensor of weights, which sum up to 1.
+    The weights correspond to the weight each input point of the Bezier curve is given when constructing the curve.
+    This Tensor is then used to weigh parameters of CurveLayers.
+
+    For further information, see:
+    https://en.wikipedia.org/wiki/B%C3%A9zier_curve
+    """
+
     def __init__(self, num_bends: int):
         super().__init__(num_bends=num_bends)
+        self.degree = num_bends + 1
         self.binom = tf.Variable(
-            tf.constant(binom(num_bends - 1, np.arange(num_bends), dtype=np.float32)),
+            tf.constant(
+                binom(self.degree, np.arange(self.degree + 1), dtype=np.float32)
+            ),
             trainable=False,
         )
-        self.range = tf.Variable(tf.range(0, float(num_bends)), trainable=False)
+        self.range = tf.Variable(tf.range(0, float(self.degree + 1)), trainable=False)
         self.rev_range = tf.Variable(
-            tf.range(float(num_bends - 1), -1, delta=-1), trainable=False
+            tf.range(float(self.degree), -1, delta=-1), trainable=False
         )
-
-        # Not sure if this is the best way to substitute register_buffer() in PyTorch
-        # The PyTorch Buffer in this example is not considered a model parameter, not trained,
-        # part of the module's state, moved to cuda() or cpu() with the rest of the model's parameters
 
     def call(self, point_on_curve: Union[float, tf.Tensor]) -> tf.Tensor:
         return (

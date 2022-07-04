@@ -11,11 +11,16 @@ def model_dir(tmpdir):
     return tmpdir.mkdir("model")
 
 
+@pytest.fixture(params=list(range(0, 4)))
+def num_bends(request) -> int:
+    return request.param
+
+
 class TestCurveNet:
-    def test_init(self):
+    def test_init(self, num_bends):
         net = CurveNet(
             num_classes=10,
-            num_bends=3,
+            num_bends=num_bends,
             weight_decay=1e4,
             curve=Bezier,
             curve_model=CNN.curve,
@@ -27,7 +32,7 @@ class TestCurveNet:
     def test_call(self):
         net = CurveNet(
             num_classes=10,
-            num_bends=3,
+            num_bends=0,
             weight_decay=1e4,
             curve=Bezier,
             curve_model=CNN.curve,
@@ -37,10 +42,10 @@ class TestCurveNet:
         )
         net(tf.random.uniform((128, 28, 28, 1)))
 
-    def test_save_model(self, model_dir):
+    def test_save_model(self, model_dir, num_bends):
         net = CurveNet(
             num_classes=10,
-            num_bends=3,
+            num_bends=num_bends,
             weight_decay=1e4,
             curve=Bezier,
             curve_model=CNN.curve,
@@ -51,10 +56,10 @@ class TestCurveNet:
         net(tf.random.uniform((128, 28, 28, 1)))
         net.save(filepath=model_dir)
 
-    def test_save_weights(self, model_dir):
+    def test_save_weights(self, model_dir, num_bends):
         net = CurveNet(
             num_classes=10,
-            num_bends=3,
+            num_bends=num_bends,
             weight_decay=1e4,
             curve=Bezier,
             curve_model=CNN.curve,
@@ -65,10 +70,10 @@ class TestCurveNet:
         net(tf.random.uniform((128, 28, 28, 1)))
         net.save_weights(filepath=model_dir)
 
-    def test_load_weights(self, model_dir):
+    def test_load_weights(self, model_dir, num_bends):
         net = CurveNet(
             num_classes=10,
-            num_bends=3,
+            num_bends=num_bends,
             weight_decay=1e4,
             curve=Bezier,
             curve_model=CNN.curve,
@@ -83,7 +88,7 @@ class TestCurveNet:
 
         net2 = CurveNet(
             num_classes=10,
-            num_bends=3,
+            num_bends=num_bends,
             weight_decay=1e4,
             curve=Bezier,
             curve_model=CNN.curve,
