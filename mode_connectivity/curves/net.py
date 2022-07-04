@@ -120,10 +120,10 @@ class CurveNet(tf.keras.Model):
     def _build_from_base_model(self, base_model: tf.keras.Model):
         """Build the curve model to initialize weights."""
         base_input_shape = base_model.layers[0].input_shape
-        curve_point_weights_input_shape = (len(self.fix_points),)
+        point_on_curve_weights_input_shape = (len(self.fix_points),)
         input_shape = [
             tf.TensorShape(base_input_shape),
-            tf.TensorShape(curve_point_weights_input_shape),
+            tf.TensorShape(point_on_curve_weights_input_shape),
         ]
         self.curve_model.build(input_shape)
 
