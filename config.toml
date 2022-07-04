@@ -1,0 +1,52 @@
+[base-model-1]
+dir = "results/MNIST_BasicCNN/checkpoints_base_model_1"
+dataset = "mnist"
+data-path = "datasets/"
+model = "CNN"
+epochs = 10
+lr = 0.05
+wd = 0.0005
+transform = "CNN"
+seed = 1
+
+[base-model-2]
+dir = "results/MNIST_BasicCNN/checkpoints_base_model_2"
+dataset = "mnist"
+data-path = "datasets/"
+model = "CNN"
+epochs = 10
+lr = 0.05
+wd = 0.0005
+transform = "CNN"
+seed = 42
+
+[curve-pretrained]
+dir = "results/MNIST_BasicCNN/checkpoints_curve"
+dataset = "mnist"
+data-path = "datasets/"
+model = "CNN"
+curve = "Bezier"
+transform = "CNN"
+num-bends = 1
+epochs = 10
+lr = 0.05
+wd = 0.0005
+init-start = "results/MNIST_BasicCNN/checkpoints_base_model_1/model-weights-epoch10"
+fix-start = true
+init-end = "results/MNIST_BasicCNN/checkpoints_base_model_2/model-weights-epoch10"
+fix-end = true
+
+[curve-evaluate]
+dir = "results/MNIST_BasicCNN/evaluation_curve"
+dataset = "mnist"
+data-path = "datasets/"
+model = "CNN"
+curve = "Bezier"
+transform = "CNN"
+num-bends = 1
+wd = 0.0005
+ckpt = "results/MNIST_BasicCNN/checkpoints_curve/model-weights-epoch10"
+init-linear = false
+fix-start = true
+fix-end = true
+num-points = 11

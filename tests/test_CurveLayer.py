@@ -79,13 +79,10 @@ class CurveLayerTest:
 
         # Even without optimization of the networks parameters, the params should be updated since we change the location on the curve.
         old_kernel= tf.Variable(built_layer.kernel)
-        old_bias= tf.Variable(built_layer.bias)
         output= built_layer([tf.random.uniform(shape=input_shape), curve_point_weights])
         new_kernel= tf.Variable(built_layer.kernel)
-        new_bias= tf.Variable(built_layer.bias)
 
         assert not tf.experimental.numpy.allclose(old_kernel, new_kernel)
-        assert not tf.experimental.numpy.allclose(old_bias, new_bias)
 
         self.check_output_size(output, parameters)
 
