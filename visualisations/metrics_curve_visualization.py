@@ -12,37 +12,36 @@ metrics = np.load(path)
 # %%
 
 stat1 = "tr_f1"
-stat2 = "te_f1"
-title = "Train vs. Test f1 score (weighted)"
+stat2 = "tr_acc"
+stat3 = "tr_pr"
+title = "Train Metrics"
 
-_, plot = plt.subplots(1)
-plot.plot(metrics["points_on_curve"], metrics[stat1])
-plot.plot(metrics["points_on_curve"], metrics[stat2])
+
+plt.plot(metrics["points_on_curve"], metrics[stat1], color = 'blue', label = stat1)
+plt.plot(metrics["points_on_curve"], metrics[stat2], color = 'orange', label = stat2)
+plt.plot(metrics["points_on_curve"], metrics[stat3], color = 'black', label = stat3)
 plt.title(title + " for points on curve", fontsize=12)
 plt.xlabel("Point on curve")
 plt.ylabel(title)
+plt.legend()
+plt.show()
+
 
 # %%
-stat1 = "tr_acc"
+stat1 = "te_f1"
 stat2 = "te_acc"
-title = "Train vs. Test accuracy (normalized)"
+stat3 = "te_pr"
+title = "Test Metrics"
 
-_, plot = plt.subplots(1)
-plot.plot(metrics["points_on_curve"], metrics[stat1])
-plot.plot(metrics["points_on_curve"], metrics[stat2])
+
+plt.plot(metrics["points_on_curve"], metrics[stat1], color = 'blue', label = stat1)
+plt.plot(metrics["points_on_curve"], metrics[stat2], color = 'orange', label = stat2)
+plt.plot(metrics["points_on_curve"], metrics[stat3], color = 'black', label = stat3)
 plt.title(title + " for points on curve", fontsize=12)
 plt.xlabel("Point on curve")
 plt.ylabel(title)
-# %%
-# %%
-stat1 = "tr_pr"
-stat2 = "te_pr"
-title = "Train vs. Test precision (weighted)"
+plt.legend()
+plt.show()
 
-_, plot = plt.subplots(1)
-plot.plot(metrics["points_on_curve"], metrics[stat1])
-plot.plot(metrics["points_on_curve"], metrics[stat2])
-plt.title(title + " for points on curve", fontsize=12)
-plt.xlabel("Point on curve")
-plt.ylabel(title)
 # %%
+
