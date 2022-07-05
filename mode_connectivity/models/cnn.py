@@ -111,18 +111,18 @@ class CNNCurve(tf.keras.Model):
         self.fc_part = [self.dense1, self.dense2, self.dense3]
 
     def call(self, inputs: Tuple[tf.Tensor, tf.Tensor], **kwargs):
-        x, coeffs_t = inputs
+        x, point_on_curve_weights = inputs
 
-        x = self.conv1((x, coeffs_t), **kwargs)
+        x = self.conv1((x, point_on_curve_weights), **kwargs)
         x = self.pool1(x, **kwargs)
-        x = self.conv2((x, coeffs_t), **kwargs)
+        x = self.conv2((x, point_on_curve_weights), **kwargs)
         x = self.pool2(x, **kwargs)
-        x = self.conv3((x, coeffs_t), **kwargs)
+        x = self.conv3((x, point_on_curve_weights), **kwargs)
         x = self.flatten1(x, **kwargs)
 
-        x = self.dense1((x, coeffs_t), **kwargs)
-        x = self.dense2((x, coeffs_t), **kwargs)
-        x = self.dense3((x, coeffs_t), **kwargs)
+        x = self.dense1((x, point_on_curve_weights), **kwargs)
+        x = self.dense2((x, point_on_curve_weights), **kwargs)
+        x = self.dense3((x, point_on_curve_weights), **kwargs)
         return x
 
 
