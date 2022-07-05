@@ -40,6 +40,7 @@ class Arguments:
     num_points: int = None
     ckpt: str = None
     point_on_curve: float = None
+    save_evaluation: bool = True
 
 
 def parse_config() -> Arguments:
@@ -251,7 +252,7 @@ def _add_evaluate_arguments(parser: argparse.ArgumentParser) -> None:
         "--point-on-curve",
         type=float,
         default=None,
-        metavar="CKPT",
+        metavar="CKPT", # Correct metavariable?
         help="point on curve to be evaluated (default: None)",
     )
     parser.add_argument(
@@ -260,4 +261,11 @@ def _add_evaluate_arguments(parser: argparse.ArgumentParser) -> None:
         default=None,
         metavar="CKPT",
         help="checkpoint to eval (default: None)",
+    )
+    parser.add_argument(
+        "--save-evaluation",
+        type=bool,
+        default=True,
+        metavar="CKPT", # Correct metavariable?
+        help="Set whether evaluation should be saved",
     )
