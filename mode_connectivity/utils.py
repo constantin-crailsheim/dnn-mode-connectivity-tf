@@ -10,6 +10,19 @@ from tensorflow.python.framework.errors import NotFoundError
 logger = logging.getLogger(__name__)
 
 
+def disable_gpu():
+    logger.info("Trying to disable GPU")
+    try:
+        tf.config.set_visible_devices([], "GPU")
+        logger.info(f"GPU disabled.")
+    except RuntimeError:
+        logger.error(
+            "Cannot modify devices after calling tensorflow methods. "
+            "Try to set your device before any operations. "
+        )
+    logger.info(f"Running on devices {tf.config.get_visible_devices()}")
+
+
 def set_seeds(seed: int):
     tf.random.set_seed(seed)
     # TODO torch.cuda.manual_seed(args.seed)

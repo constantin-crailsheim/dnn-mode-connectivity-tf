@@ -2,6 +2,8 @@ import logging
 import os
 from typing import Dict, List
 
+import tabulate
+
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import tensorflow as tf
 
@@ -14,24 +16,29 @@ from mode_connectivity.argparser import (
 )
 from mode_connectivity.curves.net import CurveNet
 from mode_connectivity.data import data_loaders
+from mode_connectivity.logger import configure_loggers
 from mode_connectivity.models.cnn import CNN
 from mode_connectivity.models.mlp import MLP
 from mode_connectivity.utils import (
     AlphaLearningRateSchedule,
+    disable_gpu,
     load_checkpoint,
     save_checkpoint,
     save_weights,
     set_seeds,
 )
-import tabulate
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 def train(args: Arguments):
+    configure_loggers()
+    if args.disable_gpu:
+        disable_gpu()
+
     logger.info("Starting train")
     set_seeds(seed=args.seed)
+
     loaders, model = get_model_and_loaders(args)
 
     loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
@@ -57,7 +64,6 @@ def train(args: Arguments):
         validation_data=loaders["test"],
         epochs=args.epochs,
         initial_epoch=start_epoch,
-        workers=args.num_workers,
         callbacks=[model_checkpoint_callback, learning_rate_scheduler],
     )
 
@@ -79,8 +85,13 @@ def train_from_config():
 
 
 def evaluate(args: Arguments):
+    configure_loggers()
+    if args.disable_gpu:
+        disable_gpu()
+
     logger.info("Starting evaluate")
     set_seeds(seed=args.seed)
+
     loaders, model = get_model_and_loaders(args)
 
     loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
