@@ -15,6 +15,7 @@ from mode_connectivity.models.mlp import MLP
 from mode_connectivity.utils import (
     adjust_learning_rate,
     check_batch_normalization,
+    disable_gpu,
     l2_regularizer,
     learning_rate_schedule,
     load_checkpoint,
@@ -26,6 +27,8 @@ from mode_connectivity.utils import (
 
 def main():
     args = parse_train_arguments()
+    if args.disable_gpu:
+        disable_gpu()
 
     # TODO: Set backends cudnnn
     set_seeds(seed=args.seed)
@@ -169,7 +172,7 @@ def train(
             loaders["train"],
             model,
             optimizer,
-            criterion, 
+            criterion,
             n_datasets["train"],
             regularizer,
         )
@@ -297,29 +300,26 @@ def train_batch(
     regularizer: Union[Callable, None] = None,
     lr_schedule: Union[Callable, None] = None,
 ) -> Tuple[float, float]:
-    # TODO Allocate model to GPU as well, but no necessary at the moment, since we don't have GPUs.
+    with tf.GradientTape() as tape:
+        output = model(input)
+        loss = criterion(target, output)  # + model.losses necessary?
+        # PyTorch:
+        # if regularizer is not None:
+        #     loss += regularizer(model)
+    grads = tape.gradient(loss, model.trainable_variables)
+    grads_and_vars = zip(grads, model.trainable_variables)
+    optimizer.apply_gradients(grads_and_vars)
 
-    with tf.device("/cpu:0"):
-        with tf.GradientTape() as tape:
-            output = model(input)
-            loss = criterion(target, output)  # + model.losses necessary?
-            # PyTorch:
-            # if regularizer is not None:
-            #     loss += regularizer(model)
-        grads = tape.gradient(loss, model.trainable_variables)
-        grads_and_vars = zip(grads, model.trainable_variables)
-        optimizer.apply_gradients(grads_and_vars)
+    # See for above:
+    # https://medium.com/analytics-vidhya/3-different-ways-to-perform-gradient-descent-in-tensorflow-2-0-and-ms-excel-ffc3791a160a
+    # https://d2l.ai/chapter_multilayer-perceptrons/weight-decay.html (4.5.4)
 
-        # See for above:
-        # https://medium.com/analytics-vidhya/3-different-ways-to-perform-gradient-descent-in-tensorflow-2-0-and-ms-excel-ffc3791a160a
-        # https://d2l.ai/chapter_multilayer-perceptrons/weight-decay.html (4.5.4)
-
-        loss = tf.reduce_sum(loss).numpy()
-        pred = tf.math.argmax(output, axis=1, output_type=tf.dtypes.int64)
-        # Is there an easier way?
-        correct = tf.math.reduce_sum(
-            tf.cast(tf.math.equal(pred, target), tf.float32)
-        ).numpy()
+    loss = tf.reduce_sum(loss).numpy()
+    pred = tf.math.argmax(output, axis=1, output_type=tf.dtypes.int64)
+    # Is there an easier way?
+    correct = tf.math.reduce_sum(
+        tf.cast(tf.math.equal(pred, target), tf.float32)
+    ).numpy()
 
     return loss, correct  # Do we need to return the model as well?
 
@@ -335,22 +335,19 @@ def test_batch(
     regularizer: Union[Callable, None] = None,
     **kwargs,
 ) -> Dict[str, float]:
-    # TODO Allocate model to GPU as well.
+    output = model(input, **kwargs)
+    nll = criterion(target, output)
+    loss = tf.identity(nll)  # COrrect funtion for nll.clone() in Pytorch
+    # PyTorch:
+    # if regularizer is not None:
+    #     loss += regularizer(model)
 
-    with tf.device("/cpu:0"):
-        output = model(input, **kwargs)
-        nll = criterion(target, output)
-        loss = tf.identity(nll)  # COrrect funtion for nll.clone() in Pytorch
-        # PyTorch:
-        # if regularizer is not None:
-        #     loss += regularizer(model)
-
-        nll = tf.reduce_sum(nll).numpy()
-        loss = tf.reduce_sum(loss).numpy() 
-        pred = tf.math.argmax(output, axis=1, output_type=tf.dtypes.int64)
-        correct = tf.math.reduce_sum(
-            tf.cast(tf.math.equal(pred, target), tf.float32)
-        ).numpy()
+    nll = tf.reduce_sum(nll).numpy()
+    loss = tf.reduce_sum(loss).numpy()
+    pred = tf.math.argmax(output, axis=1, output_type=tf.dtypes.int64)
+    correct = tf.math.reduce_sum(
+        tf.cast(tf.math.equal(pred, target), tf.float32)
+    ).numpy()
 
     return nll, loss, correct
 

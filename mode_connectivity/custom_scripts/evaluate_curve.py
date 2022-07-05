@@ -11,6 +11,7 @@ from mode_connectivity.curves import curves, layers, net
 from argparser import Arguments, parse_evaluate_arguments
 from mode_connectivity.curves.net import CurveNet
 from data import data_loaders
+from mode_connectivity.utils import disable_gpu
 from models.cnn import CNN
 from models.mlp import MLP
 
@@ -27,7 +28,9 @@ from utils import (
 
 def main():
     args = parse_evaluate_arguments()
-
+    if args.disable_gpu:
+        disable_gpu()
+        
     loaders, num_classes, n_datasets = data_loaders(
         dataset=args.dataset,
         path=args.data_path,
@@ -62,9 +65,8 @@ def main():
     previous_parameters = None
     
     for i, point_on_curve in enumerate(points_on_curve):
-        with tf.device("/cpu:0"):
-            point_on_curve_tensor = tf.constant(point_on_curve, shape = (), dtype = tf.float32)
-            model.point_on_curve.assign(point_on_curve_tensor)
+        point_on_curve_tensor = tf.constant(point_on_curve, shape = (), dtype = tf.float32)
+        model.point_on_curve.assign(point_on_curve_tensor)
 
         parameters = model.get_weighted_parameters(point_on_curve_tensor)
         if previous_parameters is not None:
@@ -171,24 +173,21 @@ def test_batch(
     criterion: Callable,
     regularizer: Union[Callable, None] = None,
 ) -> Dict[str, float]:
-    # TODO Allocate model to GPU as well.
+    output = model(inputs = input, training=False)
+    nll = criterion(target, output)
+    loss = tf.identity(nll)  # Correct funtion for nll.clone() in Pytorch
+    # PyTorch:
+    # if regularizer is not None:
+    #     loss += regularizer(model)
 
-    with tf.device("/cpu:0"):
-        output = model(inputs = input, training=False)
-        nll = criterion(target, output)
-        loss = tf.identity(nll)  # Correct funtion for nll.clone() in Pytorch
-        # PyTorch:
-        # if regularizer is not None:
-        #     loss += regularizer(model)
-
-        nll = tf.reduce_sum(nll).numpy()
-        loss = tf.reduce_sum(
-            loss
-        ).numpy()  # What exactly are we trying to add up here, see original code? Check with PyTorch Code.
-        pred = tf.math.argmax(output, axis=1, output_type=tf.dtypes.int64)
-        correct = tf.math.reduce_sum(
-            tf.cast(tf.math.equal(pred, target), tf.float32)
-        ).numpy()
+    nll = tf.reduce_sum(nll).numpy()
+    loss = tf.reduce_sum(
+        loss
+    ).numpy()  # What exactly are we trying to add up here, see original code? Check with PyTorch Code.
+    pred = tf.math.argmax(output, axis=1, output_type=tf.dtypes.int64)
+    correct = tf.math.reduce_sum(
+        tf.cast(tf.math.equal(pred, target), tf.float32)
+    ).numpy()
 
     return nll, loss, correct
 

@@ -15,6 +15,7 @@ from mode_connectivity.models.mlp import MLP
 from mode_connectivity.utils import (
     adjust_learning_rate,
     check_batch_normalization,
+    disable_gpu,
     l2_regularizer,
     learning_rate_schedule,
     load_checkpoint,
@@ -25,7 +26,9 @@ from mode_connectivity.utils import (
 
 def main():
     args = parse_train_arguments()
-
+    if args.disable_gpu:
+        disable_gpu()
+        
     # TODO: Set backends cudnnn
     set_seeds(seed=args.seed)
 
@@ -270,25 +273,22 @@ def train_batch(
     regularizer: Union[Callable, None] = None,
     lr_schedule: Union[Callable, None] = None,
 ) -> Tuple[float, float]:
-    # TODO Allocate model to GPU as well, but no necessary at the moment, since we don't have GPUs.
+    with tf.GradientTape() as tape:
+        output = model(input)
+        loss = criterion(target, output)  # + model.losses necessary?
+        # PyTorch:
+        # if regularizer is not None:
+        #     loss += regularizer(model)
+    grads = tape.gradient(loss, model.trainable_variables)
+    grads_and_vars = zip(grads, model.trainable_variables)
+    optimizer.apply_gradients(grads_and_vars)
 
-    with tf.device("/cpu:0"):
-        with tf.GradientTape() as tape:
-            output = model(input)
-            loss = criterion(target, output)  # + model.losses necessary?
-            # PyTorch:
-            # if regularizer is not None:
-            #     loss += regularizer(model)
-        grads = tape.gradient(loss, model.trainable_variables)
-        grads_and_vars = zip(grads, model.trainable_variables)
-        optimizer.apply_gradients(grads_and_vars)
+    # See for above:
+    # https://medium.com/analytics-vidhya/3-different-ways-to-perform-gradient-descent-in-tensorflow-2-0-and-ms-excel-ffc3791a160a
+    # https://d2l.ai/chapter_multilayer-perceptrons/weight-decay.html (4.5.4)
 
-        # See for above:
-        # https://medium.com/analytics-vidhya/3-different-ways-to-perform-gradient-descent-in-tensorflow-2-0-and-ms-excel-ffc3791a160a
-        # https://d2l.ai/chapter_multilayer-perceptrons/weight-decay.html (4.5.4)
-
-        # What exactly are we trying to add up here, see original code? Check with PyTorch Code.
-        loss = tf.reduce_sum(loss).numpy()
+    # What exactly are we trying to add up here, see original code? Check with PyTorch Code.
+    loss = tf.reduce_sum(loss).numpy()
 
     return loss
 
@@ -302,19 +302,16 @@ def test_batch(
     regularizer: Union[Callable, None] = None,
     **kwargs,
 ) -> Dict[str, float]:
-    # TODO Allocate model to GPU as well.
+    output = model(input, **kwargs)
+    nll = criterion(target, output)
+    loss = tf.identity(nll)  # Correct funtion for nll.clone() in Pytorch
+    # PyTorch:
+    # if regularizer is not None:
+    #     loss += regularizer(model)
 
-    with tf.device("/cpu:0"):
-        output = model(input, **kwargs)
-        nll = criterion(target, output)
-        loss = tf.identity(nll)  # Correct funtion for nll.clone() in Pytorch
-        # PyTorch:
-        # if regularizer is not None:
-        #     loss += regularizer(model)
-
-        nll = tf.reduce_sum(nll).numpy()
-        loss = tf.reduce_sum(loss).numpy()
-        
+    nll = tf.reduce_sum(nll).numpy()
+    loss = tf.reduce_sum(loss).numpy()
+    
     return nll, loss
 
 
