@@ -173,7 +173,7 @@ def train_epoch(
             criterion=criterion,
             lr_schedule=lr_schedule,
         )
-        loss_sum += loss_batch * len(input)
+        loss_sum += loss_batch
         correct += correct_batch
 
     return {
@@ -207,8 +207,8 @@ def test_epoch(
             criterion=criterion,
             **kwargs,
         )
-        nll_sum += nll_batch * len(input)
-        loss_sum += loss_batch * len(input)
+        nll_sum += nll_batch
+        loss_sum += loss_batch
         correct += correct_batch
 
     return {
@@ -243,7 +243,7 @@ def train_batch(
         # https://medium.com/analytics-vidhya/3-different-ways-to-perform-gradient-descent-in-tensorflow-2-0-and-ms-excel-ffc3791a160a
         # https://d2l.ai/chapter_multilayer-perceptrons/weight-decay.html (4.5.4)
 
-        loss = tf.reduce_sum(loss).numpy()
+        loss = loss.numpy() * len(input)
         pred = tf.math.argmax(output, axis=1, output_type=tf.dtypes.int64)
         # Is there an easier way?
         correct = tf.math.reduce_sum(
@@ -272,8 +272,8 @@ def test_batch(
         loss = tf.identity(nll)  # COrrect funtion for nll.clone() in Pytorch
         loss += tf.add_n(model.losses)  # Add Regularization loss
 
-        nll = tf.reduce_sum(nll).numpy()
-        loss = tf.reduce_sum(loss).numpy()
+        nll = nll.numpy() * len(input)
+        loss = loss.numpy() * len(input)
         pred = tf.math.argmax(output, axis=1, output_type=tf.dtypes.int64)
         correct = tf.math.reduce_sum(
             tf.cast(tf.math.equal(pred, target), tf.float32)
