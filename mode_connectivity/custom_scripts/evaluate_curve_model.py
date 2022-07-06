@@ -164,8 +164,7 @@ def evaluate_epoch(
     test_loader: Iterable,
     model: Layer,
     criterion: Callable,
-    n_test: int,
-    **kwargs,
+    n_test: int
 ) -> Dict[str, tf.Tensor]:
 
     loss_sum = 0.0
@@ -181,8 +180,7 @@ def evaluate_epoch(
             input=input,
             target=target,
             model=model,
-            criterion=criterion,
-            **kwargs,
+            criterion=criterion
         )
         loss_sum += loss_batch
         correct += correct_batch
@@ -202,13 +200,12 @@ def evaluate_batch(
     input: tf.Tensor,
     target: tf.Tensor,
     model: Layer,
-    criterion: Callable,
-    **kwargs,
+    criterion: Callable
 ) -> Dict[str, float]:
     # TODO Allocate model to GPU as well.
 
     with tf.device("/cpu:0"):
-        output = model(input, **kwargs)
+        output = model(input, training = False)
         loss = criterion(target, output)
 
         loss = loss.numpy() * len(input)
