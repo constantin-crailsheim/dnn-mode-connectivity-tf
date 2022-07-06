@@ -131,7 +131,7 @@ def get_model(architecture, args: Arguments, num_classes: int, input_shape):
         )
         base_model.build(input_shape=input_shape)
         if args.resume is None:
-            for path, k in [(args.init_start, 0), (args.init_end, args.num_bends - 1)]:
+            for path, k in [(args.init_start, 0), (args.init_end, args.num_bends + 1)]:
                 if path is not None:
                     print("Loading %s as point #%d" % (path, k))
                     # base_model = tf.keras.models.load_model(path)
