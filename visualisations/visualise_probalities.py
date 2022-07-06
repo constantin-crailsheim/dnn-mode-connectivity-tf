@@ -1,7 +1,4 @@
 # %%
-import os
-from typing import Union
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -35,7 +32,7 @@ def load_probabilities(set, point_on_curve, dir: str, file_name: str):
 
 dir = "results/MNIST_BasicCNN/evaluation_curve/"
 
-file_name = "predictions_and_probabilities_curve_epoch10.npz"
+file_name = "predictions_and_probabilities_curve_epoch0.npz"
 
 # %%
 
@@ -50,11 +47,11 @@ print(check_available_points_on_curve(dir, file_name))
 
 set = "train" # "train" or "test"
 
-point_on_curve = 0.1 # For evaluated points on curve see above
+point_on_curve = 0.0 # For evaluated points on curve see above
 
 target_to_evaluate = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] # Choose from 
 
-clip_min = 0.9 # Minimum of x-axis (probabilites)
+clip_min = 0 # Minimum of x-axis (probabilites)
 clip_max = 1 # Maximsum of x-axis (probabilites)
 
 bandwidth = 0.01 # Bandwidth of kernel for densities
