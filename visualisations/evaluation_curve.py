@@ -26,7 +26,7 @@ plt.legend(['Linear initialization', 'Trained curve'])
 # %%
 
 stat = "train_accuracy_scores"
-title = "Train accuracy scores"
+title = "Train accuracy score"
 
 _, plot = plt.subplots(1)
 plot.plot(stats_init["points_on_curve"], stats_init[stat])
@@ -39,7 +39,7 @@ plt.legend(['Linear initialization', 'Trained curve'])
 # %%
 
 stat = "train_accuracy_scores"
-title = "Train accuracy scores"
+title = "Train accuracy score"
 
 _, plot = plt.subplots(1)
 plot.plot(stats_init["points_on_curve"], stats_init[stat])
@@ -78,7 +78,7 @@ plt.legend(['Linear initialization', 'Trained curve'])
 # %%
 
 stat = "test_accuracy_scores"
-title = "Test accuracy scores"
+title = "Test accuracy score"
 
 _, plot = plt.subplots(1)
 plot.plot(stats_init["points_on_curve"], stats_init[stat])
@@ -91,7 +91,7 @@ plt.legend(['Linear initialization', 'Trained curve'])
 # %%
 
 stat = "test_f1_scores"
-title = "Test F1 scores"
+title = "Test F1 score"
 
 _, plot = plt.subplots(1)
 plot.plot(stats_init["points_on_curve"], stats_init[stat])
@@ -100,5 +100,3 @@ plt.title(title + " for points on curve", fontsize=12)
 plt.xlabel("Point on curve")
 plt.ylabel(title)
 plt.legend(['Linear initialization', 'Trained curve'])
-
-# %%
