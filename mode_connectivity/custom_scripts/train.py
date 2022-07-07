@@ -5,22 +5,18 @@ import tabulate
 import tensorflow as tf
 from keras.layers import Layer
 from keras.optimizers import Optimizer
-
-import mode_connectivity.curves.curves as curves
 from mode_connectivity.argparser import Arguments, parse_train_arguments
-from mode_connectivity.curves.net import CurveNet
 from mode_connectivity.data import data_loaders
-from mode_connectivity.models.cnn import CNN
-from mode_connectivity.models.mlp import MLP
 from mode_connectivity.utils import (
     adjust_learning_rate,
     check_batch_normalization,
-    l2_regularizer,
+    get_architecture,
+    get_model,
     learning_rate_schedule,
     load_checkpoint,
     save_checkpoint,
-    save_model,
     save_weights,
+    set_seeds,
 )
 
 
@@ -51,7 +47,6 @@ def main():
 
     # TODO: Check if correct function, takes labels of shape [nbatch, nclass], while F.cross_entropy()
     # takes labels of shape [nBatch]
-    regularizer = None if not args.curve else l2_regularizer(args.wd)
     optimizer = tf.keras.optimizers.SGD(
         # TODO how can we fit equivalent of arg params in PyTorch
         # PyTorch: params=filter(lambda param: param.requires_grad, model.parameters()),
@@ -81,67 +76,10 @@ def main():
         loaders=loaders,
         model=model,
         criterion=criterion,
-        regularizer=regularizer,
         optimizer=optimizer,
         start_epoch=start_epoch,
         n_datasets=n_datasets,
     )
-
-
-def set_seeds(seed: int):
-    tf.random.set_seed(seed)
-    # TODO torch.cuda.manual_seed(args.seed)
-
-
-def get_architecture(model_name: str):
-    if model_name == "CNN":
-        return CNN
-    if model_name == "MLP":
-        return MLP
-    raise KeyError(f"Unkown model {model_name}")
-
-
-def get_model(architecture, args: Arguments, num_classes: int, input_shape):
-    # Changed method arguments to take args as input () since many of those variables needed in curve-case
-
-    # If no curve is to be fit the base version of the architecture is initialised (e.g CNNBase instead of CNNCurve).
-    if not args.curve:
-        model = architecture.base(
-            num_classes=num_classes, weight_decay=args.wd, **architecture.kwargs
-        )
-        return model
-
-    # Otherwise the curve version of the architecture (e.g. CNNCurve) is initialised in the context of a CurveNet.
-    # The CurveNet additionally contains the curve (e.g. Bezier) and imports the parameters of the pre-trained base-nets that constitute the outer points of the curve.
-    else:
-        curve = getattr(curves, args.curve)
-        model = CurveNet(
-            num_classes=num_classes,
-            num_bends=args.num_bends,
-            weight_decay=args.wd,
-            curve=curve,
-            curve_model=architecture.curve,
-            fix_start=args.fix_start,
-            fix_end=args.fix_end,
-            architecture_kwargs=architecture.kwargs,
-        )
-
-        base_model = architecture.base(
-            num_classes=num_classes, weight_decay=args.wd, **architecture.kwargs
-        )
-        base_model.build(input_shape=input_shape)
-        if args.resume is None:
-            for path, k in [(args.init_start, 0), (args.init_end, args.num_bends - 1)]:
-                if path is not None:
-                    print("Loading %s as point #%d" % (path, k))
-                    # base_model = tf.keras.models.load_model(path)
-                    base_model.load_weights(path)
-                    model.import_base_parameters(base_model, k)
-            if args.init_linear:
-                print("Linear initialization.")
-                model.init_linear()
-
-        return model
 
 
 def train(
@@ -149,7 +87,6 @@ def train(
     loaders: Dict[str, Iterable],
     model: Layer,
     criterion: Callable,
-    regularizer: Union[Callable, None],
     optimizer: Optimizer,
     start_epoch: int,
     n_datasets: Dict,
@@ -169,14 +106,13 @@ def train(
             loaders["train"],
             model,
             optimizer,
-            criterion, 
+            criterion,
             n_datasets["train"],
-            regularizer,
         )
 
         if not args.curve or not has_batch_normalization:
             test_results = test_epoch(
-                loaders["test"], model, criterion, n_datasets["test"], regularizer
+                loaders["test"], model, criterion, n_datasets["test"]
             )
 
         if epoch % args.save_freq == 0:
@@ -215,7 +151,6 @@ def train_epoch(
     optimizer: Optimizer,
     criterion: Callable,
     n_train: int,
-    regularizer: Union[Callable, None] = None,
     lr_schedule: Union[Callable, None] = None,
 ) -> Dict[str, float]:
     loss_sum = 0.0
@@ -236,7 +171,6 @@ def train_epoch(
             model=model,
             optimizer=optimizer,
             criterion=criterion,
-            regularizer=regularizer,
             lr_schedule=lr_schedule,
         )
         loss_sum += loss_batch
@@ -255,7 +189,6 @@ def test_epoch(
     model: Layer,
     criterion: Callable,
     n_test: int,
-    regularizer: Union[Callable, None] = None,
     **kwargs,
 ) -> Dict[str, float]:
     nll_sum = 0.0
@@ -272,7 +205,6 @@ def test_epoch(
             test_loader=test_loader,
             model=model,
             criterion=criterion,
-            regularizer=regularizer,
             **kwargs,
         )
         nll_sum += nll_batch
@@ -294,7 +226,6 @@ def train_batch(
     model: Layer,
     optimizer: Optimizer,
     criterion: Callable,
-    regularizer: Union[Callable, None] = None,
     lr_schedule: Union[Callable, None] = None,
 ) -> Tuple[float, float]:
     # TODO Allocate model to GPU as well, but no necessary at the moment, since we don't have GPUs.
@@ -302,10 +233,8 @@ def train_batch(
     with tf.device("/cpu:0"):
         with tf.GradientTape() as tape:
             output = model(input)
-            loss = criterion(target, output)  # + model.losses necessary?
-            # PyTorch:
-            # if regularizer is not None:
-            #     loss += regularizer(model)
+            loss = criterion(target, output)
+            loss += tf.add_n(model.losses)  # Add Regularization loss
         grads = tape.gradient(loss, model.trainable_variables)
         grads_and_vars = zip(grads, model.trainable_variables)
         optimizer.apply_gradients(grads_and_vars)
@@ -314,7 +243,7 @@ def train_batch(
         # https://medium.com/analytics-vidhya/3-different-ways-to-perform-gradient-descent-in-tensorflow-2-0-and-ms-excel-ffc3791a160a
         # https://d2l.ai/chapter_multilayer-perceptrons/weight-decay.html (4.5.4)
 
-        loss = tf.reduce_sum(loss).numpy()
+        loss = loss.numpy() * len(input)
         pred = tf.math.argmax(output, axis=1, output_type=tf.dtypes.int64)
         # Is there an easier way?
         correct = tf.math.reduce_sum(
@@ -332,21 +261,19 @@ def test_batch(
     test_loader: Iterable,
     model: Layer,
     criterion: Callable,
-    regularizer: Union[Callable, None] = None,
     **kwargs,
 ) -> Dict[str, float]:
     # TODO Allocate model to GPU as well.
 
     with tf.device("/cpu:0"):
         output = model(input, **kwargs)
+        # TODO is Negative Loss Likelihood calculated correctly here?
         nll = criterion(target, output)
         loss = tf.identity(nll)  # COrrect funtion for nll.clone() in Pytorch
-        # PyTorch:
-        # if regularizer is not None:
-        #     loss += regularizer(model)
+        loss += tf.add_n(model.losses)  # Add Regularization loss
 
-        nll = tf.reduce_sum(nll).numpy()
-        loss = tf.reduce_sum(loss).numpy() 
+        nll = nll.numpy() * len(input)
+        loss = loss.numpy() * len(input)
         pred = tf.math.argmax(output, axis=1, output_type=tf.dtypes.int64)
         correct = tf.math.reduce_sum(
             tf.cast(tf.math.equal(pred, target), tf.float32)
