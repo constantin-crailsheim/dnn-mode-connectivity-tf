@@ -8,8 +8,8 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import tensorflow as tf
 from keras.layers import Layer
 
+from sklearn.metrics import accuracy_score
 from sklearn.metrics import f1_score
-from sklearn.metrics import precision_score
 
 from mode_connectivity.argparser import Arguments, parse_evaluate_arguments
 from mode_connectivity.data import data_loaders
@@ -50,9 +50,12 @@ def main():
         points_on_curve = [args.point_on_curve]
     
     train_losses = np.zeros(T)
-    train_accuracies = np.zeros(T)
+    train_accuracy_scores = np.zeros(T)
+    train_f1_scores = np.zeros(T)
     test_losses = np.zeros(T)
-    test_accuracies = np.zeros(T)
+    test_accuracy_scores = np.zeros(T)
+    test_f1_scores = np.zeros(T)
+
     dl = np.zeros(T)
 
     train_predictions = []
@@ -61,12 +64,6 @@ def main():
     test_predictions = []
     test_targets = []
     test_output = []
-
-    train_f1_scores = np.zeros(T)
-    train_precision_scores = np.zeros(T)
-    test_f1_scores = np.zeros(T)
-    test_precision_scores = np.zeros(T)
-
 
     previous_parameters = None
 
@@ -95,9 +92,7 @@ def main():
             )
 
         train_losses[i] = train_results['loss']
-        train_accuracies[i] = train_results['accuracy']
         test_losses[i] = test_results['loss']
-        test_accuracies[i] = test_results['accuracy']
 
         train_predictions.append(train_results['pred'])
         train_output.append(train_results['output'])
@@ -106,19 +101,19 @@ def main():
         test_output.append(test_results['output'])
         test_targets.append(test_results['target'])
 
+        train_accuracy_scores[i] = accuracy_score(train_results['target'], train_results['pred'])
         train_f1_scores[i] = f1_score(train_results['target'], train_results['pred'], average='weighted')
-        train_precision_scores[i] = precision_score(train_results['target'], train_results['pred'],  average='weighted')
+        test_accuracy_scores[i] = accuracy_score(test_results['target'], test_results['pred'])
         test_f1_scores[i] = f1_score(test_results['target'], test_results['pred'], average='weighted')
-        test_precision_scores[i] = precision_score(test_results['target'], test_results['pred'],  average='weighted')
-
-        values = [point_on_curve, train_losses[i], train_accuracies[i], test_losses[i], test_accuracies[i], train_f1_scores[i], train_precision_scores[i], test_f1_scores[i], test_precision_scores[i]]
+        
+        values = [point_on_curve, train_losses[i], train_accuracy_scores[i] * 100, train_f1_scores[i], test_losses[i], test_accuracy_scores[i] * 100, test_f1_scores[i]]
 
         print_stats_of_point_on_curve(values, i)
     
     if args.save_evaluation == True:
         save_stats_of_points_on_curve(
-            train_losses, train_accuracies, test_losses, test_accuracies,
-            train_f1_scores, train_precision_scores, test_f1_scores, test_precision_scores,
+            train_losses, train_accuracy_scores, train_f1_scores,
+            test_losses, test_accuracy_scores, test_f1_scores,
             points_on_curve, dl, args.dir)
         
         save_predictions_and_probabilites(
@@ -129,8 +124,8 @@ def main():
 
     if len(points_on_curve) > 1:
         print_and_save_summary_stats(
-            train_losses, train_accuracies, test_losses, test_accuracies,
-            train_f1_scores, train_precision_scores, test_f1_scores, test_precision_scores,
+            train_losses, train_accuracy_scores, train_f1_scores,
+            test_losses, test_accuracy_scores, test_f1_scores,
             points_on_curve, dl, args.dir, save=args.save_evaluation)
 
 
@@ -176,21 +171,19 @@ def evaluate_epoch(
 
     # PyTorch: model.eval()
     for input, target in test_loader:
-        loss_batch, correct_batch, pred_batch, output_batch, target_batch = evaluate_batch(
+        loss_batch, pred_batch, output_batch, target_batch = evaluate_batch(
             input=input,
             target=target,
             model=model,
             criterion=criterion
         )
         loss_sum += loss_batch
-        correct += correct_batch
         pred += pred_batch
         output += output_batch
         target_list += target_batch
 
     return {
         "loss": loss_sum / n_test,
-        "accuracy": correct * 100.0 / n_test,
         "pred": np.array(pred),  
         "output": np.array(output),  
         "target": np.array(target_list), 
@@ -210,15 +203,12 @@ def evaluate_batch(
 
         loss = loss.numpy() * len(input)
         pred = tf.math.argmax(output, axis=1, output_type=tf.dtypes.int64)
-        correct = tf.math.reduce_sum(
-            tf.cast(tf.math.equal(pred, target), tf.float32)
-        ).numpy()
 
-    return loss, correct, pred.numpy().tolist(), output.numpy().tolist(), target.numpy().tolist()
+    return loss, pred.numpy().tolist(), output.numpy().tolist(), target.numpy().tolist()
 
 
 def print_stats_of_point_on_curve(values, i):
-    columns = ['Point on curve', 'Train loss', 'Train accuracy (%)', 'Test loss', 'Test accuracy (%)', 'Train F1 score', 'Train precision score', 'Test F1 score', 'Test precision score']
+    columns = ['Point on curve', 'Train loss', 'Train accuracy (%)', 'Train F1 score', 'Test loss', 'Test accuracy (%)', 'Test F1 score']
     table = tabulate.tabulate([values], columns, tablefmt='simple', floatfmt='10.4f')
     if i % 40 == 0:
         table = table.split('\n')
@@ -228,8 +218,8 @@ def print_stats_of_point_on_curve(values, i):
     print(table)
 
 def save_stats_of_points_on_curve(
-        train_losses, train_accuracies, test_losses, test_accuracies,
-        train_f1_scores, train_precision_scores, test_f1_scores, test_precision_scores,
+        train_losses, train_accuracy_scores, train_f1_scores,
+        test_losses, test_accuracy_scores, test_f1_scores,
         points_on_curve, dl, dir: str, file_name: str = 'stats_of_points_on_curve.npz'):
 
         os.makedirs(dir, exist_ok=True)
@@ -237,13 +227,11 @@ def save_stats_of_points_on_curve(
             os.path.join(dir, file_name),
             points_on_curve=points_on_curve,
             train_losses=train_losses,
-            train_accuracies=train_accuracies,
-            test_losses=test_losses,
-            test_accuracies=test_accuracies,
+            train_accuracy_scores=train_accuracy_scores,
             train_f1_scores=train_f1_scores,
-            train_precision_scores=train_precision_scores,
+            test_losses=test_losses,
+            test_accuracy_scores=test_accuracy_scores,
             test_f1_scores=test_f1_scores,
-            test_precision_scores=test_precision_scores,
             dl=dl
         )
 
@@ -272,30 +260,26 @@ def compute_stats(values, dl):
     return min, max, avg, int
 
 def print_and_save_summary_stats(
-        train_losses, train_accuracies, test_losses, test_accuracies,
-        train_f1_scores, train_precision_scores, test_f1_scores, test_precision_scores,
+        train_losses, train_accuracy_scores, train_f1_scores,
+        test_losses, test_accuracy_scores, test_f1_scores,
         points_on_curve, dl, dir: str, file_name: str = 'summary_stats_curve.npz', save: bool = True):
 
     train_loss_min, train_loss_max, train_loss_avg, train_loss_int = compute_stats(train_losses, dl)
-    train_accuracy_min, train_accuracy_max, train_accuracy_avg, train_accuracy_int = compute_stats(train_accuracies, dl)
+    train_accuracy_scores_min, train_accuracy_scores_max, train_accuracy_scores_avg, train_accuracy_scores_int = compute_stats(train_accuracy_scores, dl)
     train_f1_scores_min, train_f1_scores_max, train_f1_scores_avg, train_f1_scores_int = compute_stats(train_f1_scores, dl)
-    train_precision_scores_min, train_precision_scores_max, train_precision_scores_avg, train_precision_scores_int = compute_stats(train_precision_scores, dl)
 
     test_loss_min, test_loss_max, test_loss_avg, test_loss_int = compute_stats(test_losses, dl)
-    test_accuracy_min, test_accuracy_max, test_accuracy_avg, test_accuracy_int = compute_stats(test_accuracies, dl)
+    test_accuracy_scores_min, test_accuracy_scores_max, test_accuracy_scores_avg, test_accuracy_scores_int = compute_stats(test_accuracy_scores, dl)
     test_f1_scores_min, test_f1_scores_max, test_f1_scores_avg, test_f1_scores_int = compute_stats(test_f1_scores, dl)
-    test_precision_scores_min, test_precision_scores_max, test_precision_scores_avg, test_precision_scores_int = compute_stats(test_precision_scores, dl)
-
+    
     print('Length: %.2f' % np.sum(dl))
     print(tabulate.tabulate([
             ['Train loss', train_losses[0], train_losses[-1], train_loss_min, train_loss_max, train_loss_avg, train_loss_int],
-            ['Train accuracy (%)', train_accuracies[0], train_accuracies[-1], train_accuracy_min, train_accuracy_max, train_accuracy_avg, train_accuracy_int],
+            ['Train accuracy (%)', train_accuracy_scores[0]*100, train_accuracy_scores[-1]*100, train_accuracy_scores_min*100, train_accuracy_scores_max*100, train_accuracy_scores_avg*100, train_accuracy_scores_int*100],
             ['Train F1 score', train_f1_scores[0], train_f1_scores[-1], train_f1_scores_min, train_f1_scores_max, train_f1_scores_avg, train_f1_scores_int],
-            ['Train precision score', train_precision_scores[0], train_precision_scores[-1], train_precision_scores_min, train_precision_scores_max, train_precision_scores_avg, train_precision_scores_int],
             ['Test loss', test_losses[0], test_losses[-1], test_loss_min, test_loss_max, test_loss_avg, test_loss_int],
-            ['Test accuracy (%)', test_accuracies[0], test_accuracies[-1], test_accuracy_min, test_accuracy_max, test_accuracy_avg, test_accuracy_int],
+            ['Test accuracy (%)', test_accuracy_scores[0]*100, test_accuracy_scores[-1]*100, test_accuracy_scores_min*100, test_accuracy_scores_max*100, test_accuracy_scores_avg*100, test_accuracy_scores_int*100],
             ['Test F1 score', test_f1_scores[0], test_f1_scores[-1], test_f1_scores_min, test_f1_scores_max, test_f1_scores_avg, test_f1_scores_int],
-            ['Test precision score', test_precision_scores[0], test_precision_scores[-1], test_precision_scores_min, test_precision_scores_max, test_precision_scores_avg, test_precision_scores_int],
         ], [
             '', 'start', 'end', 'min', 'max', 'avg', 'int'
         ], tablefmt='simple', floatfmt='10.4f'))
@@ -309,34 +293,26 @@ def print_and_save_summary_stats(
             train_loss_max=train_loss_max,
             train_loss_avg=train_loss_avg,
             train_loss_int=train_loss_int,
-            train_accuracy_min=train_accuracy_min,
-            train_accuracy_max=train_accuracy_max,
-            train_accuracy_avg=train_accuracy_avg,
-            train_accuracy_int=train_accuracy_int,
+            train_accuracy_min=train_accuracy_scores_min,
+            train_accuracy_max=train_accuracy_scores_max,
+            train_accuracy_avg=train_accuracy_scores_avg,
+            train_accuracy_int=train_accuracy_scores_int,
             train_f1_scores_min=train_f1_scores_min,
             train_f1_scores_max=train_f1_scores_max,
             train_f1_scores_avg=train_f1_scores_avg,
             train_f1_scores_int=train_f1_scores_int,
-            train_precision_scores_min=train_precision_scores_min,
-            train_precision_scores_max=train_precision_scores_max,
-            train_precision_scores_avg=train_precision_scores_avg,
-            train_precision_scores_int=train_precision_scores_int,
             test_loss_min=test_loss_min,
             test_loss_max=test_loss_max,
             test_loss_avg=test_loss_avg,
             test_loss_int=test_loss_int,
-            test_accuracy_min=test_accuracy_min,
-            test_accuracy_max=test_accuracy_max,
-            test_accuracy_avg=test_accuracy_avg,
-            test_accuracy_int=test_accuracy_int,
+            test_accuracy_min=test_accuracy_scores_min,
+            test_accuracy_max=test_accuracy_scores_max,
+            test_accuracy_avg=test_accuracy_scores_avg,
+            test_accuracy_int=test_accuracy_scores_int,
             test_f1_scores_min=test_f1_scores_min,
             test_f1_scores_max=test_f1_scores_max,
             test_f1_scores_avg=test_f1_scores_avg,
-            test_f1_scores_int=test_f1_scores_int,
-            test_precision_scores_min=test_precision_scores_min,
-            test_precision_scores_max=test_precision_scores_max,
-            test_precision_scores_avg=test_precision_scores_avg,
-            test_precision_scores_int=test_precision_scores_int
+            test_f1_scores_int=test_f1_scores_int
         )
 
 if __name__ == "__main__":

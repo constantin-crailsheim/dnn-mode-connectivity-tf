@@ -21,11 +21,12 @@ plot.plot(stats_curve["points_on_curve"], stats_curve[stat])
 plt.title(title + " for points on curve", fontsize=12)
 plt.xlabel("Point on curve")
 plt.ylabel(title)
+plt.legend(['Linear initialization', 'Trained curve'])
 
 # %%
 
-stat = "train_accuracies"
-title = "Train accuracy"
+stat = "train_accuracy_scores"
+title = "Train accuracy scores"
 
 _, plot = plt.subplots(1)
 plot.plot(stats_init["points_on_curve"], stats_init[stat])
@@ -33,6 +34,20 @@ plot.plot(stats_curve["points_on_curve"], stats_curve[stat])
 plt.title(title + " for points on curve", fontsize=12)
 plt.xlabel("Point on curve")
 plt.ylabel(title)
+plt.legend(['Linear initialization', 'Trained curve'])
+
+# %%
+
+stat = "train_accuracy_scores"
+title = "Train accuracy scores"
+
+_, plot = plt.subplots(1)
+plot.plot(stats_init["points_on_curve"], stats_init[stat])
+plot.plot(stats_curve["points_on_curve"], stats_curve[stat])
+plt.title(title + " for points on curve", fontsize=12)
+plt.xlabel("Point on curve")
+plt.ylabel(title)
+plt.legend(['Linear initialization', 'Trained curve'])
 
 # %%
 
@@ -45,18 +60,7 @@ plot.plot(stats_curve["points_on_curve"], stats_curve[stat])
 plt.title(title + " for points on curve", fontsize=12)
 plt.xlabel("Point on curve")
 plt.ylabel(title)
-
-# %%
-
-stat = "train_precision_scores"
-title = "Train precision scores"
-
-_, plot = plt.subplots(1)
-plot.plot(stats_init["points_on_curve"], stats_init[stat])
-plot.plot(stats_curve["points_on_curve"], stats_curve[stat])
-plt.title(title + " for points on curve", fontsize=12)
-plt.xlabel("Point on curve")
-plt.ylabel(title)
+plt.legend(['Linear initialization', 'Trained curve'])
 
 # %%
 
@@ -69,11 +73,12 @@ plot.plot(stats_curve["points_on_curve"], stats_curve[stat])
 plt.title(title + " for points on curve", fontsize=12)
 plt.xlabel("Point on curve")
 plt.ylabel(title)
+plt.legend(['Linear initialization', 'Trained curve'])
 
 # %%
 
-stat = "test_accuracies"
-title = "Test accuracy"
+stat = "test_accuracy_scores"
+title = "Test accuracy scores"
 
 _, plot = plt.subplots(1)
 plot.plot(stats_init["points_on_curve"], stats_init[stat])
@@ -81,6 +86,7 @@ plot.plot(stats_curve["points_on_curve"], stats_curve[stat])
 plt.title(title + " for points on curve", fontsize=12)
 plt.xlabel("Point on curve")
 plt.ylabel(title)
+plt.legend(['Linear initialization', 'Trained curve'])
 
 # %%
 
@@ -93,52 +99,6 @@ plot.plot(stats_curve["points_on_curve"], stats_curve[stat])
 plt.title(title + " for points on curve", fontsize=12)
 plt.xlabel("Point on curve")
 plt.ylabel(title)
+plt.legend(['Linear initialization', 'Trained curve'])
 
-# %%
-
-stat = "test_precision_scores"
-title = "Test precision scores"
-
-_, plot = plt.subplots(1)
-plot.plot(stats_init["points_on_curve"], stats_init[stat])
-plot.plot(stats_curve["points_on_curve"], stats_curve[stat])
-plt.title(title + " for points on curve", fontsize=12)
-plt.xlabel("Point on curve")
-plt.ylabel(title)
-
-# %%
-
-# Combination possible, but not sensible scale
-
-stat1 = "train_accuracies"
-stat2 = "train_f1_scores"
-stat3 = "train_precision_scores"
-title = "Evaluation of train set"
-
-plt.plot(stats_curve["points_on_curve"], stats_curve[stat1]/100, color = 'blue', label = stat1)
-plt.plot(stats_curve["points_on_curve"], stats_curve[stat2], color = 'orange', label = stat2)
-plt.plot(stats_curve["points_on_curve"], stats_curve[stat3], color = 'black', label = stat3)
-plt.title(title + " for points on curve", fontsize=12)
-plt.xlabel("Point on curve")
-plt.ylabel(title)
-plt.legend()
-plt.show()
-
-# %%
-
-# Combination possible, but not sensible scale
-
-stat1 = "test_accuracies"
-stat2 = "test_f1_scores"
-stat3 = "test_precision_scores"
-title = "Evaluation of test set"
-
-plt.plot(stats_curve["points_on_curve"], stats_curve[stat1]/100, color = 'blue', label = stat1)
-plt.plot(stats_curve["points_on_curve"], stats_curve[stat2], color = 'orange', label = stat2)
-plt.plot(stats_curve["points_on_curve"], stats_curve[stat3], color = 'black', label = stat3)
-plt.title(title + " for points on curve", fontsize=12)
-plt.xlabel("Point on curve")
-plt.ylabel(title)
-plt.legend()
-plt.show()
 # %%
