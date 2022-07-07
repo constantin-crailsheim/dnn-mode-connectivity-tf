@@ -32,7 +32,7 @@ def point_on_curve(request) -> float:
 
 
 class TestPolyChain:
-    @pytest.mark.parametrize("num_bends", [1, 2, 3, 4, 5])
+    @pytest.mark.parametrize("num_bends", [0, 1, 2, 3, 4, 5])
     def test_init(self, num_bends):
         curve = PolyChain(num_bends=num_bends)
         assert isinstance(curve, PolyChain)
@@ -42,7 +42,7 @@ class TestPolyChain:
         assert curve.range[-1] == num_bends + 1
         assert curve.range.shape == num_bends + 2
 
-    @pytest.mark.parametrize("num_bends", [0, -1])
+    @pytest.mark.parametrize("num_bends", [-1, -2])
     def test_init_smaller_1(self, num_bends):
         with pytest.raises(ValueError):
             PolyChain(num_bends=num_bends)
