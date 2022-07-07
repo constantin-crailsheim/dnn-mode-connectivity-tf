@@ -26,6 +26,7 @@ from mode_connectivity.models.mlp import MLP
 from mode_connectivity.utils import (
     adjust_learning_rate,
     check_batch_normalization,
+    disable_gpu,
     l2_regularizer,
     learning_rate_schedule,
     load_checkpoint,
@@ -48,6 +49,8 @@ from utils import (
 
 def main():
     args = parse_evaluate_arguments()
+    if args.disable_gpu:
+        disable_gpu()
 
     loaders, num_classes, n_datasets = data_loaders(
         dataset=args.dataset,
@@ -69,9 +72,8 @@ def main():
     criterion = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
     regularizer = None if not args.curve else l2_regularizer(args.wd)
 
-    with tf.device("/cpu:0"):
-        point_on_curve_tensor = tf.constant(args.point_on_curve, shape = (), dtype = tf.float32)
-        model.point_on_curve.assign(point_on_curve_tensor)
+    point_on_curve_tensor = tf.constant(args.point_on_curve, shape = (), dtype = tf.float32)
+    model.point_on_curve.assign(point_on_curve_tensor)
 
 
     train_results = evaluation_epoch(
@@ -203,22 +205,19 @@ def evaluation_batch(
     criterion: Callable,
     regularizer: Union[Callable, None] = None,
 ) -> Dict[str, float]:
-    # TODO Allocate model to GPU as well.
+    output = model(input, training=False)
+    nll = criterion(target, output)
+    loss = tf.identity(nll)  # COrrect funtion for nll.clone() in Pytorch
+    # PyTorch:
+    # if regularizer is not None:
+    #     loss += regularizer(model)
 
-    with tf.device("/cpu:0"):
-        output = model(input, training=False)
-        nll = criterion(target, output)
-        loss = tf.identity(nll)  # COrrect funtion for nll.clone() in Pytorch
-        # PyTorch:
-        # if regularizer is not None:
-        #     loss += regularizer(model)
-
-        nll = tf.reduce_sum(nll).numpy()
-        loss = tf.reduce_sum(loss).numpy()
-        pred = tf.math.argmax(output, axis=1, output_type=tf.dtypes.int64)
-        correct = tf.math.reduce_sum(
-            tf.cast(tf.math.equal(pred, target), tf.float32)
-        ).numpy()
+    nll = tf.reduce_sum(nll).numpy()
+    loss = tf.reduce_sum(loss).numpy()
+    pred = tf.math.argmax(output, axis=1, output_type=tf.dtypes.int64)
+    correct = tf.math.reduce_sum(
+        tf.cast(tf.math.equal(pred, target), tf.float32)
+    ).numpy()
 
     return nll, loss, correct, pred.numpy().tolist(), output.numpy().tolist(), target.numpy().tolist()
 
