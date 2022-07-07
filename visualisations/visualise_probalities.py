@@ -18,7 +18,7 @@ def check_available_points_on_curve(dir: str, file_name: str):
 def load_probabilities(set, point_on_curve, dir: str, file_name: str):
     path = "../" + dir + file_name
     stats = np.load(path)
-    id_point_on_curve = stats['points_on_curve'] == point_on_curve
+    id_point_on_curve = np.isclose(stats['points_on_curve'], point_on_curve)
     target = stats[set + "_targets"][id_point_on_curve][0]
     output = stats[set + '_output'][id_point_on_curve][0]
     output_probs = softmax(output)
@@ -47,7 +47,7 @@ print(check_available_points_on_curve(dir, file_name))
 
 set = "train" # "train" or "test"
 
-point_on_curve = 0.0 # For evaluated points on curve see above
+point_on_curve = 0.8 # For evaluated points on curve see above
 
 target_to_evaluate = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] # Choose from 
 
