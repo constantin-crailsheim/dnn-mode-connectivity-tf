@@ -7,6 +7,7 @@ from mode_connectivity.curves.curves import PolyChain, Curve
 def list_as_tensor(list_: list, dtype=np.float32) -> tf.Tensor:
     return tf.convert_to_tensor(np.asarray(list_, dtype))
 
+
 testdata_output = [
     (1, 0.0, list_as_tensor([1.0, 0.0, 0.0])),
     (1, 0.25, list_as_tensor([0.5, 0.5, 0.0])),
@@ -43,7 +44,7 @@ class TestPolyChain:
         assert curve.range.shape == num_bends + 2
 
     @pytest.mark.parametrize("num_bends", [-1, -2])
-    def test_init_smaller_1(self, num_bends):
+    def test_init_smaller_0(self, num_bends):
         with pytest.raises(ValueError):
             PolyChain(num_bends=num_bends)
 
@@ -53,7 +54,12 @@ class TestPolyChain:
         output_3 = polychain(point_on_curve)
         assert np.allclose(output_1, output_2, output_3)
         assert np.allclose(sum(output_1), sum(output_2), sum(output_3), 1)
-        assert output_1.shape == output_2.shape == output_3.shape == polychain.num_bends + 2
+        assert (
+            output_1.shape
+            == output_2.shape
+            == output_3.shape
+            == polychain.num_bends + 2
+        )
 
     @pytest.mark.parametrize(
         "num_bends, point_on_curve, expected_output", testdata_output
@@ -72,7 +78,12 @@ class TestPolyChain:
         output_3 = polychain(tf.constant(point_on_curve))
         assert np.allclose(output_1, output_2, output_3)
         assert np.allclose(sum(output_1), sum(output_2), sum(output_3), 1)
-        assert output_1.shape == output_2.shape == output_3.shape == polychain.num_bends + 2
+        assert (
+            output_1.shape
+            == output_2.shape
+            == output_3.shape
+            == polychain.num_bends + 2
+        )
 
     @pytest.mark.parametrize(
         "num_bends, point_on_curve, expected_output", testdata_output

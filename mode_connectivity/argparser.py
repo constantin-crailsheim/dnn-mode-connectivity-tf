@@ -27,6 +27,7 @@ class Arguments:
     # Compute
     num_workers: int = 4
     seed: int = 1
+    disable_gpu: bool = False
 
     # Checkpoints
     init_start: str = None
@@ -121,6 +122,12 @@ def _add_compute_arguments(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         "--seed", type=int, default=1, metavar="S", help="random seed (default: 1)"
+    )
+    parser.add_argument(
+        "--disable-gpu",
+        dest="disable_gpu",
+        action="store_true",
+        help="disable GPU in computation (default: False)",
     )
 
 

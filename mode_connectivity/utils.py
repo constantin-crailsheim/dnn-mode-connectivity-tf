@@ -7,7 +7,28 @@ import keras
 import tensorflow as tf
 from tensorflow.python.framework.errors import NotFoundError
 
+import mode_connectivity.curves.curves as curves
+from mode_connectivity.argparser import Arguments
+from mode_connectivity.curves.net import CurveNet
+from mode_connectivity.data import data_loaders
+from mode_connectivity.models.cnn import CNN
+from mode_connectivity.models.mlp import MLP
+
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+
+def disable_gpu():
+    logger.info("Trying to disable GPU")
+    try:
+        tf.config.set_visible_devices([], "GPU")
+        logger.info(f"GPU disabled.")
+    except RuntimeError:
+        logger.error(
+            "Cannot modify devices after calling tensorflow methods. "
+            "Try to set your device before any operations. "
+        )
+    logger.info(f"Running on devices {tf.config.get_visible_devices()}")
 
 
 def set_seeds(seed: int):
@@ -68,8 +89,8 @@ def check_batch_normalization(model):
 
 def load_checkpoint(
     checkpoint_path: str,
-    model: keras.Model,
-    optimizer: keras.optimizers.Optimizer,
+    model: tf.keras.Model,
+    optimizer: tf.keras.optimizers.Optimizer,
     **kwargs,
 ) -> int:
     """Load the model and optimizer from a saved checkpoint.
@@ -107,8 +128,8 @@ def load_checkpoint(
 def save_checkpoint(
     directory: str,
     epoch: int,
-    model: keras.Model,
-    optimizer: keras.optimizers.Optimizer,
+    model: tf.keras.Model,
+    optimizer: tf.keras.optimizers.Optimizer,
     name: str = "checkpoint",
     **kwargs,
 ) -> None:
@@ -156,7 +177,7 @@ def split_list(list_: List[Any], size: int) -> List[List[Any]]:
 def save_model(
     directory: str,
     epoch: int,
-    model: keras.Model,
+    model: tf.keras.Model,
 ) -> None:
     """
     Save the current model in SavedModel format.
@@ -184,3 +205,102 @@ def save_weights(
     # print(model.curve_model.input_spec)
     # print(model.call.get_concrete_function(inputs=model.curve_model.input_spec))
     model.save_weights(model_path)
+
+
+def get_architecture(model_name: str):
+    if model_name == "CNN":
+        return CNN
+    if model_name == "MLP":
+        return MLP
+    raise KeyError(f"Unkown model {model_name}")
+
+
+def get_model(architecture, args: Arguments, num_classes: int, input_shape):
+    # If no curve is to be fit the base version of the architecture is initialised (e.g CNNBase instead of CNNCurve).
+    if not args.curve:
+        logger.info(f"Loading Regular Model {architecture.__name__}")
+        model = architecture.base(
+            num_classes=num_classes, weight_decay=args.wd, **architecture.kwargs
+        )
+        return model
+
+    # Otherwise the curve version of the architecture (e.g. CNNCurve) is initialised in the context of a CurveNet.
+    # The CurveNet additionally contains the curve (e.g. Bezier) and imports the parameters of the pre-trained base-nets that constitute the outer points of the curve.
+    curve = getattr(curves, args.curve)
+    logger.info(
+        f"Loading CurveNet with CurveModel {architecture.__name__} and Curve {curve.__name__}"
+    )
+    model = CurveNet(
+        num_classes=num_classes,
+        num_bends=args.num_bends,
+        weight_decay=args.wd,
+        curve=curve,
+        curve_model=architecture.curve,
+        fix_start=args.fix_start,
+        fix_end=args.fix_end,
+        architecture_kwargs=architecture.kwargs,
+    )
+
+    if args.ckpt:
+        logger.info(f"Restoring model from checkpoint {args.ckpt} for evaluation")
+        # Evalutate the model from Checkpoint
+        # expect_partial()
+        # -> silence Value in checkpoint could not be found in the restored object: (root).optimizer. ..
+        # https://stackoverflow.com/questions/58289342/tf2-0-translation-model-error-when-restoring-the-saved-model-unresolved-objec
+        model.load_weights(args.ckpt).expect_partial()
+        return model
+
+    # Build model from 0, 1 or 2 base_models
+    base_model = architecture.base(
+        num_classes=num_classes, weight_decay=args.wd, **architecture.kwargs
+    )
+    base_model.build(input_shape=input_shape)
+    if args.resume is None:
+        load_base_weights(
+            path=args.init_start,
+            index=0,
+            model=model,
+            base_model=base_model,
+        )
+        load_base_weights(
+            path=args.init_end,
+            index=args.num_bends + 1,
+            model=model,
+            base_model=base_model,
+        )
+        if args.init_linear:
+            logger.info("Linear initialization.")
+            model.init_linear()
+
+    return model
+
+
+def load_base_weights(
+    path: str, index: int, model: tf.keras.Model, base_model: tf.keras.Model
+) -> None:
+    if not path:
+        return None
+    logger.info(f"Loading {path} as point #{index}")
+    base_model.load_weights(path).expect_partial()
+    model.import_base_parameters(base_model, index)
+
+
+def get_model_and_loaders(args: Arguments):
+    loaders, num_classes, _ = data_loaders(
+        dataset=args.dataset,
+        path=args.data_path,
+        batch_size=args.batch_size,
+        num_workers=args.num_workers,
+        transform_name=args.transform,
+        use_test=args.use_test,
+    )
+
+    architecture = get_architecture(model_name=args.model)
+    model = get_model(
+        architecture=architecture,
+        args=args,
+        num_classes=num_classes,
+        input_shape=(None, 28, 28, 1),  # TODO Determine this from dataset
+    )
+
+    return loaders, model
