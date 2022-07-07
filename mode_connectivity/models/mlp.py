@@ -19,7 +19,7 @@ class MLPBase(tf.keras.Model):  # Inherit equivalent of torch.nn
                 #     activation="tanh",
                 #     kernel_regularizer = tf.keras.regularizers.L2(weight_decay)),
                 tf.keras.layers.Dense(
-                    units=4,
+                    units=16,
                     activation="tanh",
                     kernel_regularizer = tf.keras.regularizers.L2(weight_decay)),
                 tf.keras.layers.Dense(
@@ -45,7 +45,7 @@ class MLPCurve(tf.keras.Model):  # Inherit equivalent of torch.nn
         #     kernel_regularizer = tf.keras.regularizers.L2(weight_decay)
         # )
         self.dense1 = DenseCurve(
-            units=4,
+            units=16,
             fix_points=fix_points,
             activation="tanh",
             kernel_regularizer = tf.keras.regularizers.L2(weight_decay)

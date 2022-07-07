@@ -195,9 +195,9 @@ def train(
             directory=args.dir, epoch=epoch, model=model, optimizer=optimizer
         )
 
-        # Additionally save the final model as SavedModel.
-        save_weights(directory=args.dir, epoch=epoch, model=model)
-        save_model(directory=args.dir, epoch=epoch, model=model)
+    # Additionally save the final model as SavedModel.
+    save_weights(directory=args.dir, epoch=epoch, model=model)
+    save_model(directory=args.dir, epoch=epoch, model=model)
 
 
 def train_epoch(

@@ -40,34 +40,36 @@ def load_model(path, architecture, curve, num_bends, wd, fix_start, fix_end, num
     return model
 
 # %%
-path = "../results/Regression_MLP/checkpoints_curve/model-weights-epoch20"
+path = "../results/Regression_MLP/checkpoints_curve/model-weights-epoch100"
 
 model = load_model(
     path=path,
     architecture = MLP,
     curve = "Bezier",
-    num_bends=3,
+    num_bends=5,
     wd=1e-4,
-    fix_start=True,
-    fix_end=True,
-    num_classes=10,
-    input_shape=(None, 2)
-)
-# %%
-
-path = "../results/Regression_LinReg/checkpoints_curve/model-weights-epoch10"
-
-model = load_model(
-    path=path,
-    architecture = LinReg,
-    curve = "Bezier",
-    num_bends=3,
-    wd=5e-4,
     fix_start=True,
     fix_end=True,
     num_classes=10,
     input_shape=(None, 4)
 )
+
+
+# %%
+
+# path = "../results/Regression_LinReg/checkpoints_curve/model-weights-epoch10"
+
+# model = load_model(
+#     path=path,
+#     architecture = LinReg,
+#     curve = "Bezier",
+#     num_bends=3,
+#     wd=5e-4,
+#     fix_start=True,
+#     fix_end=True,
+#     num_classes=10,
+#     input_shape=(None, 4)
+# )
 
 
 # %%

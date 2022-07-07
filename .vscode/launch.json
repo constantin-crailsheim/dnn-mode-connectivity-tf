@@ -143,7 +143,7 @@
                 "--dataset=regression",
                 "--data-path=datasets/",
                 "--model=MLP",
-                "--epochs=20",
+                "--epochs=300",
                 "--lr=0.0001",
                 "--wd=5e-4",
                 "--transform=MLP",
@@ -162,11 +162,11 @@
                 "--dataset=regression",
                 "--data-path=datasets/",
                 "--model=MLP",
-                "--epochs=20",
+                "--epochs=300",
                 "--lr=0.0001",
                 "--wd=5e-4",
                 "--transform=MLP",
-                "--seed=42"
+                "--seed=2"
             ]
         },
         {
@@ -184,12 +184,12 @@
                 "--curve=Bezier",
                 "--transform=MLP",
                 "--num-bends=5",
-                "--epochs=20",
+                "--epochs=100",
                 "--lr=0.01",
                 "--wd=1e-4",
-                "--init-start=results/Regression_MLP/checkpoints_model_1/model-weights-epoch20",
+                "--init-start=results/Regression_MLP/checkpoints_model_1/model-weights-epoch300",
                 "--fix-start",
-                "--init-end=results/Regression_MLP/checkpoints_model_2/model-weights-epoch20",
+                "--init-end=results/Regression_MLP/checkpoints_model_2/model-weights-epoch300",
                 "--fix-end"
             ]
         },
@@ -207,9 +207,9 @@
                 "--model=MLP",
                 "--curve=Bezier",
                 "--transform=MLP",
-                "--num-bends=3",
-                "--wd=5e-4",
-                "--ckpt=results/Regression_MLP/checkpoints_curve/model-weights-epoch20",
+                "--num-bends=5",
+                "--wd=1e-4",
+                "--ckpt=results/Regression_MLP/checkpoints_curve/model-weights-epoch100",
                 "--num_points=11",
                 "--init-linear-off",
                 "--fix-start",
