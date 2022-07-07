@@ -179,8 +179,8 @@ class CurveNet(tf.keras.Model):
     def call(
         self,
         inputs: tf.Tensor,
-        training=None,
-        mask=None,
+        training=None, # Why are we not setting this to True as default
+        mask=None, # For what do we need the mask?
     ):
         if training is not False:
             # If training is False, we are in evaluation.
