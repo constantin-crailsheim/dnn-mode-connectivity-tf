@@ -1,6 +1,8 @@
 import argparse
 from dataclasses import dataclass
 
+import toml
+
 
 @dataclass
 class Arguments:
@@ -25,6 +27,7 @@ class Arguments:
     # Compute
     num_workers: int = 4
     seed: int = 1
+    disable_gpu: bool = False
 
     # Checkpoints
     init_start: str = None
@@ -35,9 +38,24 @@ class Arguments:
     save_freq: int = 50
 
     # Evaluate:
-    num_points: int = 61
+    num_points: int = None
     ckpt: str = None
-    point_on_curve: float = 0.0
+    point_on_curve: float = None
+    save_evaluation: bool = True
+
+
+def parse_config() -> Arguments:
+    parser = argparse.ArgumentParser(description="DNN curve training")
+    parser.add_argument(
+        "config", nargs="?", type=str, default=None, help="Configuration to load"
+    )
+    args = parser.parse_args()
+    data = toml.load("config.toml")
+    model_config = data.get(args.config, None)
+    if not model_config:
+        raise KeyError(f"Unknown model config {args.config}")
+    model_config = {k.replace("-", "_"): v for k, v in model_config.items()}
+    return Arguments(**model_config)
 
 
 def parse_train_arguments() -> Arguments:
@@ -51,6 +69,7 @@ def parse_train_arguments() -> Arguments:
     args = parser.parse_args()
     return Arguments(**args.__dict__)
 
+
 def parse_evaluate_arguments() -> Arguments:
     parser = argparse.ArgumentParser(description="DNN evaluation")
 
@@ -62,6 +81,7 @@ def parse_evaluate_arguments() -> Arguments:
 
     args = parser.parse_args()
     return Arguments(**args.__dict__)
+
 
 def _add_dataset_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
@@ -102,6 +122,12 @@ def _add_compute_arguments(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         "--seed", type=int, default=1, metavar="S", help="random seed (default: 1)"
+    )
+    parser.add_argument(
+        "--disable-gpu",
+        dest="disable_gpu",
+        action="store_true",
+        help="disable GPU in computation (default: False)",
     )
 
 
@@ -184,7 +210,7 @@ def _add_checkpoint_arguments(parser: argparse.ArgumentParser) -> None:
         type=str,
         default=None,
         help="path to SavedModel of init start point (default: None)",
-        #metavar="CKPT", #Since we use the SavedModel instead of the checkpoint now, this term is not suitable anymore
+        # metavar="CKPT", #Since we use the SavedModel instead of the checkpoint now, this term is not suitable anymore
     )
     parser.add_argument(
         "--fix-start",
@@ -197,7 +223,7 @@ def _add_checkpoint_arguments(parser: argparse.ArgumentParser) -> None:
         type=str,
         default=None,
         help="path to SavedModel of init end point (default: None)",
-        #metavar="CKPT", #Since we use the SavedModel instead of the checkpoint now, this term is not suitable anymore
+        # metavar="CKPT", #Since we use the SavedModel instead of the checkpoint now, this term is not suitable anymore
     )
     parser.add_argument(
         "--fix-end",
@@ -220,25 +246,33 @@ def _add_checkpoint_arguments(parser: argparse.ArgumentParser) -> None:
         help="save frequency (default: 50)",
     )
 
+
 def _add_evaluate_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
-        '--num_points',
+        "--num-points",
         type=int,
-        default=61,
-        metavar='N',
-        help='number of points on the curve (default: 61)',
+        default=None,
+        metavar="N",
+        help="number of points on the curve (default: None)",
     )
     parser.add_argument(
-        '--ckpt',
+        "--point-on-curve",
+        type=float,
+        default=None,
+        metavar="CKPT", # Correct metavariable?
+        help="point on curve to be evaluated (default: None)",
+    )
+    parser.add_argument(
+        "--ckpt",
         type=str,
         default=None,
-        metavar='CKPT',
-        help='checkpoint to eval (default: None)'
+        metavar="CKPT",
+        help="checkpoint to eval (default: None)",
     )
     parser.add_argument(
-        '--point_on_curve',
-        type=float,
-        default=0.0,
-        metavar='CKPT',
-        help='point on curve to be evaluated (default: 0.0)'
+        "--save-evaluation",
+        type=bool,
+        default=True,
+        metavar="CKPT", # Correct metavariable?
+        help="Set whether evaluation should be saved",
     )

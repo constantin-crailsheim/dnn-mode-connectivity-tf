@@ -1,39 +1,46 @@
 # %%
-import os
-import matplotlib.pyplot as plt
 import numpy as np
-
 import sklearn as sklearn
 from sklearn.metrics import ConfusionMatrixDisplay
 
 # %%
-# Execute only first time running the notebook.
-os.chdir("..")
+
+def check_available_points_on_curve(dir: str, file_name: str):
+    path = "../" + dir + file_name
+    stats = np.load(path)
+    return stats['points_on_curve']
+
+def load_predictions(set, point_on_curve, dir: str, file_name: str):
+    path = "../" + dir + file_name
+    stats = np.load(path)
+    id_point_on_curve = np.isclose(stats['points_on_curve'], point_on_curve)
+    targets = stats[set + "_targets"][id_point_on_curve][0]
+    predictions = stats[set + "_predictions"][id_point_on_curve][0]
+    return targets, predictions
+
 
 # %%
-# Set point on curve
 
-point_on_curve = 0.4
+# Set directory and file
 
-# %%
-# Plot confusion matrix for train data
+dir = "results/MNIST_BasicCNN/evaluation_curve/"
 
-path = "results/MNIST_BasicCNN/evaluation_model/train_predictions_of_" + str(point_on_curve) + "_point_on_curve.npz"
-stats = np.load(path)
-
-predictions = stats['predictions']
-target = stats['target']
-
-ConfusionMatrixDisplay.from_predictions(target, predictions)
+file_name = "predictions_and_probabilities_curve_epoch0.npz"
 
 # %%
-# Plot confusion matrix for test data
 
-path = "results/MNIST_BasicCNN/evaluation_model/test_predictions_of_" + str(point_on_curve) + "_point_on_curve.npz"
-stats = np.load(path)
+# Check which points of curve have been evaluated
 
-predictions = stats['predictions']
-target = stats['target']
+print(check_available_points_on_curve(dir, file_name))
 
-ConfusionMatrixDisplay.from_predictions(target, predictions)
 # %%
+# Set evaluation parameters
+
+set = "train"
+
+point_on_curve = 0.5
+
+# Plot confusion matrix
+targets, predictions = load_predictions(set, point_on_curve, dir, file_name)
+
+ConfusionMatrixDisplay.from_predictions(targets, predictions)

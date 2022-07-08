@@ -17,6 +17,7 @@ from mode_connectivity.models.mlp import MLP
 from mode_connectivity.utils import (
     adjust_learning_rate,
     check_batch_normalization,
+    disable_gpu,
     l2_regularizer,
     learning_rate_schedule,
     load_checkpoint,
@@ -26,7 +27,9 @@ from mode_connectivity.utils import (
 
 def main():
     args = parse_train_arguments()
-
+    if args.disable_gpu:
+        disable_gpu()
+        
     # TODO: Set backends cudnnn
     set_seeds(seed=args.seed)
 
@@ -198,9 +201,9 @@ def train_epoch(
 
     for iter, (input, target) in enumerate(train_loader):
         if callable(lr_schedule):
-
             lr = lr_schedule(iter / num_iters)
             adjust_learning_rate(optimizer, lr)
+        
         loss_batch = train_batch(
             input=input,
             target=target,
@@ -208,6 +211,7 @@ def train_epoch(
             optimizer=optimizer,
             criterion=criterion
         )
+        
         loss_sum += loss_batch
 
     return {
