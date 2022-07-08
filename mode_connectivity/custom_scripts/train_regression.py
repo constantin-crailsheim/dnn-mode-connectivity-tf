@@ -18,10 +18,8 @@ from mode_connectivity.utils import (
     adjust_learning_rate,
     check_batch_normalization,
     disable_gpu,
-    l2_regularizer,
     learning_rate_schedule,
     load_checkpoint,
-    save_checkpoint,
     save_weights,
 )
 
