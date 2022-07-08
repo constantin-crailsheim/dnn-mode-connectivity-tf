@@ -101,8 +101,8 @@
                 "--transform=CNN",
                 "--num-bends=1",
                 "--wd=5e-4",
-                "--ckpt=results/MNIST_BasicCNN/checkpoints_curve/model-weights-epoch0",
-                "--num-points=11",
+                "--ckpt=results/MNIST_BasicCNN/checkpoints_curve/model-weights-epoch10",
+                "--num-points=6",
                 "--save-evaluation=True",
                 "--init-linear-off",
                 "--fix-start",
@@ -145,8 +145,8 @@
                 "--dataset=regression",
                 "--data-path=datasets/",
                 "--model=MLP",
-                "--epochs=20",
-                "--lr=0.01",
+                "--epochs=150",
+                "--lr=0.001",
                 "--wd=5e-4",
                 "--transform=MLP",
                 "--seed=1"
@@ -164,11 +164,11 @@
                 "--dataset=regression",
                 "--data-path=datasets/",
                 "--model=MLP",
-                "--epochs=20",
-                "--lr=0.01",
+                "--epochs=150",
+                "--lr=0.001",
                 "--wd=5e-4",
                 "--transform=MLP",
-                "--seed=42"
+                "--seed=2"
             ]
         },
         {
@@ -185,13 +185,37 @@
                 "--model=MLP",
                 "--curve=Bezier",
                 "--transform=MLP",
-                "--num-bends=1",
-                "--epochs=20",
+                "--num-bends=5",
+                "--epochs=100",
                 "--lr=0.01",
-                "--wd=1e-4",
-                "--init-start=results/Regression_MLP/checkpoints_model_1/model-weights-epoch20",
+                "--wd=5e-4",
+                "--init-start=results/Regression_MLP/checkpoints_model_1/model-weights-epoch150",
                 "--fix-start",
-                "--init-end=results/Regression_MLP/checkpoints_model_2/model-weights-epoch20",
+                "--init-end=results/Regression_MLP/checkpoints_model_2/model-weights-epoch150",
+                "--fix-end"
+            ]
+        },
+        {
+            "name": "Evalute curve MLP with regression data",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "--dir=results/Regression_MLP/evaluation_curve",
+                "--dataset=regression",
+                "--data-path=datasets/",
+                "--model=MLP",
+                "--curve=Bezier",
+                "--transform=MLP",
+                "--num-bends=1",
+                "--wd=5e-4",
+                "--ckpt=results/Regression_MLP/checkpoints_curve/model-weights-epoch100",
+                "--num-points=11",
+                "--save-evaluation=True",
+                "--init-linear-off",
+                "--fix-start",
                 "--fix-end"
             ]
         }

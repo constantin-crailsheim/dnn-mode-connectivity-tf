@@ -286,7 +286,7 @@ def load_base_weights(
 
 
 def get_model_and_loaders(args: Arguments):
-    loaders, num_classes, _ = data_loaders(
+    loaders, num_classes, _, input_shape = data_loaders(
         dataset=args.dataset,
         path=args.data_path,
         batch_size=args.batch_size,
@@ -300,7 +300,7 @@ def get_model_and_loaders(args: Arguments):
         architecture=architecture,
         args=args,
         num_classes=num_classes,
-        input_shape=(None, 28, 28, 1),  # TODO Determine this from dataset
+        input_shape=input_shape,  # TODO Determine this from dataset
     )
 
     return loaders, model
