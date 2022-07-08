@@ -1,7 +1,9 @@
+import os
 import time
 from typing import Callable, Dict, Iterable, Tuple, Union
-
 import tabulate
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import tensorflow as tf
 from keras.layers import Layer
 from keras.optimizers import Optimizer
@@ -12,7 +14,6 @@ from mode_connectivity.curves.net import CurveNet
 from mode_connectivity.data import data_loaders
 from mode_connectivity.models.cnn import CNN
 from mode_connectivity.models.mlp import MLP
-from mode_connectivity.models.linreg import LinReg
 from mode_connectivity.utils import (
     adjust_learning_rate,
     check_batch_normalization,
@@ -20,7 +21,6 @@ from mode_connectivity.utils import (
     learning_rate_schedule,
     load_checkpoint,
     save_checkpoint,
-    save_model,
     save_weights,
 )
 
@@ -48,22 +48,17 @@ def main():
 
     criterion = tf.keras.losses.MeanSquaredError()
 
-    # TODO: Check if correct function, takes labels of shape [nbatch, nclass], while F.cross_entropy()
-    # takes labels of shape [nBatch]
-    regularizer = None if not args.curve else l2_regularizer(args.wd)
     optimizer = tf.keras.optimizers.SGD(
         learning_rate=args.lr,
         momentum=args.momentum,
     )
 
     start_epoch = 1
+    # TODO Include resume training?
     if args.resume:
         start_epoch = load_checkpoint(
             checkpoint_path=args.resume, model=model, optimizer=optimizer
         )
-    save_checkpoint(
-        directory=args.dir, epoch=start_epoch - 1, model=model, optimizer=optimizer
-    )
     save_weights(directory=args.dir, epoch=start_epoch - 1, model=model)
 
     train(
@@ -71,7 +66,6 @@ def main():
         loaders=loaders,
         model=model,
         criterion=criterion,
-        regularizer=regularizer,
         optimizer=optimizer,
         start_epoch=start_epoch,
         n_datasets=n_datasets,
@@ -88,8 +82,6 @@ def get_architecture(model_name: str):
         return CNN
     if model_name == "MLP":
         return MLP
-    if model_name == "LinReg":
-        return LinReg
     raise KeyError(f"Unkown model {model_name}")
 
 
@@ -141,7 +133,6 @@ def train(
     loaders: Dict[str, Iterable],
     model: Layer,
     criterion: Callable,
-    regularizer: Union[Callable, None],
     optimizer: Optimizer,
     start_epoch: int,
     n_datasets: Dict,
@@ -163,42 +154,34 @@ def train(
             model,
             optimizer,
             criterion,
-            n_datasets["train"],
-            regularizer,
+            n_datasets["train"]
         )
 
         if not args.curve or not has_batch_normalization:
             test_results = test_epoch(
-                loaders["test"], model, criterion, n_datasets["test"], regularizer
+                loaders["test"],
+                model,
+                criterion,
+                n_datasets["test"]
             )
 
         if epoch % args.save_freq == 0:
-            save_checkpoint(
-                directory=args.dir, epoch=epoch, model=model, optimizer=optimizer
-            )
+            save_weights(directory=args.dir, epoch=epoch, model=model)
             
-
         time_epoch = time.time() - time_epoch
         values = [
             epoch,
             lr,
             train_results["loss"],
-            test_results["nll"],
+            test_results["loss"],
             time_epoch,
         ]
 
         print_epoch_stats(values, epoch, start_epoch)
 
     if args.epochs % args.save_freq != 0:
-        # Save last checkpoint if not already saved
-        save_checkpoint(
-            directory=args.dir, epoch=epoch, model=model, optimizer=optimizer
-        )
-
-    # Additionally save the final model as SavedModel.
-    save_weights(directory=args.dir, epoch=epoch, model=model)
-    save_model(directory=args.dir, epoch=epoch, model=model)
-
+        # Save last weights if not already saved
+        save_weights(directory=args.dir, epoch=epoch, model=model)
 
 def train_epoch(
     train_loader: Iterable,
@@ -206,17 +189,16 @@ def train_epoch(
     optimizer: Optimizer,
     criterion: Callable,
     n_train: int,
-    regularizer: Union[Callable, None] = None,
-    lr_schedule: Union[Callable, None] = None,
+    lr_schedule: Union[Callable, None] = None
 ) -> Dict[str, float]:
     loss_sum = 0.0
-    correct = 0.0
 
     num_iters = len(train_loader)
     # PyTorch: model.train()
 
     for iter, (input, target) in enumerate(train_loader):
         if callable(lr_schedule):
+
             lr = lr_schedule(iter / num_iters)
             adjust_learning_rate(optimizer, lr)
         loss_batch = train_batch(
@@ -224,9 +206,7 @@ def train_epoch(
             target=target,
             model=model,
             optimizer=optimizer,
-            criterion=criterion,
-            regularizer=regularizer,
-            lr_schedule=lr_schedule,
+            criterion=criterion
         )
         loss_sum += loss_batch
 
@@ -239,29 +219,21 @@ def test_epoch(
     test_loader: Iterable,
     model: Layer,
     criterion: Callable,
-    n_test: int,
-    regularizer: Union[Callable, None] = None,
-    **kwargs,
+    n_test: int
 ) -> Dict[str, float]:
-    nll_sum = 0.0
     loss_sum = 0.0
 
     # PyTorch: model.eval()
     for input, target in test_loader:
-        nll_batch, loss_batch = test_batch(
+        loss_batch = test_batch(
             input=input,
             target=target,
-            test_loader=test_loader,
             model=model,
-            criterion=criterion,
-            regularizer=regularizer,
-            **kwargs,
+            criterion=criterion
         )
-        nll_sum += nll_batch
         loss_sum += loss_batch
 
     return {
-        "nll": nll_sum / n_test,
         "loss": loss_sum / n_test
     }
 
@@ -272,28 +244,20 @@ def train_batch(
     model: Layer,
     optimizer: Optimizer,
     criterion: Callable,
-    regularizer: Union[Callable, None] = None,
-    lr_schedule: Union[Callable, None] = None,
 ) -> Tuple[float, float]:
     # TODO Allocate model to GPU as well, but no necessary at the moment, since we don't have GPUs.
 
     with tf.device("/cpu:0"):
         with tf.GradientTape() as tape:
             output = model(input)
-            loss = criterion(target, output)  # + model.losses necessary?
-            # PyTorch:
-            # if regularizer is not None:
-            #     loss += regularizer(model)
+            loss = criterion(target, output)
+            loss += tf.add_n(model.losses)
+
         grads = tape.gradient(loss, model.trainable_variables)
         grads_and_vars = zip(grads, model.trainable_variables)
         optimizer.apply_gradients(grads_and_vars)
 
-        # See for above:
-        # https://medium.com/analytics-vidhya/3-different-ways-to-perform-gradient-descent-in-tensorflow-2-0-and-ms-excel-ffc3791a160a
-        # https://d2l.ai/chapter_multilayer-perceptrons/weight-decay.html (4.5.4)
-
-        # What exactly are we trying to add up here, see original code? Check with PyTorch Code.
-        loss = tf.reduce_sum(loss).numpy()
+        loss = loss.numpy() * len(input)
 
     return loss
 
@@ -301,30 +265,23 @@ def train_batch(
 def test_batch(
     input: tf.Tensor,
     target: tf.Tensor,
-    test_loader: Iterable,
     model: Layer,
     criterion: Callable,
-    regularizer: Union[Callable, None] = None,
-    **kwargs,
 ) -> Dict[str, float]:
     # TODO Allocate model to GPU as well.
 
     with tf.device("/cpu:0"):
-        output = model(input, **kwargs)
-        nll = criterion(target, output)
-        loss = tf.identity(nll)  # Correct funtion for nll.clone() in Pytorch
-        # PyTorch:
-        # if regularizer is not None:
-        #     loss += regularizer(model)
+        output = model(input)
+        loss = criterion(target, output)
+        loss += tf.add_n(model.losses)
 
-        nll = tf.reduce_sum(nll).numpy()
-        loss = tf.reduce_sum(loss).numpy()
+        loss = loss.numpy() * len(input)
         
-    return nll, loss
+    return loss
 
 
 def print_epoch_stats(values, epoch, start_epoch):
-    COLUMNS = ["ep", "lr", "tr_loss", "te_nll", "time"]
+    COLUMNS = ["ep", "lr", "tr_loss", "te_loss", "time"]
     table = tabulate.tabulate([values], COLUMNS, tablefmt="simple", floatfmt="9.4f")
     if epoch % 40 == 1 or epoch == start_epoch:
         table = table.split("\n")

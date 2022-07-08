@@ -143,8 +143,8 @@
                 "--dataset=regression",
                 "--data-path=datasets/",
                 "--model=MLP",
-                "--epochs=300",
-                "--lr=0.0001",
+                "--epochs=150",
+                "--lr=0.001",
                 "--wd=5e-4",
                 "--transform=MLP",
                 "--seed=1"
@@ -162,8 +162,8 @@
                 "--dataset=regression",
                 "--data-path=datasets/",
                 "--model=MLP",
-                "--epochs=300",
-                "--lr=0.0001",
+                "--epochs=150",
+                "--lr=0.001",
                 "--wd=5e-4",
                 "--transform=MLP",
                 "--seed=2"
@@ -187,117 +187,9 @@
                 "--epochs=100",
                 "--lr=0.01",
                 "--wd=1e-4",
-                "--init-start=results/Regression_MLP/checkpoints_model_1/model-weights-epoch300",
+                "--init-start=results/Regression_MLP/checkpoints_model_1/model-weights-epoch100",
                 "--fix-start",
-                "--init-end=results/Regression_MLP/checkpoints_model_2/model-weights-epoch300",
-                "--fix-end"
-            ]
-        },
-        {
-            "name": "Evalute curve MLP with Regression",
-            "type": "python",
-            "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal",
-            "justMyCode": false,
-            "args": [
-                "--dir=results/Regression_MLP/evaluation_curve",
-                "--dataset=regression",
-                "--data-path=datasets/",
-                "--model=MLP",
-                "--curve=Bezier",
-                "--transform=MLP",
-                "--num-bends=5",
-                "--wd=1e-4",
-                "--ckpt=results/Regression_MLP/checkpoints_curve/model-weights-epoch100",
-                "--num_points=11",
-                "--init-linear-off",
-                "--fix-start",
-                "--fix-end"
-            ]
-        },
-        {
-            "name": "LinReg with regression data (Fit base model 1)",
-            "type": "python",
-            "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal",
-            "justMyCode": false,
-            "args": [
-                "--dir=results/Regression_LinReg/checkpoints_model_1",
-                "--dataset=regression",
-                "--data-path=datasets/",
-                "--model=LinReg",
-                "--epochs=60",
-                "--lr=0.0001",
-                "--wd=5e-4",
-                "--transform=LinReg",
-                "--seed=1"
-            ]
-        },
-        {
-            "name": "LinReg with regression data (Fit base model 2)",
-            "type": "python",
-            "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal",
-            "justMyCode": false,
-            "args": [
-                "--dir=results/Regression_LinReg/checkpoints_model_2",
-                "--dataset=regression",
-                "--data-path=datasets/",
-                "--model=LinReg",
-                "--epochs=60",
-                "--lr=0.0001",
-                "--wd=5e-4",
-                "--transform=LinReg",
-                "--seed=42"
-            ]
-        },
-        {
-            "name": "LinReg with regression data (Fit curve | pretrained)",
-            "type": "python",
-            "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal",
-            "justMyCode": true,
-            "args": [
-                "--dir=results/Regression_LinReg/checkpoints_curve",
-                "--dataset=regression",
-                "--data-path=datasets/",
-                "--model=LinReg",
-                "--curve=Bezier",
-                "--transform=LinReg",
-                "--num-bends=3",
-                "--epochs=10",
-                "--lr=0.00005",
-                "--wd=5e-4",
-                "--init-start=results/Regression_LinReg/checkpoints_model_1/model-weights-epoch60",
-                "--fix-start",
-                "--init-end=results/Regression_LinReg/checkpoints_model_2/model-weights-epoch60",
-                "--fix-end"
-            ]
-        },
-        {
-            "name": "Evalute curve LinReg with Regression",
-            "type": "python",
-            "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal",
-            "justMyCode": false,
-            "args": [
-                "--dir=results/Regression_LinReg/evaluation_curve",
-                "--dataset=regression",
-                "--data-path=datasets/",
-                "--model=LinReg",
-                "--curve=Bezier",
-                "--transform=LinReg",
-                "--num-bends=3",
-                "--wd=5e-4",
-                "--ckpt=results/Regression_LinReg/checkpoints_curve/model-weights-epoch15",
-                "--num_points=11",
-                "--init-linear-off",
-                "--fix-start",
+                "--init-end=results/Regression_MLP/checkpoints_model_2/model-weights-epoch100",
                 "--fix-end"
             ]
         }

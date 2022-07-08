@@ -9,15 +9,11 @@ __all__ = [
 ]
 
 
-class MLPBase(tf.keras.Model):  # Inherit equivalent of torch.nn
+class MLPBase(tf.keras.Model):
     def __init__(self, num_classes: int, weight_decay: float):
         super(MLPBase, self).__init__()
         self.fc_part = tf.keras.models.Sequential(
             [
-                # tf.keras.layers.Dense(
-                #     units=16,
-                #     activation="tanh",
-                #     kernel_regularizer = tf.keras.regularizers.L2(weight_decay)),
                 tf.keras.layers.Dense(
                     units=16,
                     activation="tanh",
@@ -34,16 +30,10 @@ class MLPBase(tf.keras.Model):  # Inherit equivalent of torch.nn
         return x
 
 
-class MLPCurve(tf.keras.Model):  # Inherit equivalent of torch.nn
+class MLPCurve(tf.keras.Model): 
     def __init__(self, num_classes: int, fix_points: List[bool], weight_decay: float):
         super(MLPCurve, self).__init__()
 
-        # self.dense1 = DenseCurve(
-        #     units=16,
-        #     fix_points=fix_points,
-        #     activation="relu",
-        #     kernel_regularizer = tf.keras.regularizers.L2(weight_decay)
-        # )
         self.dense1 = DenseCurve(
             units=16,
             fix_points=fix_points,
@@ -57,7 +47,7 @@ class MLPCurve(tf.keras.Model):  # Inherit equivalent of torch.nn
             kernel_regularizer = tf.keras.regularizers.L2(weight_decay)
         )
 
-        self.fc_part = [self.dense1, self.dense2] # , self.dense3
+        self.fc_part = [self.dense1, self.dense2]
 
     def call(
         self, inputs: Tuple[tf.Tensor, tf.Tensor], training=None, mask=None
@@ -66,7 +56,6 @@ class MLPCurve(tf.keras.Model):  # Inherit equivalent of torch.nn
 
         x = self.dense1((x, point_on_curve_weights))
         x = self.dense2((x, point_on_curve_weights))
-        # x = self.dense3((x, point_on_curve_weights))
 
         return x
 
