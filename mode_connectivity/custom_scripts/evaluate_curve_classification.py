@@ -20,11 +20,14 @@ from mode_connectivity.curves.net import CurveNet
 from mode_connectivity.models.cnn import CNN
 from mode_connectivity.models.mlp import MLP
 
+from mode_connectivity.utils import disable_gpu
+
 def main():
     args = parse_evaluate_arguments()
+    if args.disable_gpu:
+        disable_gpu()
 
-
-    loaders, num_classes, n_datasets = data_loaders(
+    loaders, num_classes, n_datasets, input_shape = data_loaders(
         dataset=args.dataset,
         path=args.data_path,
         batch_size=args.batch_size,
@@ -37,7 +40,7 @@ def main():
         architecture=architecture,
         args=args,
         num_classes=num_classes,
-        input_shape=(None, 28, 28, 1), # TODO use output from data loader
+        input_shape=input_shape, # TODO use output from data loader
     )
 
     criterion = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
@@ -68,9 +71,8 @@ def main():
     previous_parameters = None
 
     for i, point_on_curve in enumerate(points_on_curve):
-        with tf.device("/cpu:0"):
-            point_on_curve_tensor = tf.constant(point_on_curve, shape = (), dtype = tf.float32)
-            model.point_on_curve.assign(point_on_curve_tensor)
+        point_on_curve_tensor = tf.constant(point_on_curve, shape = (), dtype = tf.float32)
+        model.point_on_curve.assign(point_on_curve_tensor)
 
         if len(points_on_curve) > 1:
             parameters = model.get_weighted_parameters(point_on_curve_tensor)
@@ -195,14 +197,12 @@ def evaluate_batch(
     model: Layer,
     criterion: Callable
 ) -> Dict[str, float]:
-    # TODO Allocate model to GPU as well.
 
-    with tf.device("/cpu:0"):
-        output = model(input, training = False)
-        loss = criterion(target, output)
+    output = model(input, training = False)
+    loss = criterion(target, output)
 
-        loss = loss.numpy() * len(input)
-        pred = tf.math.argmax(output, axis=1, output_type=tf.dtypes.int64)
+    loss = loss.numpy() * len(input)
+    pred = tf.math.argmax(output, axis=1, output_type=tf.dtypes.int64)
 
     return loss, pred.numpy().tolist(), output.numpy().tolist(), target.numpy().tolist()
 
@@ -232,7 +232,7 @@ def save_stats_of_points_on_curve(
             test_losses=test_losses,
             test_accuracy_scores=test_accuracy_scores,
             test_f1_scores=test_f1_scores,
-            dl=dl
+            dl=dl # TODO do we need to save this here?
         )
 
 def save_predictions_and_probabilites(

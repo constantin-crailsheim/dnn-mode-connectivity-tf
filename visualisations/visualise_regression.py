@@ -46,8 +46,9 @@ def load_regression_data():
     return dataset_tensor, data, x_linspace
 
 def plot_point_on_curve(point_on_curve, model, dataset_tensor, data, x_linspace):
-    point_on_curve_tensor = tf.constant(point_on_curve, shape = (1,), dtype = tf.float64)
-    prediction = model(dataset_tensor, point_on_curve_tensor).numpy()
+    point_on_curve_tensor = tf.constant(point_on_curve, shape = (), dtype = tf.float32)
+    model.point_on_curve.assign(point_on_curve_tensor)
+    prediction = model(dataset_tensor, training = False).numpy()
     sns.set_style('darkgrid')
     blue = sns.color_palette()[0]
     red = sns.color_palette()[3]
@@ -69,8 +70,9 @@ def plot_points_on_curve(n_points_on_curve, model, dataset_tensor, data, x_linsp
     points_on_curve = np.linspace(0.0, 1.0, n_points_on_curve)
     for i, point_on_curve in enumerate(points_on_curve):
         with tf.device("/cpu:0"):
-            point_on_curve_tensor = tf.constant(point_on_curve, shape = (1,), dtype = tf.float64)
-        prediction = model(dataset_tensor, point_on_curve).numpy()
+            point_on_curve_tensor = tf.constant(point_on_curve, shape = (), dtype = tf.float32)
+            model.point_on_curve.assign(point_on_curve_tensor)
+        prediction = model(dataset_tensor, training = False).numpy()
         if i in (0.0, 1.0):
             plt.plot(x_linspace, prediction, color="g")
         else:
@@ -78,14 +80,14 @@ def plot_points_on_curve(n_points_on_curve, model, dataset_tensor, data, x_linsp
 
 
 # %%
-path = "../results/Regression_MLP/checkpoints_curve/model-weights-epoch100"
+path = "../results/Regression_MLP/checkpoints_curve/model-weights-epoch0"
 
 model = load_model(
     path=path,
     architecture = MLP,
     curve = "Bezier",
     num_bends=5,
-    wd=1e-4,
+    wd=5e-4,
     fix_start=True,
     fix_end=True,
     num_classes=10,
@@ -97,7 +99,7 @@ dataset_tensor, data, x_linspace = load_regression_data()
 # %%
 # Plot single curve
 
-point_on_curve = 0.0
+point_on_curve = 0.5
 
 plot_point_on_curve(point_on_curve, model, dataset_tensor, data, x_linspace)
 
@@ -107,3 +109,5 @@ plot_point_on_curve(point_on_curve, model, dataset_tensor, data, x_linspace)
 n_points_on_curve = 100
 
 plot_points_on_curve(n_points_on_curve, model, dataset_tensor, data, x_linspace)
+
+# %%

@@ -116,7 +116,7 @@ def get_model(architecture, args: Arguments, num_classes: int, input_shape):
         )
         base_model.build(input_shape=input_shape)
         if args.resume is None:
-            for path, k in [(args.init_start, 0), (args.init_end, args.num_bends - 1)]:
+            for path, k in [(args.init_start, 0), (args.init_end, args.num_bends + 1)]:
                 if path is not None:
                     print("Loading %s as point #%d" % (path, k))
                     # base_model = tf.keras.models.load_model(path)
@@ -141,7 +141,7 @@ def train(
     has_batch_normalization = check_batch_normalization(
         model
     )  # Not implemented yet, returns always False
-    test_results = {"loss": None, "accuracy": None, "nll": None}
+    test_results = {"loss": None}
 
     for epoch in range(start_epoch, args.epochs + 1):
         time_epoch = time.time()
@@ -249,17 +249,16 @@ def train_batch(
 ) -> Tuple[float, float]:
     # TODO Allocate model to GPU as well, but no necessary at the moment, since we don't have GPUs.
 
-    with tf.device("/cpu:0"):
-        with tf.GradientTape() as tape:
-            output = model(input)
-            loss = criterion(target, output)
-            loss += tf.add_n(model.losses)
+    with tf.GradientTape() as tape:
+        output = model(input)
+        loss = criterion(target, output)
+        loss += tf.add_n(model.losses)
 
-        grads = tape.gradient(loss, model.trainable_variables)
-        grads_and_vars = zip(grads, model.trainable_variables)
-        optimizer.apply_gradients(grads_and_vars)
+    grads = tape.gradient(loss, model.trainable_variables)
+    grads_and_vars = zip(grads, model.trainable_variables)
+    optimizer.apply_gradients(grads_and_vars)
 
-        loss = loss.numpy() * len(input)
+    loss = loss.numpy() * len(input)
 
     return loss
 
@@ -272,12 +271,11 @@ def test_batch(
 ) -> Dict[str, float]:
     # TODO Allocate model to GPU as well.
 
-    with tf.device("/cpu:0"):
-        output = model(input)
-        loss = criterion(target, output)
-        loss += tf.add_n(model.losses)
+    output = model(input)
+    loss = criterion(target, output)
+    loss += tf.add_n(model.losses)
 
-        loss = loss.numpy() * len(input)
+    loss = loss.numpy() * len(input)
         
     return loss
 

@@ -205,6 +205,7 @@ def train_batch(
     optimizer: Optimizer,
     criterion: Callable,
 ) -> Tuple[float, float]:
+
     with tf.GradientTape() as tape:
         output = model(input)
         loss = criterion(target, output)
