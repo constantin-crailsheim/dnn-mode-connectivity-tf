@@ -1,7 +1,9 @@
+import os
 import time
 from typing import Callable, Dict, Iterable, Tuple, Union
 
 import tabulate
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import tensorflow as tf
 from keras.layers import Layer
 from keras.optimizers import Optimizer
@@ -11,12 +13,10 @@ from mode_connectivity.utils import (
     adjust_learning_rate,
     check_batch_normalization,
     disable_gpu,
-    l2_regularizer,
     get_architecture,
     get_model,
     learning_rate_schedule,
     load_checkpoint,
-    save_checkpoint,
     save_weights,
     set_seeds,
 )
@@ -69,10 +69,6 @@ def main():
         start_epoch = load_checkpoint(
             checkpoint_path=args.resume, model=model, optimizer=optimizer
         )
-    # Is save_checkpoint still needed?
-    save_checkpoint(
-        directory=args.dir, epoch=start_epoch - 1, model=model, optimizer=optimizer
-    )
     save_weights(directory=args.dir, epoch=start_epoch - 1, model=model)
 
     train(
@@ -114,15 +110,14 @@ def train(
             n_datasets["train"],
         )
 
+        # Does the condition make sense here?
         if not args.curve or not has_batch_normalization:
             test_results = test_epoch(
                 loaders["test"], model, criterion, n_datasets["test"]
             )
 
         if epoch % args.save_freq == 0:
-            save_checkpoint(
-                directory=args.dir, epoch=epoch, model=model, optimizer=optimizer
-            )
+            save_weights(directory=args.dir, epoch=epoch, model=model)
 
         time_epoch = time.time() - time_epoch
         values = [
@@ -130,7 +125,7 @@ def train(
             lr,
             train_results["loss"],
             train_results["accuracy"],
-            test_results["nll"],
+            test_results["loss"],
             test_results["accuracy"],
             time_epoch,
         ]
@@ -139,15 +134,7 @@ def train(
 
     if args.epochs % args.save_freq != 0:
         # Save last checkpoint if not already saved
-        save_checkpoint(
-            directory=args.dir, epoch=epoch, model=model, optimizer=optimizer
-        )
-
-        # Additionally save the final model as SavedModel.
         save_weights(directory=args.dir, epoch=epoch, model=model)
-        # Saving whole model probably not needed anymore
-        # save_model(directory=args.dir, epoch=epoch, model=model)
-
 
 def train_epoch(
     train_loader: Iterable,
@@ -155,7 +142,7 @@ def train_epoch(
     optimizer: Optimizer,
     criterion: Callable,
     n_train: int,
-    lr_schedule: Union[Callable, None] = None,
+    lr_schedule: Union[Callable, None] = None, # Do we need this?
 ) -> Dict[str, float]:
     loss_sum = 0.0
     correct = 0.0
@@ -170,21 +157,16 @@ def train_epoch(
         loss_batch, correct_batch = train_batch(
             input=input,
             target=target,
-            loss_sum=loss_sum,
-            correct=correct,
             model=model,
             optimizer=optimizer,
             criterion=criterion,
-            lr_schedule=lr_schedule,
         )
         loss_sum += loss_batch
         correct += correct_batch
 
     return {
         "loss": loss_sum / n_train,  # Add function to find length
-        "accuracy": correct
-        * 100.0
-        / n_train,  # Add function to find length of dataset,
+        "accuracy": correct * 100.0 / n_train,  # Add function to find length of dataset,
     }
 
 
@@ -195,28 +177,22 @@ def test_epoch(
     n_test: int,
     **kwargs,
 ) -> Dict[str, float]:
-    nll_sum = 0.0
     loss_sum = 0.0
     correct = 0.0
 
     # PyTorch: model.eval()
     for input, target in test_loader:
-        nll_batch, loss_batch, correct_batch = test_batch(
+        loss_batch, correct_batch = test_batch(
             input=input,
             target=target,
-            nll_sum=nll_sum,
-            correct=correct,
-            test_loader=test_loader,
             model=model,
             criterion=criterion,
             **kwargs,
         )
-        nll_sum += nll_batch
         loss_sum += loss_batch
         correct += correct_batch
 
     return {
-        "nll": nll_sum / n_test,  # Add function to find length
         "loss": loss_sum / n_test,  # Add function to find length
         "accuracy": correct * 100.0 / n_test,  # Add function to find length
     }
@@ -225,12 +201,9 @@ def test_epoch(
 def train_batch(
     input: tf.Tensor,
     target: tf.Tensor,
-    loss_sum: float,
-    correct: float,
     model: Layer,
     optimizer: Optimizer,
     criterion: Callable,
-    lr_schedule: Union[Callable, None] = None,
 ) -> Tuple[float, float]:
     with tf.GradientTape() as tape:
         output = model(input)
@@ -257,31 +230,26 @@ def train_batch(
 def test_batch(
     input: tf.Tensor,
     target: tf.Tensor,
-    nll_sum: float,
-    correct: float,
-    test_loader: Iterable,
     model: Layer,
     criterion: Callable,
     **kwargs,
 ) -> Dict[str, float]:
     output = model(input, **kwargs)
     # TODO is Negative Loss Likelihood calculated correctly here?
-    nll = criterion(target, output)
-    loss = tf.identity(nll)  # COrrect funtion for nll.clone() in Pytorch
+    loss = criterion(target, output)
     loss += tf.add_n(model.losses)  # Add Regularization loss
 
-    nll = nll.numpy() * len(input)
     loss = loss.numpy() * len(input)
     pred = tf.math.argmax(output, axis=1, output_type=tf.dtypes.int64)
     correct = tf.math.reduce_sum(
         tf.cast(tf.math.equal(pred, target), tf.float32)
     ).numpy()
 
-    return nll, loss, correct
+    return loss, correct
 
 
 def print_epoch_stats(values, epoch, start_epoch):
-    COLUMNS = ["ep", "lr", "tr_loss", "tr_acc", "te_nll", "te_acc", "time"]
+    COLUMNS = ["ep", "lr", "tr_loss", "tr_acc", "te_loss", "te_acc", "time"]
     table = tabulate.tabulate([values], COLUMNS, tablefmt="simple", floatfmt="9.4f")
     if epoch % 40 == 1 or epoch == start_epoch:
         table = table.split("\n")
