@@ -25,7 +25,7 @@ class CurveNet(tf.keras.Model):
         self,
         num_classes: int,
         num_bends: int,
-        weight_decay: float,
+        weight_decay: float, # TODO Add to architecture
         curve: Type[Curve],  # Bezier, Polychain
         curve_model: Type[tf.keras.Model],  # ConvFCCurve, VGGCurve
         fix_start: bool = True,

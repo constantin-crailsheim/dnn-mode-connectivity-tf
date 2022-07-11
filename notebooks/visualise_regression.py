@@ -80,7 +80,7 @@ def plot_points_on_curve(n_points_on_curve, model, dataset_tensor, data, x_linsp
 
 
 # %%
-path = "../results/Regression_MLP/checkpoints_curve/model-weights-epoch0"
+path = "../results/Regression_MLP/checkpoints_curve/model-weights-epoch100"
 
 model = load_model(
     path=path,
@@ -106,6 +106,7 @@ plot_point_on_curve(point_on_curve, model, dataset_tensor, data, x_linspace)
 
 # %%
 # Plot multiple curves for points on curve
+
 n_points_on_curve = 100
 
 plot_points_on_curve(n_points_on_curve, model, dataset_tensor, data, x_linspace)

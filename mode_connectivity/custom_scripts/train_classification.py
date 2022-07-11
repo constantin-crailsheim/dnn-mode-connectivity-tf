@@ -26,8 +26,7 @@ def main():
     args = parse_train_arguments()
     if args.disable_gpu:
         disable_gpu()
-
-    # TODO: Set backends cudnnn
+        
     set_seeds(seed=args.seed)
 
     loaders, num_classes, n_datasets, input_shape = data_loaders(

@@ -165,7 +165,6 @@ def evaluate_epoch(
 ) -> Dict[str, tf.Tensor]:
 
     loss_sum = 0.0
-    correct = 0.0
 
     pred = []
     output = []
