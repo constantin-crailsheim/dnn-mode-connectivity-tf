@@ -10,9 +10,6 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
     base_layer: Type[tf.keras.layers.Layer]
     parameters: Tuple[str]
 
-    curve_kernels: List[tf.Variable]
-    curve_biases: List[tf.Variable]
-
     def __init__(
         self,
         fix_points: List[bool],
@@ -197,7 +194,7 @@ class DenseCurve(CurveLayer, tf.keras.layers.Dense):
         )
 
 
-class BatchNormalization(CurveLayer, tf.keras.layers.BatchNormalization):
+class BatchNormalizationCurve(CurveLayer, tf.keras.layers.BatchNormalization):
     def __init__(
         self,
         fix_points: List[bool],
