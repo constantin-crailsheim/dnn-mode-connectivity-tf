@@ -1,5 +1,4 @@
 # %%
-import os
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -21,7 +20,7 @@ plot.plot(stats_curve["points_on_curve"], stats_curve[stat])
 plt.title(title + " for points on curve", fontsize=12)
 plt.xlabel("Point on curve")
 plt.ylabel(title)
-plt.legend(['Linear initialization', 'Trained curve'])
+plt.legend(["Linear initialization", "Trained curve"])
 
 # %%
 
@@ -34,7 +33,7 @@ plot.plot(stats_curve["points_on_curve"], stats_curve[stat])
 plt.title(title + " for points on curve", fontsize=12)
 plt.xlabel("Point on curve")
 plt.ylabel(title)
-plt.legend(['Linear initialization', 'Trained curve'])
+plt.legend(["Linear initialization", "Trained curve"])
 
 # %%
 
@@ -47,7 +46,7 @@ plot.plot(stats_curve["points_on_curve"], stats_curve[stat])
 plt.title(title + " for points on curve", fontsize=12)
 plt.xlabel("Point on curve")
 plt.ylabel(title)
-plt.legend(['Linear initialization', 'Trained curve'])
+plt.legend(["Linear initialization", "Trained curve"])
 
 # %%
 
@@ -60,7 +59,7 @@ plot.plot(stats_curve["points_on_curve"], stats_curve[stat])
 plt.title(title + " for points on curve", fontsize=12)
 plt.xlabel("Point on curve")
 plt.ylabel(title)
-plt.legend(['Linear initialization', 'Trained curve'])
+plt.legend(["Linear initialization", "Trained curve"])
 
 # %%
 
@@ -73,7 +72,7 @@ plot.plot(stats_curve["points_on_curve"], stats_curve[stat])
 plt.title(title + " for points on curve", fontsize=12)
 plt.xlabel("Point on curve")
 plt.ylabel(title)
-plt.legend(['Linear initialization', 'Trained curve'])
+plt.legend(["Linear initialization", "Trained curve"])
 
 # %%
 
@@ -86,7 +85,7 @@ plot.plot(stats_curve["points_on_curve"], stats_curve[stat])
 plt.title(title + " for points on curve", fontsize=12)
 plt.xlabel("Point on curve")
 plt.ylabel(title)
-plt.legend(['Linear initialization', 'Trained curve'])
+plt.legend(["Linear initialization", "Trained curve"])
 
 # %%
 
@@ -99,4 +98,4 @@ plot.plot(stats_curve["points_on_curve"], stats_curve[stat])
 plt.title(title + " for points on curve", fontsize=12)
 plt.xlabel("Point on curve")
 plt.ylabel(title)
-plt.legend(['Linear initialization', 'Trained curve'])
+plt.legend(["Linear initialization", "Trained curve"])
