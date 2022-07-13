@@ -7,6 +7,8 @@ import tensorflow as tf
 class CurveLayer(tf.keras.layers.Layer, ABC):
     fix_points: List[bool]
     num_bends: int
+    base_layer: Type[tf.keras.layers.Layer]
+    parameters: Tuple[str]
 
     curve_kernels: List[tf.Variable]
     curve_biases: List[tf.Variable]
@@ -60,12 +62,12 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
 
         # Build the layer
         self.base_layer.build(self, input_shape[0])
+        self._reset_input_spec()
 
         # Restore parameter regularizers
         for reg_name, regularizer in regularizers.items():
             setattr(self, reg_name, regularizer)
 
-        self._reset_input_spec()
         # Register curve parameters (e.g. curve_kernels, curve_biases)
         self.add_parameter_weights()
         # Delete old paramters, so they are not registered as
@@ -182,7 +184,7 @@ class Conv2DCurve(CurveLayer, tf.keras.layers.Conv2D):
 class DenseCurve(CurveLayer, tf.keras.layers.Dense):
     def __init__(
         self,
-        units,
+        units: int,
         fix_points: List[bool],
         **kwargs,
     ):
@@ -191,5 +193,19 @@ class DenseCurve(CurveLayer, tf.keras.layers.Dense):
             fix_points=fix_points,
             base_layer=tf.keras.layers.Dense,
             parameters=("kernel", "bias"),
+            **kwargs,
+        )
+
+
+class BatchNormalization(CurveLayer, tf.keras.layers.BatchNormalization):
+    def __init__(
+        self,
+        fix_points: List[bool],
+        **kwargs,
+    ):
+        super().__init__(
+            fix_points=fix_points,
+            base_layer=tf.keras.layers.BatchNormalization,
+            parameters=("gamma", "beta"),
             **kwargs,
         )
