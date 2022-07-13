@@ -1,5 +1,9 @@
 # Subspace inference in TensorFlow
-Implementation of subspace inference in tensorflow based on PyTorch code..
+Implementation of subspace inference in tensorflow based on PyTorch code.
+
+Link to orignal Repo:
+
+https://github.com/timgaripov/dnn-mode-connectivity
 
 # Setup
 
