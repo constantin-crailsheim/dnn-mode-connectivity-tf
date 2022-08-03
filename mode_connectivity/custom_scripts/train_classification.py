@@ -43,14 +43,11 @@ def main():
         architecture=architecture,
         args=args,
         num_classes=num_classes,
-        input_shape=input_shape,  # TODO Determine this from dataset
+        input_shape=input_shape,
     )
 
-    # criterion = tf.nn.sparse_softmax_cross_entropy_with_logits
     criterion = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 
-    # TODO: Check if correct function, takes labels of shape [nbatch, nclass], while F.cross_entropy()
-    # takes labels of shape [nBatch]
     optimizer = tf.keras.optimizers.SGD(
         # TODO how can we fit equivalent of arg params in PyTorch
         # PyTorch: params=filter(lambda param: param.requires_grad, model.parameters()),
