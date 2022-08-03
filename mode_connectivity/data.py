@@ -36,7 +36,7 @@ def data_loaders(
         train_set_loader = train_set.map(standardization).shuffle(ds_info.splits["train"].num_examples)
         test_set_loader = test_set.map(standardization).shuffle(ds_info.splits["test"].num_examples)
 
-        num_classes = 10 # TODO Find number of train labels in train_set object
+        num_classes = ds_info.features['label'].num_classes
 
         n_train = ds_info.splits["train"].num_examples
         n_test = ds_info.splits["test"].num_examples
