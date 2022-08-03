@@ -5,6 +5,7 @@ import tensorflow as tf
 
 
 class CurveLayer(tf.keras.layers.Layer, ABC):
+    """Base class for Curve-Implementations of layers."""
     fix_points: List[bool]
     num_bends: int
 
@@ -14,6 +15,16 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
     def __init__(
         self, fix_points: List[bool], base_layer: Type[tf.keras.layers.Layer], **kwargs
     ):
+        """
+        Initialize CurveLayer.
+
+        Args:
+            fix_points (List[bool]): List indicating for each bend on the curve if it is not trainable.
+            base_layer (Type[tf.keras.layers.Layer]): Regular TensorFlow-Layer.
+
+        Raises:
+            ValueError
+        """
         if len(fix_points) < 2:
             raise ValueError(
                 f"You need to specify at least two points (found {len(fix_points)})!"
@@ -33,6 +44,14 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
         ]
 
     def build(self, input_shape):
+        """
+        Invoked by the first __call__() to the layer.
+        Determines the shape of the kernel and bias of the layer.
+
+        Args:
+            input_shape
+        """
+
         # We need to remove the kernel and bias regularizer temporarly for building
         # or otherwise the kernel/bias-regularizer will get registered and thus
         # taken into account when calculating the loss.
@@ -50,12 +69,23 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
 
     # TODO Check inputs as Tuple or seperate
     def call(self, inputs: Tuple[tf.Tensor, tf.Tensor]):
+        """
+        Applies the layer to inputs.
+        As layer weights it uses the weights of the model lying on the respective point on the curve.
+
+        Args:
+            inputs (Tuple[tf.Tensor, tf.Tensor]): Tuple of layer inputs and weights of the respective curve points (models on curve).
+
+        Returns:
+            _type_: Layer output
+        """
         x, curve_point_weights = inputs
         self.kernel, self.bias = self.compute_weighted_parameters(curve_point_weights)
         return self.base_layer.call(self, x)
 
     def add_parameter_weights(self, kernel_shape: Tuple, bias_shape: Tuple):
-        """Add kernel and bias weights for each curve point.
+        """
+        Adds kernel and bias for each curve point.
 
         This method needs to be called in the build() method of
         the new layer.
@@ -76,6 +106,17 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
                 self.curve_biases[i] = self._add_bias(i, bias_shape, fixed)
 
     def _add_kernel(self, index: int, shape: Tuple, fixed: bool):
+        """
+        Adds the kernel for a certain curve point.
+
+        Args:
+            index (int): Index of the curve point.
+            shape (Tuple): Shape of the kernel.
+            fixed (bool): Boolean indicating if the kernel is not trainable.
+
+        Returns:
+            _type_: Resulting kernel
+        """
         name = f"kernel_curve_{index}"
         weight = self.add_weight(
             name=name,
@@ -89,6 +130,18 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
         return weight
 
     def _add_bias(self, index: int, shape: Tuple, fixed: bool):
+        """
+        Adds the bias for a certain curve point.
+
+        Args:
+            index (int): Index of the curve point.
+            shape (Tuple): Shape of the bias.
+            fixed (bool): Boolean indicating if the bias is not trainable.
+
+        Returns:
+            _type_: Resulting bias
+        """
+
         name = f"bias_curve_{index}"
         weight = self.add_weight(
             name=name,
@@ -104,13 +157,14 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
     def compute_weighted_parameters(
         self, curve_point_weights: tf.Tensor
     ) -> Tuple[tf.Tensor, tf.Tensor]:
-        """Compute weights for the curve kernel and bias.
+        """
+        Compute reweighted kernel and bias based on the weights for each curve point.
 
         Args:
-            curve_point_weights (tf.Tensor): Coefficients calculated from the curve.
+            curve_point_weights (tf.Tensor): Weights for each curve point calculated from the curve.
 
         Returns:
-            Tuple[tf.Tensor, tf.Tensor]: The scaled weights for kernel and bias.
+            Tuple[tf.Tensor, tf.Tensor]: Reweighted kernel and bias.
         """
         weights = (
             self._compute_single_parameter(self.curve_kernels, curve_point_weights),
@@ -121,7 +175,8 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
     def _compute_single_parameter(
         self, parameters: List[tf.Variable], curve_point_weights: tf.Tensor
     ) -> tf.Tensor:
-        """Multiplies the given weights by the respective coefficient
+        """
+        Multiplies the given weights by the respective coefficient
         and adds them together.
 
         Args:
@@ -137,6 +192,7 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
 
 
 class Conv2DCurve(CurveLayer, tf.keras.layers.Conv2D):
+    """Implementation of the Conv2D-Layer as CurveLayer."""
     def __init__(
         self,
         filters: int,
@@ -154,6 +210,7 @@ class Conv2DCurve(CurveLayer, tf.keras.layers.Conv2D):
 
 
 class DenseCurve(CurveLayer, tf.keras.layers.Dense):
+    """Implementation of the Dense-Layer as CurveLayer."""
     def __init__(
         self,
         units,

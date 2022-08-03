@@ -7,20 +7,17 @@ from scipy.special import binom
 
 
 class Curve(tf.keras.layers.Layer, ABC):
-    """Base class for Curve Layers.
-
-    Args:
-            num_bends (int): Degree of the Curve. Needs to be greater than 0.
-                0: Linear
-                1: Quadratic
-                2: Cubic
-                ...
-    """
+    """Base class for parametric curves."""
 
     num_bends: int
 
     def __init__(self, num_bends: int):
-        """Initialize the Curve Layer."""
+        """
+        Initialize the curve.
+
+        Args:
+            num_bends (int): The amount of bends on the curve.
+        """
         super().__init__()
         if num_bends < 0:
             raise ValueError(
@@ -30,6 +27,20 @@ class Curve(tf.keras.layers.Layer, ABC):
 
     @abstractmethod
     def call(self, point_on_curve: Union[float, tf.Tensor]) -> tf.Tensor:
+        """
+        Returns a tensor of weights summing up to 1.
+        The weights correspond to the weight each input point of the curve is given when constructing the curve.
+        This tensor is then used to weight the parameters of CurveLayers.
+
+        For further information, see:
+        https://en.wikipedia.org/wiki/B%C3%A9zier_curve
+
+        Args:
+            point_on_curve (Union[float, tf.Tensor]): Point on curve specified by values in [0, 1].
+
+        Returns:
+            tf.Tensor: Tensor of weights.
+        """
         pass
 
     def __repr__(self):
@@ -37,24 +48,17 @@ class Curve(tf.keras.layers.Layer, ABC):
 
 
 class Bezier(Curve):
-    """Implementation of the Bezier Curve in a Layer context.
-
-    Args:
-            degree (int): Degree of the Curve. Needs to be greater than 0.
-                1: Linear
-                2: Quadratic
-                3: Cubic
-                ...
-
-    Calling this layer returns a Tensor of weights, which sum up to 1.
-    The weights correspond to the weight each input point of the Bezier curve is given when constructing the curve.
-    This Tensor is then used to weigh parameters of CurveLayers.
-
-    For further information, see:
-    https://en.wikipedia.org/wiki/B%C3%A9zier_curve
-    """
+    """Implementation of the Bezier Curve in a layer context."""
 
     def __init__(self, num_bends: int):
+        """
+        Args:
+            num_bends (int): Degree of the Curve. Needs to be greater than 0.
+                0: Linear
+                1: Quadratic
+                2: Cubic
+                ...
+        """
         super().__init__(num_bends=num_bends)
         self.degree = num_bends + 1
         self.binom = tf.Variable(
@@ -76,6 +80,8 @@ class Bezier(Curve):
         )
 
 class PolyChain(Curve):
+    """Implementation of the polygonal chain in the layer context."""
+
     def __init__(self, num_bends: int):
         super().__init__(num_bends=num_bends)
         self.num_bends = num_bends
