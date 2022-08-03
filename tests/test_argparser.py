@@ -47,17 +47,6 @@ class TestArgparser:
             assert args.dataset == "SomeDataset"
             assert args.data_path == "SomePath"
 
-    def test_parse_dataset_arguments_use_test_true(self):
-        dataset_args = ["--use-test"]
-        with mock.patch("sys.argv", BASIC_ARGS + dataset_args):
-            args = parse_train_arguments()
-            assert args.use_test is True
-
-    def test_parse_dataset_arguments_use_test_false(self):
-        with mock.patch("sys.argv", BASIC_ARGS):
-            args = parse_train_arguments()
-            assert args.use_test is False
-
     def test_parse_compute_arguments(self):
         compute_args = ["--num-workers", "8", "--seed", "123"]
         with mock.patch("sys.argv", BASIC_ARGS + compute_args):
@@ -67,8 +56,6 @@ class TestArgparser:
 
     def test_parse_model_arguments_model(self):
         model_args = [
-            "--transform",
-            "NotVGG",
             "--batch-size",
             "99",
             "--curve",
@@ -86,7 +73,6 @@ class TestArgparser:
         ]
         with mock.patch("sys.argv", BASIC_ARGS + model_args):
             args = parse_train_arguments()
-            assert args.transform == "NotVGG"
             assert args.batch_size == 99
             assert args.curve == "SomeCurve"
             assert args.num_bends == 9

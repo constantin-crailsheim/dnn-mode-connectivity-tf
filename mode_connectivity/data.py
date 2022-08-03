@@ -13,8 +13,6 @@ def data_loaders(
     path: str,
     batch_size: int,
     num_workers: int, # To be excluded
-    transform_name: str, # To be excluded
-    use_test: bool = False, # To be excluded
     shuffle_train: bool = True,
 ):
     path = os.path.join(path, dataset.lower())
