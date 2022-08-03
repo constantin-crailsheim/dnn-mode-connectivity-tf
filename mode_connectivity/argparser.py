@@ -99,11 +99,6 @@ def _add_dataset_arguments(parser: argparse.ArgumentParser) -> None:
         help="dataset name (default: mnist)",
     )
     parser.add_argument(
-        "--use-test",
-        action="store_true",
-        help="switches between validation and test set (default: validation)",
-    )
-    parser.add_argument(
         "--data-path",
         type=str,
         default="datasets/",
@@ -148,31 +143,24 @@ def _add_model_arguments(parser: argparse.ArgumentParser) -> None:
         help="curve type to use (default: None)",
     )
     parser.add_argument(
-        "--transform",
-        type=str,
-        default="CNN",
-        metavar="TRANSFORM",
-        help="transform name (default: CNN)",
-    )
-    parser.add_argument(
         "--batch-size",
         type=int,
         default=128,
-        metavar="N",
+        metavar="N_BATCH",
         help="input batch size (default: 128)",
     )
     parser.add_argument(
         "--num-bends",
         type=int,
         default=3,
-        metavar="N",
+        metavar="N_BENDS",
         help="number of curve bends (default: 3)",
     )
     parser.add_argument(
         "--epochs",
         type=int,
         default=200,
-        metavar="N",
+        metavar="N_EPOCHS",
         help="number of epochs to train (default: 200)",
     )
     parser.add_argument(
