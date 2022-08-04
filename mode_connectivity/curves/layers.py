@@ -161,7 +161,7 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
         Compute reweighted kernel and bias based on the weights for each curve point.
 
         Args:
-            curve_point_weights (tf.Tensor): Weights for each curve point calculated from the curve.
+            curve_point_weights (tf.Tensor): Coefficients for each curve point calculated from the curve.
 
         Returns:
             Tuple[tf.Tensor, tf.Tensor]: Reweighted kernel and bias.

@@ -14,9 +14,7 @@ logger = logging.getLogger(__name__)
 class CurveNet(tf.keras.Model):
     num_classes: int
     num_bends: int
-
     fix_points: List[bool]
-
     curve: Curve
     curve_model: tf.keras.Model
     curve_layers: List[CurveLayer]
@@ -26,12 +24,27 @@ class CurveNet(tf.keras.Model):
         num_classes: int,
         num_bends: int,
         weight_decay: float, # TODO Add to architecture
-        curve: Type[Curve],  # Bezier, Polychain
-        curve_model: Type[tf.keras.Model],  # ConvFCCurve, VGGCurve
+        curve: Type[Curve],
+        curve_model: Type[tf.keras.Model],
         fix_start: bool = True,
         fix_end: bool = True,
         architecture_kwargs: Union[Dict[str, Any], None] = None,
     ):
+        """Initializes the CurveNet consisiting of a CurveModel with CurveLayers (e.g. CNNCurve) and a Curve (e.g. Bezier).
+
+        Args:
+            num_classes (int): The amount of classes the net discriminates among.
+            num_bends (int): The amount of bends on the curve.
+            weight_decay (float): A float indicating the intensity of weight decay.
+            curve (Type[Curve]): A parametric curve (e.g. Bezier).
+            curve_model (Type[tf.keras.Model]): The curve version of the utilized model (e.g. CNNCurve).
+            fix_start (bool, optional): Boolean indicating whether the start of the curve (first pre-trained model) is fixed. Defaults to True.
+            fix_end (bool, optional): Boolean indicating whether the end of the curve (latter pre-trained model)  is fixed. Defaults to True.
+            architecture_kwargs (Union[Dict[str, Any], None], optional): Further arguments for the curve model. Defaults to None.
+
+        Raises:
+            ValueError: Indicates falsely specified curve.
+        """
         super().__init__()
         if num_bends < 0:
             raise ValueError(
@@ -61,9 +74,10 @@ class CurveNet(tf.keras.Model):
         ]
 
     def import_base_parameters(self, base_model: tf.keras.Model, index: int) -> None:
-        """Import parameters from the base model into this model.
+        """
+        Import parameters from the BaseModel into the CurveModel.
 
-        Parameters in the Base Model (without Curve layers) are
+        Parameters in the BaseModel (without CurveLayers) are
         saved with the name
             <layerName>_<layerIndex>/<parameter>:0
 
@@ -72,20 +86,20 @@ class CurveNet(tf.keras.Model):
             conv2d/bias:0
             dense_1/kernel:0
 
-        Whereas parameters in the Curve Model are save with a '_curve' suffix
-        and an index that matches them to the curve point.
+        whereas parameters in the CurveModel are saved with a '_curve' suffix
+        and an index that matches them to the point on curve.
 
         For example:
             conv2d_curve/kernel_curve_1:0
             conv2d_curve/bias_curve_0:0
             dense_1_curve/kernel_curve_2:0
 
-        Here we want to load weights for a specific point on the curve
-        from the pretrained Base Model.
+        Here weights for a specific point on the curve are loaded
+        from the pretrained BaseModel.
 
         Args:
-            base_model (tf.keras.Model): The base model from which parameters should be imported.
-            index (int): Index of the curve point.
+            base_model (tf.keras.Model): The BaseModel (e.g. CNNBase) whose parameters are imported.
+            index (int): Index of the point on curve.
         """
         if not self.curve_model.built:
             self._build_from_base_model(base_model)
@@ -118,7 +132,13 @@ class CurveNet(tf.keras.Model):
         )
 
     def _build_from_base_model(self, base_model: tf.keras.Model):
-        """Build the curve model to initialize weights."""
+        """
+        Helper method that builds the CurveModel and thereby initializes its weights.
+        It extracts information about the input shape from the corresponding BaseModel.
+
+        Args:
+            base_model (tf.keras.Model): The BaseModel (e.g. CNNBase).
+        """
         base_input_shape = base_model.layers[0].input_shape
         point_on_curve_weights_input_shape = (len(self.fix_points),)
         input_shape = [
@@ -129,7 +149,15 @@ class CurveNet(tf.keras.Model):
 
     @staticmethod
     def _find_parameter_index(parameter_name: str) -> Union[int, None]:
-        """Finds the index (respective curve point) of a curve parameter name."""
+        """
+        Finds the index of a curve point given a parameter name from the CurveModel.
+
+        Args:
+            parameter_name (str): Name of the parameter from the CurveModel.
+
+        Returns:
+            Union[int, None]: Index
+        """
         results = re.findall(r"(\d+):", parameter_name)
         if not results:
             return None
@@ -137,19 +165,50 @@ class CurveNet(tf.keras.Model):
 
     @staticmethod
     def _get_base_name(parameter_name: str, index: int):
-        """Returns the base model parameter name, given a curve model parameter name."""
+        """
+        Returns the BaseModel parameter name, given a CurveModel parameter name.
+
+        Args:
+            parameter_name (str): Name of the parameter from the CurveModel.
+            index (int): Index of the curve point.
+
+        Returns:
+            _type_: Name of the parameter name in the BaseModel.
+        """
         return parameter_name.replace("_curve", "").replace(f"_{index}:", ":")
 
     def init_linear(self) -> None:
-        """Initialize the linear inner curve weights of the model."""
-        # TODO What does 'init_linear' mean? This does not initialize a linear layer.
-        # Initialize linear means the the inner points of the curve are initialized as
-        # linearly between the end points, depending on how many bends we have.
+        """
+        Intitializes the inner points on the curve as a linear combination of the first and last point on the curve (pre-trained models).
+        """
         for layer in self.curve_layers:
             self._compute_inner_weights(weights=layer.curve_kernels)
             self._compute_inner_weights(weights=layer.curve_biases)
 
+    def _compute_inner_weights(self, weights: List[tf.Variable]) -> None:
+        """
+        Helper method for init_linear that performs the initialization for the kernel and bias of each layer.
+
+        Args:
+            weights (List[tf.Variable]): List of kernels or biases of a CurveLayer.
+        """
+        first_weight, last_weight = weights[0].value(), weights[-1].value()
+        n_weights = len(weights)
+        for i in range(1, n_weights - 1):
+            alpha = i * 1.0 / (n_weights - 1)
+            weights[i].assign(alpha * first_weight + (1.0 - alpha) * last_weight)
+
     def get_weighted_parameters(self, point_on_curve):
+        """
+        TODO
+        _summary_
+
+        Args:
+            point_on_curve (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
         point_on_curve_weights = self.curve(point_on_curve)
         parameters = []
         for module in self.curve_layers:
@@ -164,16 +223,17 @@ class CurveNet(tf.keras.Model):
             [tf.stop_gradient(w).numpy().ravel() for w in parameters]
         )  # .cpu() missing
 
-    def _compute_inner_weights(self, weights: List[tf.Variable]) -> None:
-        # Is this procedure mentioned somewhere in the paper?
-        first_weight, last_weight = weights[0].value(), weights[-1].value()
-        n_weights = len(weights)
-        for i in range(1, n_weights - 1):
-            alpha = i * 1.0 / (n_weights - 1)
-            weights[i].assign(alpha * first_weight + (1.0 - alpha) * last_weight)
-
     @tf.function
     def generate_point_on_curve(self, dtype=tf.float32):
+        """
+        Samples a random point on the curve as a value in the range [0, 1) based  on the Uniform distribution.
+
+        Args:
+            dtype (_type_, optional): Defaults to tf.float32.
+
+        Returns:
+            _type_: Sampled point on curve.
+        """
         return tf.random.uniform(shape=(), dtype=dtype)
 
     def call(
@@ -182,6 +242,17 @@ class CurveNet(tf.keras.Model):
         training=None, # Why are we not setting this to True as default
         mask=None, # For what do we need the mask?
     ):
+        """
+        TODO
+        _summary_
+
+        Args:
+            inputs (tf.Tensor): _description_
+            training (_type_, optional): _description_. Defaults to None.
+
+        Returns:
+            _type_: _description_
+        """
         if training is not False:
             # If training is False, we are in evaluation.
             # The point_on_curve needs to be set beforehand, or is
@@ -198,6 +269,21 @@ class CurveNet(tf.keras.Model):
         point_on_curve: Union[float, None] = None,
         **kwargs,
     ):
+        """
+        TODO
+        _summary_
+
+        Args:
+            num_points (Union[int, None], optional): _description_. Defaults to None.
+            point_on_curve (Union[float, None], optional): _description_. Defaults to None.
+
+        Raises:
+            AttributeError: _description_
+            AttributeError: _description_
+
+        Returns:
+            _type_: _description_
+        """
         if not (num_points is None or point_on_curve is None):
             raise AttributeError(
                 "Cannot specify both 'num_points' and 'point_on_curve'. "
