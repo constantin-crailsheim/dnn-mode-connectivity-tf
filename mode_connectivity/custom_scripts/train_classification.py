@@ -234,7 +234,7 @@ def test_batch(
     criterion: Callable,
     **kwargs,
 ) -> Dict[str, float]:
-    output = model(input, **kwargs)
+    output = model(input, **kwargs) # Add Train = False for BatchNorm?
     # TODO is Negative Loss Likelihood calculated correctly here?
     loss = criterion(target, output)
     loss += tf.add_n(model.losses)  # Add Regularization loss

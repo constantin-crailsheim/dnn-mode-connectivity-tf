@@ -51,7 +51,7 @@ class Bezier(Curve):
     This Tensor is then used to weigh parameters of CurveLayers.
 
     For further information, see:
-    https://en.wikipedia.org/wiki/B%C3%A9zier_curve
+    https://en.wikipedia.org/wiki/Bezier_curve
     """
 
     def __init__(self, num_bends: int):

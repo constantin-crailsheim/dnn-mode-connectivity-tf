@@ -7,6 +7,7 @@ import numpy as np
 
 from mode_connectivity.curves.curves import Curve
 from mode_connectivity.curves.layers import CurveLayer
+from mode_connectivity.curves.layers import BatchNormalizationCurve
 
 logger = logging.getLogger(__name__)
 
@@ -146,8 +147,12 @@ class CurveNet(tf.keras.Model):
         # Initialize linear means the the inner points of the curve are initialized as
         # linearly between the end points, depending on how many bends we have.
         for layer in self.curve_layers:
-            self._compute_inner_weights(weights=layer.curve_kernels)
-            self._compute_inner_weights(weights=layer.curve_biases)
+            if not isinstance(layer, BatchNormalizationCurve):
+                self._compute_inner_weights(weights=layer.curve_kernels)
+                self._compute_inner_weights(weights=layer.curve_biases)
+            # elif isinstance(layer, BatchNormalizationCurve):
+            #     self._compute_inner_weights(weights=layer.curve_betas)
+            #     self._compute_inner_weights(weights=layer.curve_gammas)
 
     def get_weighted_parameters(self, point_on_curve):
         point_on_curve_weights = self.curve(point_on_curve)
