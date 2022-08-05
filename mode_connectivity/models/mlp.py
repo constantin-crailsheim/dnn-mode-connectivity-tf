@@ -9,7 +9,7 @@ __all__ = [
 
 
 class MLPBase(tf.keras.Model):
-    def __init__(self, num_classes: int, weight_decay: float):
+    def __init__(self, num_classes: None, weight_decay: float):
         super().__init__()
         regularizers = {
             "kernel_regularizer": tf.keras.regularizers.L2(weight_decay),
@@ -27,7 +27,7 @@ class MLPBase(tf.keras.Model):
 
 
 class MLPCurve(tf.keras.Model): 
-    def __init__(self, num_classes: int, fix_points: List[bool], weight_decay: float):
+    def __init__(self, num_classes: None, fix_points: List[bool], weight_decay: float):
         super().__init__()
         regularizers = {
             "kernel_regularizer": tf.keras.regularizers.L2(weight_decay),

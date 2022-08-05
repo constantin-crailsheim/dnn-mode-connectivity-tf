@@ -209,7 +209,7 @@
                 "--model=MLP",
                 "--curve=Bezier",
                 "--transform=MLP",
-                "--num-bends=1",
+                "--num-bends=5",
                 "--wd=5e-4",
                 "--ckpt=results/Regression_MLP/checkpoints_curve/model-weights-epoch100",
                 "--num-points=11",
