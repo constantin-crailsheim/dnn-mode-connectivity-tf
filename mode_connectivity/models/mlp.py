@@ -45,7 +45,17 @@ class MLPCurve(tf.keras.Model):
 
     def call(
         self, inputs: Tuple[tf.Tensor, tf.Tensor], training=None, mask=None
-    ):
+    ):  
+        """Forward pass of MLP curve model.
+
+        Args:
+            inputs (Tuple[tf.Tensor, tf.Tensor]): Input layer and weights defining the point on curve.
+            training (_type_, optional): _description_. Defaults to None. #TODO
+            mask (_type_, optional): _description_. Defaults to None. #TODO
+
+        Returns:
+            tf.Tensor: Output layer of MLP.
+        """
         x, point_on_curve_weights = inputs
 
         x = self.dense1((x, point_on_curve_weights))

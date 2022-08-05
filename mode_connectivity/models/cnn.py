@@ -111,6 +111,14 @@ class CNNCurve(tf.keras.Model):
         self.fc_part = [self.dense1, self.dense2, self.dense3]
 
     def call(self, inputs: Tuple[tf.Tensor, tf.Tensor], **kwargs):
+        """Forward pass for CNN curve model.
+
+        Args:
+            inputs (Tuple[tf.Tensor, tf.Tensor]): Input layer and weights defining the point on curve.
+
+        Returns:
+            tf.Tensor: Output layer of neural network.
+        """
         x, point_on_curve_weights = inputs
 
         x = self.conv1((x, point_on_curve_weights), **kwargs)
