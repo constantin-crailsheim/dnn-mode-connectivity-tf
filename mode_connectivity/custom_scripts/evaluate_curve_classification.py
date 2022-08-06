@@ -20,7 +20,7 @@ from mode_connectivity.curves.net import CurveNet
 from mode_connectivity.models.cnn import CNN
 from mode_connectivity.models.mlp import MLP
 
-from mode_connectivity.utils import disable_gpu
+from mode_connectivity.utils import disable_gpu, get_model
 
 def main():
     args = parse_evaluate_arguments()
@@ -36,11 +36,11 @@ def main():
         use_test=args.use_test,
     )
     architecture = get_architecture(model_name=args.model)
-    model = load_model(
+    model = get_model(
         architecture=architecture,
         args=args,
         num_classes=num_classes,
-        input_shape=input_shape, # TODO use output from data loader
+        input_shape=input_shape,
     )
 
     criterion = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)

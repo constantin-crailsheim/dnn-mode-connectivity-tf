@@ -16,11 +16,9 @@ from mode_connectivity.utils import (
     get_architecture,
     get_model,
     learning_rate_schedule,
-    load_checkpoint,
     save_weights,
     set_seeds,
 )
-
 
 def main():
     args = parse_train_arguments()
@@ -38,7 +36,7 @@ def main():
         use_test=args.use_test,
     )
     architecture = get_architecture(model_name=args.model)
-    model = get_model(
+    model, start_epoch = get_model(
         architecture=architecture,
         args=args,
         num_classes=num_classes,
@@ -60,12 +58,8 @@ def main():
     )
     # https://www.tensorflow.org/api_docs/python/tf/keras/optimizers/SGD
 
-    start_epoch = 1
-    if args.resume:
-        start_epoch = load_checkpoint(
-            checkpoint_path=args.resume, model=model, optimizer=optimizer
-        )
-    save_weights(directory=args.dir, epoch=start_epoch - 1, model=model)
+    if not args.ckpt:
+        save_weights(directory=args.dir, epoch=start_epoch - 1, model=model)
 
     train(
         args=args,

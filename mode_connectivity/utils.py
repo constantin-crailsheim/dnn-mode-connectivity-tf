@@ -86,75 +86,6 @@ def adjust_learning_rate(optimizer, lr):
 def check_batch_normalization(model):
     return False
 
-
-def load_checkpoint(
-    checkpoint_path: str,
-    model: tf.keras.Model,
-    optimizer: tf.keras.optimizers.Optimizer,
-    **kwargs,
-) -> int:
-    """Load the model and optimizer from a saved checkpoint.
-    The model and optimizer objects get updated with the stored parameters from the checkpoint.
-
-    Also allows for additional parameters to load via kwargs.
-
-    Args:
-        checkpoint_path (str): Path to the checkpoint.
-        model (keras.Model): The model which should be restored.
-        optimizer (keras.optimizers.Optimizer): The optimizer which should be restored.
-
-    Returns:
-        int: The next epoch, from which training should be resumed.
-    """
-    logger.info(f"Restoring train state from {checkpoint_path}")
-    epoch = tf.Variable(0, name="epoch")
-    checkpoint = tf.train.Checkpoint(
-        epoch=epoch, model=model, optimizer=optimizer, **kwargs
-    )
-    try:
-        checkpoint.restore(checkpoint_path)
-    except NotFoundError as e:
-        logger.error(
-            f"Could not restore specified checkpoint from {checkpoint_path}. Error: {e.message}"
-        )
-        logger.info("Starting from epoch 1")
-        return 1
-
-    next_epoch = int(epoch) + 1
-    logger.info(f"Restored checkpoint, resuming from epoch {next_epoch}")
-    return next_epoch
-
-
-def save_checkpoint(
-    directory: str,
-    epoch: int,
-    model: tf.keras.Model,
-    optimizer: tf.keras.optimizers.Optimizer,
-    name: str = "checkpoint",
-    **kwargs,
-) -> None:
-    """Save the current train state as a checkpoint.
-
-    Also allows for additional parameters to be saved via kwargs.
-
-    Args:
-        directory (str): Directory where the checkpoint should be saved.
-        epoch (int): The current train epoch.
-        model (keras.Model): The trained model.
-        optimizer (keras.optimizers.Optimizer): The optimizer used in training.
-        name (str, optional): Custom name of the checkpoint. Defaults to "checkpoint".
-    """
-    checkpoint = tf.train.Checkpoint(
-        epoch=tf.Variable(epoch, name="epoch"),
-        model=model,
-        optimizer=optimizer,
-        **kwargs,
-    )
-    checkpoint_path = os.path.join(directory, f"{name}-epoch{epoch}")
-    logger.info(f"Saving checkpoint to {checkpoint_path}")
-    checkpoint.save(checkpoint_path)
-
-
 def split_list(list_: List[Any], size: int) -> List[List[Any]]:
     """Split a list into equal chunks of size 'size'.
 
@@ -173,7 +104,7 @@ def split_list(list_: List[Any], size: int) -> List[List[Any]]:
     """
     return list(list_[i : i + size] for i in range(0, len(list_), size))
 
-
+# Still needed.
 def save_model(
     directory: str,
     epoch: int,
@@ -222,7 +153,18 @@ def get_model(architecture, args: Arguments, num_classes: int, input_shape):
         model = architecture.base(
             num_classes=num_classes, weight_decay=args.wd, **architecture.kwargs
         )
-        return model
+        if args.ckpt:
+            if args.resume_epoch:
+                model.build(input_shape=input_shape)
+                model.load_weights(filepath=args.ckpt)
+                model.compile()
+                return model, args.resume_epoch
+            else:
+                model.build(input_shape=input_shape)
+                model.load_weights(filepath=args.ckpt)
+                model.compile()
+                return model
+        return model, 1
 
     # Otherwise the curve version of the architecture (e.g. CNNCurve) is initialised in the context of a CurveNet.
     # The CurveNet additionally contains the curve (e.g. Bezier) and imports the parameters of the pre-trained base-nets that constitute the outer points of the curve.
@@ -240,7 +182,22 @@ def get_model(architecture, args: Arguments, num_classes: int, input_shape):
         fix_end=args.fix_end,
         architecture_kwargs=architecture.kwargs,
     )
+    
+    if args.ckpt:
+        if args.resume_epoch:
+            logger.info(f"Restoring model from checkpoint {args.ckpt} to resume training.")
+            model.build(input_shape=input_shape) # Necessary?
+            model.load_weights(filepath=args.ckpt) # expect_partial() needed?
+            model.compile() # Necessary?
+            return model, args.resume_epoch
+        else:
+            logger.info(f"Restoring model from checkpoint {args.ckpt} for evaluation.")
+            model.build(input_shape=input_shape)
+            model.load_weights(filepath=args.ckpt) # expect_partial needed?
+            model.compile()
+            return model
 
+    # Replace by the above, but double check if above correct.
     if args.ckpt:
         logger.info(f"Restoring model from checkpoint {args.ckpt} for evaluation")
         # Evalutate the model from Checkpoint
@@ -272,7 +229,7 @@ def get_model(architecture, args: Arguments, num_classes: int, input_shape):
             logger.info("Linear initialization.")
             model.init_linear()
 
-    return model
+    return model, 1
 
 
 def load_base_weights(
@@ -285,7 +242,10 @@ def load_base_weights(
     model.import_base_parameters(base_model, index)
 
 
+# Adjust to new logic with get_model to load checkpoints with start epoch.
+
 def get_model_and_loaders(args: Arguments):
+    
     loaders, num_classes, _, input_shape = data_loaders(
         dataset=args.dataset,
         path=args.data_path,
@@ -300,7 +260,7 @@ def get_model_and_loaders(args: Arguments):
         architecture=architecture,
         args=args,
         num_classes=num_classes,
-        input_shape=input_shape,  # TODO Determine this from dataset
+        input_shape=input_shape,
     )
 
     return loaders, model
