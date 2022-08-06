@@ -2,12 +2,10 @@ import logging
 import re
 from typing import Any, Dict, List, Type, Union
 
-import tensorflow as tf
 import numpy as np
-
+import tensorflow as tf
 from mode_connectivity.curves.curves import Curve
 from mode_connectivity.curves.layers import CurveLayer
-from mode_connectivity.curves.layers import BatchNormalizationCurve
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +24,7 @@ class CurveNet(tf.keras.Model):
         self,
         num_classes: int,
         num_bends: int,
-        weight_decay: float, # TODO Add to architecture
+        weight_decay: float,  # TODO Add to architecture
         curve: Type[Curve],  # Bezier, Polychain
         curve_model: Type[tf.keras.Model],  # ConvFCCurve, VGGCurve
         fix_start: bool = True,
@@ -98,9 +96,8 @@ class CurveNet(tf.keras.Model):
         for name, weight in weights.items():
             parameter_index = self._find_parameter_index(name)
             if parameter_index != index:
-                # Kernel/Bias index doesn't match the curve index.
-                # What is the implication?
-                logger.debug(f"Index of {name} does not match kernel/bias index.")
+                # Index of the Curve parameter (kernel, bias, ...) does not match
+                # the specified index. Skip this parameter.
                 continue
 
             base_name = self._get_base_name(name, index)
@@ -142,17 +139,10 @@ class CurveNet(tf.keras.Model):
         return parameter_name.replace("_curve", "").replace(f"_{index}:", ":")
 
     def init_linear(self) -> None:
-        """Initialize the linear inner curve weights of the model."""
-        # TODO What does 'init_linear' mean? This does not initialize a linear layer.
-        # Initialize linear means the the inner points of the curve are initialized as
-        # linearly between the end points, depending on how many bends we have.
+        """Initialize the inner curve weights linearly between between both end points."""
         for layer in self.curve_layers:
-            if not isinstance(layer, BatchNormalizationCurve):
-                self._compute_inner_weights(weights=layer.curve_kernels)
-                self._compute_inner_weights(weights=layer.curve_biases)
-            # elif isinstance(layer, BatchNormalizationCurve):
-            #     self._compute_inner_weights(weights=layer.curve_betas)
-            #     self._compute_inner_weights(weights=layer.curve_gammas)
+            for param_name in layer.parameters:
+                self._compute_inner_weights(weights=layer.curve_params(param_name))
 
     def get_weighted_parameters(self, point_on_curve):
         point_on_curve_weights = self.curve(point_on_curve)
@@ -184,8 +174,8 @@ class CurveNet(tf.keras.Model):
     def call(
         self,
         inputs: tf.Tensor,
-        training=None, # Why are we not setting this to True as default
-        mask=None, # For what do we need the mask?
+        training=None,  # Why are we not setting this to True as default
+        mask=None,  # For what do we need the mask?
     ):
         if training is not False:
             # If training is False, we are in evaluation.
