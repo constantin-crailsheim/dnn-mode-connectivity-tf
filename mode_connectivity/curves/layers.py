@@ -103,6 +103,9 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
     def _get_curve_param_name(param_name: str) -> str:
         return f"curve_{param_name}{'es' if param_name[-1] == 's' else 's'}"
 
+    def curve_params(self, param_name: str) -> List[tf.Variable]:
+        return getattr(self, self._get_curve_param_name(param_name))
+
     def _add_parameter(self, param_name: str, index: int, fixed: bool):
         name = f"{param_name}_curve_{index}"
         weight = self.add_weight(
@@ -136,7 +139,7 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
         """
         computed_params = {}
         for param_name in self.parameters:
-            curve_params = getattr(self, self._get_curve_param_name(param_name))
+            curve_params = self.curve_params(param_name)
             computed_params[param_name] = self._compute_single_parameter(
                 curve_params, curve_point_weights
             )
