@@ -35,7 +35,6 @@ def set_seeds(seed: int):
     tf.random.set_seed(seed)
     # TODO torch.cuda.manual_seed(args.seed)
 
-
 def learning_rate_schedule(base_lr, epoch, total_epochs):
     alpha = epoch / total_epochs
     if alpha <= 0.5:
@@ -78,6 +77,7 @@ def adjust_learning_rate(optimizer, lr):
     optimizer.lr.assign(lr)
     return lr
 
+# TODO Still to be implemented:
 def check_batch_normalization(model):
     return False
 
@@ -98,28 +98,6 @@ def split_list(list_: List[Any], size: int) -> List[List[Any]]:
     ```
     """
     return list(list_[i : i + size] for i in range(0, len(list_), size))
-
-# Still needed.
-def save_model(
-    directory: str,
-    epoch: int,
-    model: tf.keras.Model,
-) -> None:
-    """
-    Save the current model in SavedModel format.
-    Can only be called once the input dimension is specified.
-
-    Args:
-        directory (str): Directory where the checkpoint should be saved.
-        epoch (int): The current train epoch.
-        model (keras.Model): The trained model.
-    """
-    model_path = os.path.join(directory, f"model-epoch{epoch}")
-    logger.info(f"Saving model to {model_path}")
-    # print(model.curve_model.input_spec)
-    # print(model.call.get_concrete_function(inputs=model.curve_model.input_spec))
-    model.save(model_path)
-
 
 def save_weights(
     directory: str,
@@ -200,16 +178,6 @@ def get_model(architecture, args: Arguments, num_classes: int, input_shape):
         if args.init_linear:
             logger.info("Linear initialization.")
             model.init_linear()
-
-    # Replace by the above, but double check if above correct.
-    # if args.ckpt:
-    #     logger.info(f"Restoring model from checkpoint {args.ckpt} for evaluation")
-    #     # Evalutate the model from Checkpoint
-    #     # expect_partial()
-    #     # -> silence Value in checkpoint could not be found in the restored object: (root).optimizer. ..
-    #     # https://stackoverflow.com/questions/58289342/tf2-0-translation-model-error-when-restoring-the-saved-model-unresolved-objec
-    #     model.load_weights(args.ckpt).expect_partial()
-    #     return model
 
     return model
 
