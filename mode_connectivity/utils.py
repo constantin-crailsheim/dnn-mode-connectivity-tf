@@ -20,8 +20,7 @@ logger.setLevel(logging.INFO)
 
 
 def disable_gpu():
-    """GPU is used as default for tensorflow. Disables GPU and used to CPU.
-    """
+    """GPU is used as default for tensorflow. Disables GPU and used to CPU."""
     logger.info("Trying to disable GPU")
     try:
         tf.config.set_visible_devices([], "GPU")
@@ -298,7 +297,7 @@ def get_model(architecture, args: Arguments, num_classes: int, input_shape):
         input_shape (_type_): Shape of the input data.
 
     Returns:
-        _type_: Inizial
+        _type_: Initialized model.
     """
     # If no curve is to be fit the base version of the architecture is initialized (e.g CNNBase instead of CNNCurve).
     if not args.curve:
@@ -371,9 +370,6 @@ def load_base_weights(
         index (int): Index indicating the bend/ point of curve.
         model (tf.keras.Model): Model to be assigned with weights/parameters.
         base_model (tf.keras.Model): Model to load weights/parameters from.
-
-    Returns:
-        _type_: _description_
     """
     if not path:
         return None
