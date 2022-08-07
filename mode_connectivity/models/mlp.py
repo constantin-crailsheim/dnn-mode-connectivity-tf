@@ -79,12 +79,12 @@ class MLPCurve(tf.keras.Model):
         Performs the forward pass of the curve MLP with input data.
 
         Args:
-            inputs (Tuple[tf.Tensor, tf.Tensor]):  Input data with bend weights that is propagated through the curve MLP.
+            inputs (Tuple[tf.Tensor, tf.Tensor]):  Input data that is propagated through the curve MLP with bend weights defining the point on curve.
             training (_type_, optional): Unused?. Defaults to None.
             mask (_type_, optional): Unused?. Defaults to None.
 
         Returns:
-            _type_: CurveNet predictions.
+            tf.Tensor: Final layer output/ Prediction of MLP.
         """
         x, point_on_curve_weights = inputs
 

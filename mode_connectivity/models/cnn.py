@@ -75,7 +75,7 @@ class CNNBase(tf.keras.Model):
             inputs (tf.Tensor): Input data that is propagated through the base CNN.
 
         Returns:
-            _type_: Predicted probability for each of the classes.
+            tf.Tensor: Final layer output for each of the classes.
         """
         x = self.conv_part(inputs, **kwargs)
         return self.fc_part(x, **kwargs)
@@ -143,10 +143,10 @@ class CNNCurve(tf.keras.Model):
         Performs the forward pass of the curve CNN with input data.
 
         Args:
-            inputs (Tuple[tf.Tensor, tf.Tensor]): Input data with bend weights that is propagated through the curve CNN.
+            inputs (Tuple[tf.Tensor, tf.Tensor]): Input data that is propagated through the curve CNN with bend weights defining the point on curve.
 
         Returns:
-            _type_: Predicted probability for each of the classes.
+            tf.Tensor: Final layer output for each of the classes.
         """
         x, point_on_curve_weights = inputs
 

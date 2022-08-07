@@ -6,6 +6,7 @@ from typing import Any, List
 import keras
 import tensorflow as tf
 from tensorflow.python.framework.errors import NotFoundError
+from keras.optimizers import Optimizer
 
 import mode_connectivity.curves.curves as curves
 from mode_connectivity.argparser import Arguments
@@ -19,6 +20,8 @@ logger.setLevel(logging.INFO)
 
 
 def disable_gpu():
+    """GPU is used as default for tensorflow. Disables GPU and used to CPU.
+    """
     logger.info("Trying to disable GPU")
     try:
         tf.config.set_visible_devices([], "GPU")
@@ -39,15 +42,15 @@ def set_seeds(seed: int):
 def learning_rate_schedule(base_lr: float, epoch: int, total_epochs: int):
     """
     Determines the learning rate for an epoch  based on an initial learning rate and total amount of epochs.
-    The implemented schedule monotonically decreases the learning rate.
+    The implemented schedule monotonically decreases the learning rate to a factor of 0.01.
 
     Args:
         base_lr (float): The initial learning rate.
-        epoch (int): The epoch for which the learning rate should be computed.
+        epoch (int): Current epoch.
         total_epochs (int): Total amount of epochs.
 
     Returns:
-        float: Scheduled learning rate for the specified epoch.
+        float: Scheduled learning rate for the current epoch.
     """
     alpha = epoch / total_epochs
     if alpha <= 0.5:
@@ -115,19 +118,19 @@ def l2_regularizer(weight_decay: float):
 
 def adjust_learning_rate(optimizer, lr):
     """
-    Adjust the learning rate of an optimizer to a  concrete value.
+    Adjust the learning rate used in an optimizer.
 
     Args:
-        optimizer (_type_): Optimizer to be updated.
-        lr (float): Learning rate.
+        optimizer (Optimizer): Optimizer to be updated.
+        lr (float): Current learning rate as computed by a learning rate schedule.
 
     Returns:
         float: The adjusted learning rate.
     """
     optimizer.lr.assign(lr)
-    return lr
 
 
+# TODO Not implemented yet.
 def check_batch_normalization(model):
     #? Necessary?
     return False
@@ -221,7 +224,7 @@ def split_list(list_: List[Any], size: int) -> List[List[Any]]:
     """
     return list(list_[i : i + size] for i in range(0, len(list_), size))
 
-
+# TODO Still needed?
 def save_model(
     directory: str,
     epoch: int,
@@ -249,12 +252,12 @@ def save_weights(
     model: keras.Model,
 ):
     """
-    Saves the model's weights/parameters to a specified path.
+    Saves the model's weights/parameters to a specified path in order to bbe restored for curve fitting or evaluation.
 
     Args:
-        directory (str): Directory where the weights/parameters should be saved.
-        epoch (int): Current epoch.
-        model (keras.Model): Model to extract parameters from.
+        directory (str): Directory to store the weights/parameters.
+        epoch (int): Current epoch of training.
+        model (keras.Model): Current model to extract parameters from.
     """
     model_path = os.path.join(directory, f"model-weights-epoch{epoch}")
     logger.info(f"Saving model weights to {model_path}")
@@ -265,17 +268,17 @@ def save_weights(
 
 def get_architecture(model_name: str):
     """
-    For a specified model name returns the corresponding architecture.
+    For a specified model name returns the corresponding architecture that is used for fitting the model.
     The architecture consists of the Base and Curve version of the model.
 
     Args:
         model_name (str): Name of the model. One out of {"CNN", "MLP"}.
 
     Raises:
-        KeyError: Indicates if the model name is unknown.
+        KeyError: Indicates if the model name is unknown/ the model is not implemented yet.
 
     Returns:
-        _type_: Architecture of the model.
+        _type_: Model architecture.
     """
     if model_name == "CNN":
         return CNN
