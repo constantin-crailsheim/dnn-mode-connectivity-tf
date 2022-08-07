@@ -209,3 +209,7 @@ class BatchNormalizationCurve(CurveLayer, tf.keras.layers.BatchNormalization):
             parameters=("gamma", "beta"),
             **kwargs,
         )
+
+    def reset_moving_stats(self):
+        self.moving_mean.assign(tf.zeros(self.moving_mean.shape))
+        self.moving_variance.assign(tf.ones(self.moving_variance.shape))

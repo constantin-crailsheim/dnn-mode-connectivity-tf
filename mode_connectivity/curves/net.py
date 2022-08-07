@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Type, Union
 import numpy as np
 import tensorflow as tf
 from mode_connectivity.curves.curves import Curve
-from mode_connectivity.curves.layers import CurveLayer
+from mode_connectivity.curves.layers import BatchNormalizationCurve, CurveLayer
 
 logger = logging.getLogger(__name__)
 
@@ -147,11 +147,11 @@ class CurveNet(tf.keras.Model):
     def get_weighted_parameters(self, point_on_curve):
         point_on_curve_weights = self.curve(point_on_curve)
         parameters = []
-        for module in self.curve_layers:
+        for layer in self.curve_layers:
             parameters.extend(
                 [
                     w
-                    for w in module.compute_weighted_parameters(point_on_curve_weights)
+                    for w in layer.compute_weighted_parameters(point_on_curve_weights)
                     if w is not None
                 ]
             )
@@ -186,6 +186,13 @@ class CurveNet(tf.keras.Model):
         outputs = self.curve_model((inputs, point_on_curve_weights))
         return outputs
 
+    def evaluate(self, *args, **kwargs):
+        positional_inputs = args[0] if args else None
+        inputs = kwargs.get("x", positional_inputs)
+        # Update moving mean/variance for BatchNorm Layers
+        self.update_batchnorm(inputs=inputs)
+        return super().evaluate(*args, **kwargs)
+
     def evaluate_points(
         self,
         *args,
@@ -217,19 +224,48 @@ class CurveNet(tf.keras.Model):
             self.point_on_curve.assign(
                 tf.constant(point_on_curve, shape=(), dtype=tf.float32)
             )
-            result = super().evaluate(*args, **kwargs)
+            result = self.evaluate(*args, **kwargs)
             result["point_on_curve"] = point_on_curve
             results.append(result)
         return results
 
-    def import_base_buffers(self, base_model: tf.keras.Model) -> None:
-        # Not needed for now, only used in test_curve.py
-        raise NotImplementedError()
+    @staticmethod
+    def is_batchnorm(layer: tf.keras.layers.Layer) -> bool:
+        return issubclass(
+            layer.__class__,
+            (tf.keras.layers.BatchNormalization, BatchNormalizationCurve),
+        )
 
-    def export_base_parameters(self, base_model: tf.keras.Model, index: int) -> None:
-        # Not needed for now, actually never used in original repo
-        raise NotImplementedError()
+    @property
+    def has_batchnorm(self) -> bool:
+        return any(self.is_batchnorm(l) for l in self.layers)
 
-    # def weights(self, inputs: tf.Tensor):
-    #     # Not needed for now, only called in eval_curve.py and plane.py
-    #     raise NotImplementedError()
+    def update_batchnorm(self, inputs: tf.Tensor, **kwargs):
+        if not self.has_batchnorm:
+            logger.debug("Model has no BatchNormalisation Layer")
+            return
+
+        momenta = {}
+        # Reset stats and save momentum for BatchNorm Layers
+        for layer in self.layers:
+            if self.is_batchnorm(layer):
+                layer.reset_moving_stats()
+                momenta[layer] = layer.momentum
+
+        num_samples = 0
+        # Run model over input batches to update moving mean/variance
+        for input_ in inputs:
+            if isinstance(input_, tuple):
+                # If we are iterating over a dataloader
+                input_ = input_[0]
+            batch_size = len(input_)
+            momentum = batch_size / (num_samples + batch_size)
+
+            for layer in momenta.keys():
+                layer.momentum = momentum
+
+            self(input_, training=True, **kwargs)
+            num_samples += batch_size
+
+        for layer, momentum in momenta.items():
+            layer.momentum = momentum
