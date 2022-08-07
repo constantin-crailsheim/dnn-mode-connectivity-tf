@@ -2,7 +2,11 @@ from typing import List, Tuple
 
 import tensorflow as tf
 
-from mode_connectivity.curves.layers import Conv2DCurve, DenseCurve, BatchNormalizationCurve
+from mode_connectivity.curves.layers import (
+    Conv2DCurve,
+    DenseCurve,
+    BatchNormalizationCurve,
+)
 
 __all__ = [
     "CNN",
@@ -107,7 +111,7 @@ class CNNCurve(tf.keras.Model):
             self.pool2,
             self.conv3,
             self.bn3,
-            self.flatten1
+            self.flatten1,
         ]
 
         self.dense1 = DenseCurve(
@@ -121,32 +125,26 @@ class CNNCurve(tf.keras.Model):
         self.dense3 = DenseCurve(
             units=num_classes, fix_points=fix_points, **regularizers
         )
-        self.fc_part = [
-            self.dense1,
-            self.bn4,
-            self.dense2,
-            self.bn5,
-            self.dense3
-        ]
+        self.fc_part = [self.dense1, self.bn4, self.dense2, self.bn5, self.dense3]
 
     def call(self, inputs: Tuple[tf.Tensor, tf.Tensor], **kwargs):
         x, point_on_curve_weights = inputs
 
-        x = self.conv1((x, point_on_curve_weights), **kwargs)
+        x = self.conv1((x, point_on_curve_weights))
         x = self.bn1((x, point_on_curve_weights), **kwargs)
-        x = self.pool1(x, **kwargs)
-        x = self.conv2((x, point_on_curve_weights), **kwargs)
+        x = self.pool1(x)
+        x = self.conv2((x, point_on_curve_weights))
         x = self.bn2((x, point_on_curve_weights), **kwargs)
-        x = self.pool2(x, **kwargs)
-        x = self.conv3((x, point_on_curve_weights), **kwargs)
+        x = self.pool2(x)
+        x = self.conv3((x, point_on_curve_weights))
         x = self.bn3((x, point_on_curve_weights), **kwargs)
-        x = self.flatten1(x, **kwargs)
+        x = self.flatten1(x)
 
-        x = self.dense1((x, point_on_curve_weights), **kwargs)
+        x = self.dense1((x, point_on_curve_weights))
         x = self.bn4((x, point_on_curve_weights), **kwargs)
-        x = self.dense2((x, point_on_curve_weights), **kwargs)
+        x = self.dense2((x, point_on_curve_weights))
         x = self.bn5((x, point_on_curve_weights), **kwargs)
-        x = self.dense3((x, point_on_curve_weights), **kwargs)
+        x = self.dense3((x, point_on_curve_weights))
         return x
 
 
