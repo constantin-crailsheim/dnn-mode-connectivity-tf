@@ -125,11 +125,12 @@ def get_model(architecture, args: Arguments, num_classes: int, input_shape):
         raise KeyError("Checkpoint needs to be defined to resume training.")
 
     if not args.curve:
-        logger.info(f"Loading Regular Model {architecture.__name__}")
+        logger.info(f"Loading regular model {architecture.__name__}")
         model = architecture.base(
             num_classes=num_classes, weight_decay=args.wd, **architecture.kwargs
         )
         if args.ckpt:
+            logger.info(f"Restoring regular model from checkpoint {args.ckpt}.")
             model.build(input_shape=input_shape)
             model.load_weights(filepath=args.ckpt)
             model.compile()
@@ -153,9 +154,9 @@ def get_model(architecture, args: Arguments, num_classes: int, input_shape):
     )
     
     if args.ckpt:
-        logger.info(f"Restoring model from checkpoint {args.ckpt} to resume training.")
-        model.build(input_shape=input_shape) # Necessary?
-        model.load_weights(filepath=args.ckpt) # expect_partial() needed?
+        logger.info(f"Restoring curve model from checkpoint {args.ckpt}.")
+        model.build(input_shape=input_shape)
+        model.load_weights(filepath=args.ckpt)
         model.compile() # Necessary?
     else:
         # Build model from 0, 1 or 2 base_models
