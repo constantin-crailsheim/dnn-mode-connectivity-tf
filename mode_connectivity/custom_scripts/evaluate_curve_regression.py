@@ -8,9 +8,6 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import tensorflow as tf
 from keras.layers import Layer
 
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import f1_score
-
 from mode_connectivity.argparser import Arguments, parse_evaluate_arguments
 from mode_connectivity.data import data_loaders
 
