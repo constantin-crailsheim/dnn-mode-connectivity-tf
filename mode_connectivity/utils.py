@@ -36,7 +36,19 @@ def set_seeds(seed: int):
     # TODO torch.cuda.manual_seed(args.seed)
 
 
-def learning_rate_schedule(base_lr, epoch, total_epochs):
+def learning_rate_schedule(base_lr: float, epoch: int, total_epochs: int):
+    """
+    Determines the learning rate for an epoch  based on an initial learning rate and total amount of epochs.
+    The implemented schedule monotonically decreases the learning rate.
+
+    Args:
+        base_lr (float): The initial learning rate.
+        epoch (int): The epoch for which the learning rate should be computed.
+        total_epochs (int): Total amount of epochs.
+
+    Returns:
+        float: Scheduled learning rate for the specified epoch.
+    """
     alpha = epoch / total_epochs
     if alpha <= 0.5:
         factor = 1.0
@@ -49,6 +61,14 @@ def learning_rate_schedule(base_lr, epoch, total_epochs):
 
 class AlphaLearningRateSchedule(tf.keras.callbacks.Callback):
     def __init__(self, model: tf.keras.Model, total_epochs: int, verbose: bool = True):
+        """
+        Initializes the AlphaLearningRateSchedule.
+
+        Args:
+            model (tf.keras.Model): Currently trained model.
+            total_epochs (int): Total amount of epochs.
+            verbose (bool, optional): Indicates if updates are displayed. Defaults to True.
+        """
         self.model = model
         self.total_epochs = total_epochs
         self.verbose = verbose
@@ -58,9 +78,23 @@ class AlphaLearningRateSchedule(tf.keras.callbacks.Callback):
         )
 
     def get_current_lr(self) -> float:
+        """
+        Returns the current learning rate of the trained model.
+
+        Returns:
+            float: Current learning rate.
+        """
         return float(tf.keras.backend.get_value(self.model.optimizer.lr))
 
     def on_epoch_begin(self, epoch: int, logs=None):
+        #Logs not used!
+        """
+        Triggers the learning rate update at the beginning of each epoch.
+
+        Args:
+            epoch (int): Current epoch.
+            logs (_type_, optional): Not used!
+        """
         lr = self.get_current_lr()
         # tf epoch is 0-indexed, so we need to add 1 to get the
         # same behaviour as in original implementation.
@@ -74,16 +108,28 @@ class AlphaLearningRateSchedule(tf.keras.callbacks.Callback):
             print(f" lr: {lr:.4f}", end=" - ")
 
 
-def l2_regularizer(weight_decay):
+def l2_regularizer(weight_decay: float):
+    #Not used?!
     return lambda model: 0.5 * weight_decay * model.l2
 
 
 def adjust_learning_rate(optimizer, lr):
+    """
+    Adjust the learning rate of an optimizer to a  concrete value.
+
+    Args:
+        optimizer (_type_): Optimizer to be updated.
+        lr (float): Learning rate.
+
+    Returns:
+        float: The adjusted learning rate.
+    """
     optimizer.lr.assign(lr)
     return lr
 
 
 def check_batch_normalization(model):
+    #? Necessary?
     return False
 
 
@@ -93,10 +139,11 @@ def load_checkpoint(
     optimizer: tf.keras.optimizers.Optimizer,
     **kwargs,
 ) -> int:
-    """Load the model and optimizer from a saved checkpoint.
-    The model and optimizer objects get updated with the stored parameters from the checkpoint.
+    """
+    Loads the model and optimizer from a saved checkpoint.
+    The model and optimizer objects get updated with the stored parameters from this checkpoint.
 
-    Also allows for additional parameters to load via kwargs.
+    Also allows for additional parameters to be loaded via kwargs.
 
     Args:
         checkpoint_path (str): Path to the checkpoint.
@@ -133,7 +180,8 @@ def save_checkpoint(
     name: str = "checkpoint",
     **kwargs,
 ) -> None:
-    """Save the current train state as a checkpoint.
+    """
+    Saves the current train state as a checkpoint.
 
     Also allows for additional parameters to be saved via kwargs.
 
@@ -156,7 +204,7 @@ def save_checkpoint(
 
 
 def split_list(list_: List[Any], size: int) -> List[List[Any]]:
-    """Split a list into equal chunks of size 'size'.
+    """Split a list into equal chunks of specified size.
 
     Args:
         list_ (List[Any]): The list to split.
@@ -200,6 +248,14 @@ def save_weights(
     epoch: int,
     model: keras.Model,
 ):
+    """
+    Saves the model's weights/parameters to a specified path.
+
+    Args:
+        directory (str): Directory where the weights/parameters should be saved.
+        epoch (int): Current epoch.
+        model (keras.Model): Model to extract parameters from.
+    """
     model_path = os.path.join(directory, f"model-weights-epoch{epoch}")
     logger.info(f"Saving model weights to {model_path}")
     # print(model.curve_model.input_spec)
@@ -208,6 +264,19 @@ def save_weights(
 
 
 def get_architecture(model_name: str):
+    """
+    For a specified model name returns the corresponding architecture.
+    The architecture consists of the Base and Curve version of the model.
+
+    Args:
+        model_name (str): Name of the model. One out of {"CNN", "MLP"}.
+
+    Raises:
+        KeyError: Indicates if the model name is unknown.
+
+    Returns:
+        _type_: Architecture of the model.
+    """
     if model_name == "CNN":
         return CNN
     if model_name == "MLP":
@@ -216,7 +285,19 @@ def get_architecture(model_name: str):
 
 
 def get_model(architecture, args: Arguments, num_classes: int, input_shape):
-    # If no curve is to be fit the base version of the architecture is initialised (e.g CNNBase instead of CNNCurve).
+    """
+    Initializes and returns either the Base or Curve version of an architecture.
+
+    Args:
+        architecture (_type_): Model architecture, e.g. CNN.
+        args (Arguments): Parsed arguments.
+        num_classes (int): The amount of classes the net discriminates among.  Specified as "None" in regression tasks.
+        input_shape (_type_): Shape of the input data.
+
+    Returns:
+        _type_: Inizial
+    """
+    # If no curve is to be fit the base version of the architecture is initialized (e.g CNNBase instead of CNNCurve).
     if not args.curve:
         logger.info(f"Loading Regular Model {architecture.__name__}")
         model = architecture.base(
@@ -224,8 +305,8 @@ def get_model(architecture, args: Arguments, num_classes: int, input_shape):
         )
         return model
 
-    # Otherwise the curve version of the architecture (e.g. CNNCurve) is initialised in the context of a CurveNet.
-    # The CurveNet additionally contains the curve (e.g. Bezier) and imports the parameters of the pre-trained base-nets that constitute the outer points of the curve.
+    # Otherwise the curve version of the architecture (e.g. CNNCurve) is initialized in the context of a CurveNet.
+    # The CurveNet additionally contains the curve (e.g. Bezier) and imports parameters from the pre-trained base-nets that constitute the outer points of the curve.
     curve = getattr(curves, args.curve)
     logger.info(
         f"Loading CurveNet with CurveModel {architecture.__name__} and Curve {curve.__name__}"
@@ -278,6 +359,19 @@ def get_model(architecture, args: Arguments, num_classes: int, input_shape):
 def load_base_weights(
     path: str, index: int, model: tf.keras.Model, base_model: tf.keras.Model
 ) -> None:
+    """
+    Helper method for get_model().
+    Loads the weights/parameters of a BaseModel and assigns them to a bend/ point of curve of the CurveModel.
+
+    Args:
+        path (str): Path to load weights/ parameters from.
+        index (int): Index indicating the bend/ point of curve.
+        model (tf.keras.Model): Model to be assigned with weights/parameters.
+        base_model (tf.keras.Model): Model to load weights/parameters from.
+
+    Returns:
+        _type_: _description_
+    """
     if not path:
         return None
     logger.info(f"Loading {path} as point #{index}")
@@ -286,6 +380,15 @@ def load_base_weights(
 
 
 def get_model_and_loaders(args: Arguments):
+    """
+    Returns data loaders and a model based on parser arguments.
+
+    Args:
+        args (Arguments): Parsed arguments.
+
+    Returns:
+        _type_: Tuple of data loaders and model.
+    """
     loaders, num_classes, _, input_shape = data_loaders(
         dataset=args.dataset,
         path=args.data_path,

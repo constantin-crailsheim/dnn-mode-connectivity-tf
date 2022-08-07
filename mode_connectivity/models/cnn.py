@@ -27,6 +27,16 @@ class CNNBase(tf.keras.Model):
     # Comment: In contrast to PyTorch there are no input dimensions required in Tensorflow.
 
     def __init__(self, num_classes: int, weight_decay: float):
+        """
+        Initializes the base version of the CNN.
+        It consists of a convolutional and fully-connected part, each comprising several layers.
+        The CNN performs image classification among several classes.
+
+        Args:
+            num_classes (int): The amount of classes the net discriminates among.
+            weight_decay (float): Indicates the intensity of weight decay.
+        """
+
         super().__init__()
         self.num_classes = num_classes
         regularizers = {
@@ -58,12 +68,30 @@ class CNNBase(tf.keras.Model):
         )  # Check if weight decay needed in each layer
 
     def call(self, inputs: tf.Tensor, **kwargs):
+        """
+        Performs the forward pass of the base CNN with input data.
+
+        Args:
+            inputs (tf.Tensor): Input data that is propagated through the base CNN.
+
+        Returns:
+            _type_: Predicted probability for each of the classes.
+        """
         x = self.conv_part(inputs, **kwargs)
         return self.fc_part(x, **kwargs)
 
 
 class CNNCurve(tf.keras.Model):
     def __init__(self, num_classes: int, fix_points: List[bool], weight_decay: float):
+        """
+        Initializes the curve version of the CNN that consists of several Curve-Layers.
+        The CNN performs image classification among several classes.
+
+        Args:
+            num_classes (int): The amount of classes the net discriminates among.
+            fix_points (List[bool]): List of Booleans indicating for each bend/ point on curve if it is fixed. Defaults to True.
+            weight_decay (float): Indicates the intensity of weight decay.
+        """
         super().__init__()
         regularizers = {
             "kernel_regularizer": tf.keras.regularizers.L2(weight_decay),
@@ -111,6 +139,15 @@ class CNNCurve(tf.keras.Model):
         self.fc_part = [self.dense1, self.dense2, self.dense3]
 
     def call(self, inputs: Tuple[tf.Tensor, tf.Tensor], **kwargs):
+        """
+        Performs the forward pass of the curve CNN with input data.
+
+        Args:
+            inputs (Tuple[tf.Tensor, tf.Tensor]): Input data with bend weights that is propagated through the curve CNN.
+
+        Returns:
+            _type_: Predicted probability for each of the classes.
+        """
         x, point_on_curve_weights = inputs
 
         x = self.conv1((x, point_on_curve_weights), **kwargs)

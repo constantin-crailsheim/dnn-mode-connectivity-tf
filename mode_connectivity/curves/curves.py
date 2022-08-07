@@ -8,15 +8,18 @@ from scipy.special import binom
 
 class Curve(tf.keras.layers.Layer, ABC):
     """Base class for parametric curves."""
-
     num_bends: int
 
     def __init__(self, num_bends: int):
         """
-        Initialize the curve.
+        Initializes the parametric curve.
+        The amount of bends on a curve determine its flexibility/ the capacity of the metamodel.
 
         Args:
             num_bends (int): The amount of bends on the curve.
+
+        Raises:
+            ValueError: Indicates falsely specified num_bends.
         """
         super().__init__()
         if num_bends < 0:
@@ -29,14 +32,14 @@ class Curve(tf.keras.layers.Layer, ABC):
     def call(self, point_on_curve: Union[float, tf.Tensor]) -> tf.Tensor:
         """
         Returns a tensor of weights summing up to 1.
-        The weights correspond to the weight each input point of the curve is given when constructing the curve.
-        This tensor is then used to weight the parameters of CurveLayers.
+        These weights correspond to the weight each bend on the curve is given when constructing the specified point on the curve.
+        The resulting tensor is then used to weight the parameters of the CurveLayers.
 
         For further information, see:
         https://en.wikipedia.org/wiki/B%C3%A9zier_curve
 
         Args:
-            point_on_curve (Union[float, tf.Tensor]): Point on curve specified by values in [0, 1].
+            point_on_curve (Union[float, tf.Tensor]): Arbitrary point on the curve specified by values in [0, 1].
 
         Returns:
             tf.Tensor: Tensor of weights.
@@ -48,7 +51,10 @@ class Curve(tf.keras.layers.Layer, ABC):
 
 
 class Bezier(Curve):
-    """Implementation of the Bezier Curve in a layer context."""
+    """
+    Implementation of the Bezier Curve in the layer context.
+    For the Bezier curve the amount of bends corresponds to the degree of the curve.
+    """
 
     def __init__(self, num_bends: int):
         """

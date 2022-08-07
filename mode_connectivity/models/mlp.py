@@ -10,6 +10,15 @@ __all__ = [
 
 class MLPBase(tf.keras.Model):
     def __init__(self, num_classes: int, weight_decay: float):
+        """
+        Initializes the base version of the MLP.
+        It consists of a fully-connected part comprising several layers.
+        The MLP regresses the target variable on the independent variables.
+
+        Args:
+            num_classes (int): Specified as "None" in this regression tasks.
+            weight_decay (float): Indicates the intensity of weight decay.
+        """
         super().__init__()
         regularizers = {
             "kernel_regularizer": tf.keras.regularizers.L2(weight_decay),
@@ -23,11 +32,30 @@ class MLPBase(tf.keras.Model):
         )
 
     def call(self, inputs: tf.Tensor, **kwargs):
+        """
+        Performs the forward pass of the base MLP with input data.
+
+        Args:
+            inputs (tf.Tensor): Input data that is propagated through the base MLP.
+
+        Returns:
+            _type_: Network predictions.
+        """
         return self.fc_part(inputs, **kwargs)
 
 
 class MLPCurve(tf.keras.Model): 
     def __init__(self, num_classes: int, fix_points: List[bool], weight_decay: float):
+        """
+        Initializes the curve version of the MLP.
+        It consists of a fully-connected part comprising several Curve-Layers.
+        The MLP regresses the target variable on the independent variables.
+
+        Args:
+            num_classes (int): Specified as "None" in this regression tasks.
+            fix_points (List[bool]): List of Booleans indicating for each bend/ point on curve if it is fixed. Defaults to True.
+            weight_decay (float): Indicates the intensity of weight decay.
+        """
         super().__init__()
         regularizers = {
             "kernel_regularizer": tf.keras.regularizers.L2(weight_decay),
@@ -46,6 +74,18 @@ class MLPCurve(tf.keras.Model):
     def call(
         self, inputs: Tuple[tf.Tensor, tf.Tensor], training=None, mask=None
     ):
+        #Delete training and mask attributes?
+        """
+        Performs the forward pass of the curve MLP with input data.
+
+        Args:
+            inputs (Tuple[tf.Tensor, tf.Tensor]):  Input data with bend weights that is propagated through the curve MLP.
+            training (_type_, optional): Unused?. Defaults to None.
+            mask (_type_, optional): Unused?. Defaults to None.
+
+        Returns:
+            _type_: CurveNet predictions.
+        """
         x, point_on_curve_weights = inputs
 
         x = self.dense1((x, point_on_curve_weights))
