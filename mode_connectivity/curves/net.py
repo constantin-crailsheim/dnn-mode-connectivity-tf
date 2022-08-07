@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class CurveNet(tf.keras.Model):
-    num_classes: int
+    num_classes: Union[int, None]
     num_bends: int
 
     fix_points: List[bool]
@@ -23,7 +23,7 @@ class CurveNet(tf.keras.Model):
 
     def __init__(
         self,
-        num_classes: int,
+        num_classes: Union[int, None],
         num_bends: int,
         weight_decay: float, # TODO Add to architecture
         curve: Type[Curve],  # Bezier, Polychain

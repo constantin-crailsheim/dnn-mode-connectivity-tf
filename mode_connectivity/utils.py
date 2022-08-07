@@ -1,7 +1,7 @@
 import logging
 import os
 from functools import partial
-from typing import Any, List
+from typing import Any, List, Union
 
 import keras
 import tensorflow as tf
@@ -215,7 +215,7 @@ def get_architecture(model_name: str):
     raise KeyError(f"Unkown model {model_name}")
 
 
-def get_model(architecture, args: Arguments, num_classes: int, input_shape):
+def get_model(architecture, args: Arguments, num_classes: Union[int, None], input_shape):
     # If no curve is to be fit the base version of the architecture is initialised (e.g CNNBase instead of CNNCurve).
     if not args.curve:
         logger.info(f"Loading Regular Model {architecture.__name__}")
@@ -300,7 +300,7 @@ def get_model_and_loaders(args: Arguments):
         architecture=architecture,
         args=args,
         num_classes=num_classes,
-        input_shape=input_shape,  # TODO Determine this from dataset
+        input_shape=input_shape,
     )
 
     return loaders, model

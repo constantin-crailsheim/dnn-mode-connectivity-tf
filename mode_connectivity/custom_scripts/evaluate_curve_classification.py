@@ -138,7 +138,7 @@ def get_architecture(model_name: str):
         return MLP
     raise KeyError(f"Unkown model {model_name}")
 
-def load_model(architecture, args: Arguments, num_classes: int, input_shape):
+def load_model(architecture, args: Arguments, num_classes: Union[int, None], input_shape):
     curve = getattr(curves, args.curve)
     model = CurveNet(
         num_classes=num_classes,
