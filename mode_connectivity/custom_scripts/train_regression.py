@@ -20,6 +20,7 @@ from mode_connectivity.utils import (
     disable_gpu,
     get_architecture,
     get_model,
+    get_epoch,
     learning_rate_schedule,
     save_weights,
     set_seeds,
@@ -41,7 +42,7 @@ def main():
         use_test=args.use_test,
     )
     architecture = get_architecture(model_name=args.model)
-    model, start_epoch = get_model(
+    model = get_model(
         architecture=architecture,
         args=args,
         num_classes=num_classes,
@@ -54,6 +55,8 @@ def main():
         learning_rate=args.lr,
         momentum=args.momentum,
     )
+
+    start_epoch = get_epoch(args)
 
     if not args.ckpt:
         save_weights(directory=args.dir, epoch=start_epoch - 1, model=model)

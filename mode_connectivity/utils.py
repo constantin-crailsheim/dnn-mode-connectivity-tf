@@ -74,14 +74,9 @@ class AlphaLearningRateSchedule(tf.keras.callbacks.Callback):
             print(f" lr: {lr:.4f}", end=" - ")
 
 
-def l2_regularizer(weight_decay):
-    return lambda model: 0.5 * weight_decay * model.l2
-
-
 def adjust_learning_rate(optimizer, lr):
     optimizer.lr.assign(lr)
     return lr
-
 
 def check_batch_normalization(model):
     return False
@@ -148,23 +143,19 @@ def get_architecture(model_name: str):
 
 def get_model(architecture, args: Arguments, num_classes: int, input_shape):
     # If no curve is to be fit the base version of the architecture is initialised (e.g CNNBase instead of CNNCurve).
+    if args.resume_epoch and not args.ckpt:
+        raise KeyError("Checkpoint needs to be defined to resume training.")
+
     if not args.curve:
         logger.info(f"Loading Regular Model {architecture.__name__}")
         model = architecture.base(
             num_classes=num_classes, weight_decay=args.wd, **architecture.kwargs
         )
         if args.ckpt:
-            if args.resume_epoch:
-                model.build(input_shape=input_shape)
-                model.load_weights(filepath=args.ckpt)
-                model.compile()
-                return model, args.resume_epoch
-            else:
-                model.build(input_shape=input_shape)
-                model.load_weights(filepath=args.ckpt)
-                model.compile()
-                return model
-        return model, 1
+            model.build(input_shape=input_shape)
+            model.load_weights(filepath=args.ckpt)
+            model.compile()
+        return model
 
     # Otherwise the curve version of the architecture (e.g. CNNCurve) is initialised in the context of a CurveNet.
     # The CurveNet additionally contains the curve (e.g. Bezier) and imports the parameters of the pre-trained base-nets that constitute the outer points of the curve.
@@ -184,35 +175,16 @@ def get_model(architecture, args: Arguments, num_classes: int, input_shape):
     )
     
     if args.ckpt:
-        if args.resume_epoch:
-            logger.info(f"Restoring model from checkpoint {args.ckpt} to resume training.")
-            model.build(input_shape=input_shape) # Necessary?
-            model.load_weights(filepath=args.ckpt) # expect_partial() needed?
-            model.compile() # Necessary?
-            return model, args.resume_epoch
-        else:
-            logger.info(f"Restoring model from checkpoint {args.ckpt} for evaluation.")
-            model.build(input_shape=input_shape)
-            model.load_weights(filepath=args.ckpt) # expect_partial needed?
-            model.compile()
-            return model
-
-    # Replace by the above, but double check if above correct.
-    if args.ckpt:
-        logger.info(f"Restoring model from checkpoint {args.ckpt} for evaluation")
-        # Evalutate the model from Checkpoint
-        # expect_partial()
-        # -> silence Value in checkpoint could not be found in the restored object: (root).optimizer. ..
-        # https://stackoverflow.com/questions/58289342/tf2-0-translation-model-error-when-restoring-the-saved-model-unresolved-objec
-        model.load_weights(args.ckpt).expect_partial()
-        return model
-
-    # Build model from 0, 1 or 2 base_models
-    base_model = architecture.base(
+        logger.info(f"Restoring model from checkpoint {args.ckpt} to resume training.")
+        model.build(input_shape=input_shape) # Necessary?
+        model.load_weights(filepath=args.ckpt) # expect_partial() needed?
+        model.compile() # Necessary?
+    else:
+        # Build model from 0, 1 or 2 base_models
+        base_model = architecture.base(
         num_classes=num_classes, weight_decay=args.wd, **architecture.kwargs
-    )
-    base_model.build(input_shape=input_shape)
-    if args.resume is None:
+        )
+        base_model.build(input_shape=input_shape)
         load_base_weights(
             path=args.init_start,
             index=0,
@@ -229,8 +201,27 @@ def get_model(architecture, args: Arguments, num_classes: int, input_shape):
             logger.info("Linear initialization.")
             model.init_linear()
 
-    return model, 1
+    # Replace by the above, but double check if above correct.
+    # if args.ckpt:
+    #     logger.info(f"Restoring model from checkpoint {args.ckpt} for evaluation")
+    #     # Evalutate the model from Checkpoint
+    #     # expect_partial()
+    #     # -> silence Value in checkpoint could not be found in the restored object: (root).optimizer. ..
+    #     # https://stackoverflow.com/questions/58289342/tf2-0-translation-model-error-when-restoring-the-saved-model-unresolved-objec
+    #     model.load_weights(args.ckpt).expect_partial()
+    #     return model
 
+    return model
+
+
+def get_epoch(args: Arguments):
+    if args.ckpt:
+        if args.resume_epoch:
+            return args.resume_epoch
+        else:
+            raise KeyError("Start epoch to resume training needs to be specified")
+    else:
+        return 1
 
 def load_base_weights(
     path: str, index: int, model: tf.keras.Model, base_model: tf.keras.Model
