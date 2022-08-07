@@ -72,11 +72,10 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
         for param_name in self.parameters:
             delattr(self, param_name)
 
-    # TODO Check inputs as Tuple or seperate
-    def call(self, inputs: Tuple[tf.Tensor, tf.Tensor]):
+    def call(self, inputs: Tuple[tf.Tensor, tf.Tensor], *args, **kwargs):
         x, curve_point_weights = inputs
         self.compute_and_set_weighted_parameters(curve_point_weights)
-        return self.base_layer.call(self, x)
+        return self.base_layer.call(self, x, *args, **kwargs)
 
     def add_parameter_weights(self):
         """Add parameter weights for each curve point.
@@ -180,6 +179,9 @@ class Conv2DCurve(CurveLayer, tf.keras.layers.Conv2D):
             **kwargs,
         )
 
+    def call(self, inputs: Tuple[tf.Tensor, tf.Tensor]):
+        return super().call(inputs)
+
 
 class DenseCurve(CurveLayer, tf.keras.layers.Dense):
     def __init__(
@@ -196,6 +198,9 @@ class DenseCurve(CurveLayer, tf.keras.layers.Dense):
             **kwargs,
         )
 
+    def call(self, inputs: Tuple[tf.Tensor, tf.Tensor]):
+        return super().call(inputs)
+
 
 class BatchNormalizationCurve(CurveLayer, tf.keras.layers.BatchNormalization):
     def __init__(
@@ -209,6 +214,9 @@ class BatchNormalizationCurve(CurveLayer, tf.keras.layers.BatchNormalization):
             parameters=("gamma", "beta"),
             **kwargs,
         )
+
+    def call(self, inputs: Tuple[tf.Tensor, tf.Tensor], training: Union[None, bool]=None):
+        return super().call(inputs, training=training)
 
     def reset_moving_stats(self):
         self.moving_mean.assign(tf.zeros(self.moving_mean.shape))
