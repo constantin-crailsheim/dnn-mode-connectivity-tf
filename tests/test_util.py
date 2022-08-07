@@ -4,8 +4,6 @@ import keras
 import numpy as np
 import pytest
 import tensorflow as tf
-from mode_connectivity.utils import load_checkpoint, save_checkpoint
-
 
 @pytest.fixture
 def checkpoints_dir(tmpdir):
@@ -33,47 +31,48 @@ def basic_model() -> keras.Model:
 @pytest.fixture
 def basic_optimizer() -> keras.optimizers.Optimizer:
     return tf.keras.optimizers.SGD(learning_rate=0.1, momentum=0.1)
+ 
+ # TODO Write tests for util functions.
 
+# class TestUtil:
+#     def test_save_checkpoint(self, checkpoints_dir, basic_model, basic_optimizer):
+#         assert not os.path.isfile(
+#             os.path.join(checkpoints_dir, "checkpoint-epoch1-1.index")
+#         )
+#         model = basic_model.get()
+#         save_checkpoint(
+#             directory=checkpoints_dir,
+#             epoch=1,
+#             model=model,
+#             optimizer=basic_optimizer,
+#             name="checkpoint",
+#         )
+#         assert os.path.isfile(
+#             os.path.join(checkpoints_dir, "checkpoint-epoch1-1.index")
+#         )
 
-class TestUtil:
-    def test_save_checkpoint(self, checkpoints_dir, basic_model, basic_optimizer):
-        assert not os.path.isfile(
-            os.path.join(checkpoints_dir, "checkpoint-epoch1-1.index")
-        )
-        model = basic_model.get()
-        save_checkpoint(
-            directory=checkpoints_dir,
-            epoch=1,
-            model=model,
-            optimizer=basic_optimizer,
-            name="checkpoint",
-        )
-        assert os.path.isfile(
-            os.path.join(checkpoints_dir, "checkpoint-epoch1-1.index")
-        )
+#     def test_load_checkpoint(self, checkpoints_dir, basic_model, basic_optimizer):
+#         model = basic_model.get(fitted=True)
+#         new_model = basic_model.get()
 
-    def test_load_checkpoint(self, checkpoints_dir, basic_model, basic_optimizer):
-        model = basic_model.get(fitted=True)
-        new_model = basic_model.get()
+#         weights_model = model.get_weights()
+#         weights_new_model = new_model.get_weights()
+#         for i in range(len(weights_model)):
+#             assert not np.allclose(weights_model[i], weights_new_model[i])
 
-        weights_model = model.get_weights()
-        weights_new_model = new_model.get_weights()
-        for i in range(len(weights_model)):
-            assert not np.allclose(weights_model[i], weights_new_model[i])
+#         save_checkpoint(
+#             directory=checkpoints_dir,
+#             epoch=1,
+#             model=model,
+#             optimizer=basic_optimizer,
+#             name="checkpoint",
+#         )
 
-        save_checkpoint(
-            directory=checkpoints_dir,
-            epoch=1,
-            model=model,
-            optimizer=basic_optimizer,
-            name="checkpoint",
-        )
+#         ckpt_path = os.path.join(checkpoints_dir, "checkpoint-epoch1-1")
+#         epoch = load_checkpoint(ckpt_path, model=new_model, optimizer=basic_optimizer)
+#         assert epoch == 2
 
-        ckpt_path = os.path.join(checkpoints_dir, "checkpoint-epoch1-1")
-        epoch = load_checkpoint(ckpt_path, model=new_model, optimizer=basic_optimizer)
-        assert epoch == 2
-
-        weights_model = model.get_weights()
-        weights_new_model = new_model.get_weights()
-        for i in range(len(weights_model)):
-            assert np.allclose(weights_model[i], weights_new_model[i])
+#         weights_model = model.get_weights()
+#         weights_new_model = new_model.get_weights()
+#         for i in range(len(weights_model)):
+#             assert np.allclose(weights_model[i], weights_new_model[i])
