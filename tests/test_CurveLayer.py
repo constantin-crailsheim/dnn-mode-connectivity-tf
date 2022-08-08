@@ -108,14 +108,6 @@ class CurveLayerTest:
 
             assert tf.experimental.numpy.allclose(getattr(built_layer, param_type), alt_param)
 
-    # Still necessary if we have test_init?
-    # def test_init_direct(self): 
-    #     with pytest.raises(
-    #         TypeError,
-    #         match="Can't instantiate abstract class CurveLayer with abstract methods build, call",
-    #     ):
-    #         CurveLayer([True, False, True])
-
 
 class TestConv2DCurveLayer(CurveLayerTest):
     testparams = [

@@ -15,12 +15,11 @@ from mode_connectivity.utils import (
     disable_gpu,
     get_architecture,
     get_model,
+    get_epoch,
     learning_rate_schedule,
-    load_checkpoint,
     save_weights,
     set_seeds,
 )
-
 
 def main():
     args = parse_train_arguments()
@@ -48,24 +47,14 @@ def main():
     criterion = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 
     optimizer = tf.keras.optimizers.SGD(
-        # TODO how can we fit equivalent of arg params in PyTorch
-        # PyTorch: params=filter(lambda param: param.requires_grad, model.parameters()),
-        # https://pytorch.org/docs/stable/generated/torch.optim.SGD.html#torch.optim.SGD
         learning_rate=args.lr,
         momentum=args.momentum,
-        # Weight decay added into models/mlp.py
-        # https://stackoverflow.com/questions/55046234/sgd-with-weight-decay-parameter-in-tensorflow
-        # https://d2l.ai/chapter_multilayer-perceptrons/weight-decay.html
-        # PyTorch: weight_decay=args.wd if args.curve is None else 0.0,
     )
-    # https://www.tensorflow.org/api_docs/python/tf/keras/optimizers/SGD
 
-    start_epoch = 1
-    if args.resume:
-        start_epoch = load_checkpoint(
-            checkpoint_path=args.resume, model=model, optimizer=optimizer
-        )
-    save_weights(directory=args.dir, epoch=start_epoch - 1, model=model)
+    start_epoch = get_epoch(args)
+
+    if not args.ckpt:
+        save_weights(directory=args.dir, epoch=start_epoch - 1, model=model)
 
     train(
         args=args,
@@ -107,7 +96,7 @@ def train(
         )
 
         # Does the condition make sense here?
-        if not args.curve or not has_batch_normalization:
+        if not args.curve and not has_batch_normalization:
             test_results = test_epoch(
                 loaders["test"], model, criterion, n_datasets["test"]
             )
@@ -144,7 +133,6 @@ def train_epoch(
     correct = 0.0
 
     num_iters = len(train_loader)
-    # PyTorch: model.train()
 
     for iter, (input, target) in enumerate(train_loader):
         if callable(lr_schedule):
@@ -161,8 +149,8 @@ def train_epoch(
         correct += correct_batch
 
     return {
-        "loss": loss_sum / n_train,  # Add function to find length
-        "accuracy": correct * 100.0 / n_train,  # Add function to find length of dataset,
+        "loss": loss_sum / n_train,
+        "accuracy": correct * 100.0 / n_train,
     }
 
 
@@ -171,26 +159,23 @@ def test_epoch(
     model: Layer,
     criterion: Callable,
     n_test: int,
-    **kwargs,
 ) -> Dict[str, float]:
     loss_sum = 0.0
     correct = 0.0
 
-    # PyTorch: model.eval()
     for input, target in test_loader:
         loss_batch, correct_batch = test_batch(
             input=input,
             target=target,
             model=model,
             criterion=criterion,
-            **kwargs,
         )
         loss_sum += loss_batch
         correct += correct_batch
 
     return {
-        "loss": loss_sum / n_test,  # Add function to find length
-        "accuracy": correct * 100.0 / n_test,  # Add function to find length
+        "loss": loss_sum / n_test,
+        "accuracy": correct * 100.0 / n_test,
     }
 
 
@@ -203,25 +188,20 @@ def train_batch(
 ) -> Tuple[float, float]:
 
     with tf.GradientTape() as tape:
-        output = model(input)
+        output = model(input, training=True)
         loss = criterion(target, output)
         loss += tf.add_n(model.losses)  # Add Regularization loss
     grads = tape.gradient(loss, model.trainable_variables)
     grads_and_vars = zip(grads, model.trainable_variables)
     optimizer.apply_gradients(grads_and_vars)
 
-    # See for above:
-    # https://medium.com/analytics-vidhya/3-different-ways-to-perform-gradient-descent-in-tensorflow-2-0-and-ms-excel-ffc3791a160a
-    # https://d2l.ai/chapter_multilayer-perceptrons/weight-decay.html (4.5.4)
-
     loss = loss.numpy() * len(input)
     pred = tf.math.argmax(output, axis=1, output_type=tf.dtypes.int64)
-    # Is there an easier way?
     correct = tf.math.reduce_sum(
         tf.cast(tf.math.equal(pred, target), tf.float32)
     ).numpy()
 
-    return loss, correct  # Do we need to return the model as well?
+    return loss, correct
 
 
 def test_batch(
@@ -229,10 +209,8 @@ def test_batch(
     target: tf.Tensor,
     model: Layer,
     criterion: Callable,
-    **kwargs,
 ) -> Dict[str, float]:
-    output = model(input, **kwargs)
-    # TODO is Negative Loss Likelihood calculated correctly here?
+    output = model(input, training=False) 
     loss = criterion(target, output)
     loss += tf.add_n(model.losses)  # Add Regularization loss
 

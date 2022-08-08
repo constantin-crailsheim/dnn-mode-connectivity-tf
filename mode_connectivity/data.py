@@ -61,7 +61,7 @@ def data_loaders(
         train_set_loader = train_dataset.shuffle(100).batch(batch_size)
         test_set_loader = test_dataset.batch(batch_size)
 
-        num_classes = 10 # How to deal with regression data for classification model
+        num_classes = None
 
         n_train = len(index_train)
         n_test = len(index_test)

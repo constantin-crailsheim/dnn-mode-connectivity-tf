@@ -98,8 +98,8 @@ class TestArgparser:
             "TheCheckpoint",
             "--init-end",
             "TheEnd",
-            "--resume",
-            "ResumeHere",
+            "--resume_epoch",
+            "100",
             "--save-freq",
             "10",
         ]
@@ -109,7 +109,7 @@ class TestArgparser:
             assert args.fix_start is False
             assert args.init_end == "TheEnd"
             assert args.fix_end is False
-            assert args.resume == "ResumeHere"
+            assert args.resume_epoch == 100
             assert args.save_freq == 10
 
     def test_parse_checkpoint_arguments_fix(self):

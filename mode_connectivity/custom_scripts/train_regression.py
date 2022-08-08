@@ -8,19 +8,20 @@ import tensorflow as tf
 from keras.layers import Layer
 from keras.optimizers import Optimizer
 
-import mode_connectivity.curves.curves as curves
 from mode_connectivity.argparser import Arguments, parse_train_arguments
-from mode_connectivity.curves.net import CurveNet
+
 from mode_connectivity.data import data_loaders
-from mode_connectivity.models.cnn import CNN
-from mode_connectivity.models.mlp import MLP
+
 from mode_connectivity.utils import (
     adjust_learning_rate,
     check_batch_normalization,
     disable_gpu,
+    get_architecture,
+    get_model,
+    get_epoch,
     learning_rate_schedule,
-    load_checkpoint,
     save_weights,
+    set_seeds,
 )
 
 def main():
@@ -53,13 +54,10 @@ def main():
         momentum=args.momentum,
     )
 
-    start_epoch = 1
-    # TODO Include resume training?
-    if args.resume:
-        start_epoch = load_checkpoint(
-            checkpoint_path=args.resume, model=model, optimizer=optimizer
-        )
-    save_weights(directory=args.dir, epoch=start_epoch - 1, model=model)
+    start_epoch = get_epoch(args)
+
+    if not args.ckpt:
+        save_weights(directory=args.dir, epoch=start_epoch - 1, model=model)
 
     train(
         args=args,
@@ -70,63 +68,6 @@ def main():
         start_epoch=start_epoch,
         n_datasets=n_datasets,
     )
-
-
-def set_seeds(seed: int):
-    tf.random.set_seed(seed)
-    # TODO torch.cuda.manual_seed(args.seed)
-
-
-def get_architecture(model_name: str):
-    if model_name == "CNN":
-        return CNN
-    if model_name == "MLP":
-        return MLP
-    raise KeyError(f"Unkown model {model_name}")
-
-
-def get_model(architecture, args: Arguments, num_classes: int, input_shape):
-    # Changed method arguments to take args as input () since many of those variables needed in curve-case
-
-    # If no curve is to be fit the base version of the architecture is initialised (e.g CNNBase instead of CNNCurve).
-    if not args.curve:
-        model = architecture.base(
-            num_classes=num_classes, weight_decay=args.wd, **architecture.kwargs
-        )
-        return model
-
-    # Otherwise the curve version of the architecture (e.g. CNNCurve) is initialised in the context of a CurveNet.
-    # The CurveNet additionally contains the curve (e.g. Bezier) and imports the parameters of the pre-trained base-nets that constitute the outer points of the curve.
-    else:
-        curve = getattr(curves, args.curve)
-        model = CurveNet(
-            num_classes=num_classes,
-            num_bends=args.num_bends,
-            weight_decay=args.wd,
-            curve=curve,
-            curve_model=architecture.curve,
-            fix_start=args.fix_start,
-            fix_end=args.fix_end,
-            architecture_kwargs=architecture.kwargs,
-        )
-
-        base_model = architecture.base(
-            num_classes=num_classes, weight_decay=args.wd, **architecture.kwargs
-        )
-        base_model.build(input_shape=input_shape)
-        if args.resume is None:
-            for path, k in [(args.init_start, 0), (args.init_end, args.num_bends + 1)]:
-                if path is not None:
-                    print("Loading %s as point #%d" % (path, k))
-                    # base_model = tf.keras.models.load_model(path)
-                    base_model.load_weights(path)
-                    model.import_base_parameters(base_model, k)
-            if args.init_linear:
-                print("Linear initialization.")
-                model.init_linear()
-
-        return model
-
 
 def train(
     args: Arguments,
@@ -146,7 +87,6 @@ def train(
         time_epoch = time.time()
 
         lr = learning_rate_schedule(args.lr, epoch, args.epochs)
-        # Not implemented yet:
         adjust_learning_rate(optimizer, lr)
 
         train_results = train_epoch(
@@ -194,7 +134,6 @@ def train_epoch(
     loss_sum = 0.0
 
     num_iters = len(train_loader)
-    # PyTorch: model.train()
 
     for iter, (input, target) in enumerate(train_loader):
         if callable(lr_schedule):
@@ -224,7 +163,6 @@ def test_epoch(
 ) -> Dict[str, float]:
     loss_sum = 0.0
 
-    # PyTorch: model.eval()
     for input, target in test_loader:
         loss_batch = test_batch(
             input=input,
@@ -246,7 +184,6 @@ def train_batch(
     optimizer: Optimizer,
     criterion: Callable,
 ) -> Tuple[float, float]:
-    # TODO Allocate model to GPU as well, but no necessary at the moment, since we don't have GPUs.
 
     with tf.GradientTape() as tape:
         output = model(input)
@@ -268,7 +205,6 @@ def test_batch(
     model: Layer,
     criterion: Callable,
 ) -> Dict[str, float]:
-    # TODO Allocate model to GPU as well.
 
     output = model(input)
     loss = criterion(target, output)

@@ -34,6 +34,28 @@
                 "--epochs=10",
                 "--lr=0.05",
                 "--wd=5e-4",
+                "--transform=CNN",
+                "--seed=42"
+            ]
+        },
+        {
+            "name": "BasicCNN with MNIST (Resume training)",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--dir=results/MNIST_BasicCNN/checkpoints_model_2",
+                "--dataset=mnist",
+                "--data-path=datasets/",
+                "--ckpt=results/MNIST_BasicCNN/checkpoints_model_2/model-weights-epoch10",
+                "--resume_epoch=11",
+                "--model=CNN",
+                "--epochs=12",
+                "--lr=0.05",
+                "--wd=5e-4",
+                "--transform=CNN",
                 "--seed=42"
             ]
         },
@@ -76,6 +98,30 @@
                 "--transform=CNN",
                 "--num-bends=1",
                 "--epochs=5",
+                "--lr=0.01",
+                "--wd=1e-4",
+                "--fix-start",
+                "--fix-end"
+            ]
+        },
+        {
+            "name": "BasicCNN with MNIST (Fit curve | resume training)",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "--dir=results/MNIST_BasicCNN/checkpoints_curve",
+                "--dataset=mnist",
+                "--data-path=datasets/",
+                "--ckpt=results/MNIST_BasicCNN/checkpoints_curve/model-weights-epoch10",
+                "--resume_epoch=11",
+                "--model=CNN",
+                "--curve=Bezier",
+                "--transform=CNN",
+                "--num-bends=1",
+                "--epochs=12",
                 "--lr=0.01",
                 "--wd=1e-4",
                 "--fix-start",
@@ -143,6 +189,28 @@
                 "--epochs=150",
                 "--lr=0.001",
                 "--wd=5e-4",
+                "--transform=MLP",
+                "--seed=1"
+            ]
+        },
+        {
+            "name": "MLP with regression data (Resume training)",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "--dir=results/Regression_MLP/checkpoints_model_1",
+                "--dataset=regression",
+                "--data-path=datasets/",
+                "--ckpt=results/Regression_MLP/checkpoints_model_1/model-weights-epoch150",
+                "--resume_epoch=151",
+                "--model=MLP",
+                "--epochs=200",
+                "--lr=0.001",
+                "--wd=5e-4",
+                "--transform=MLP",
                 "--seed=1"
             ]
         },
@@ -189,6 +257,31 @@
             ]
         },
         {
+            "name": "MLP with regression data (Fit curve | Resume training)",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "--dir=results/Regression_MLP/checkpoints_curve",
+                "--dataset=regression",
+                "--data-path=datasets/",
+                "--ckpt=results/Regression_MLP/checkpoints_curve/model-weights-epoch100",
+                "--resume_epoch=101",
+                "--model=MLP",
+                "--curve=Bezier",
+                "--num-bends=5",
+                "--fix-start",
+                "--fix-end",
+                "--epochs=150",
+                "--lr=0.001",
+                "--wd=5e-4",
+                "--transform=MLP",
+                "--seed=1"
+            ]
+        },
+        {
             "name": "Evalute curve MLP with regression data",
             "type": "python",
             "request": "launch",
@@ -201,7 +294,8 @@
                 "--data-path=datasets/",
                 "--model=MLP",
                 "--curve=Bezier",
-                "--num-bends=1",
+                "--transform=MLP",
+                "--num-bends=5",
                 "--wd=5e-4",
                 "--ckpt=results/Regression_MLP/checkpoints_curve/model-weights-epoch100",
                 "--num-points=11",

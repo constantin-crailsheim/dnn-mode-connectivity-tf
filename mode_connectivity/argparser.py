@@ -34,12 +34,12 @@ class Arguments:
     init_end: str = None
     fix_end: bool = False
     fix_start: bool = False
-    resume: str = None
+    ckpt: str = None
+    resume_epoch: int = None
     save_freq: int = 50
 
     # Evaluate:
     num_points: int = None
-    ckpt: str = None
     point_on_curve: float = None
     save_evaluation: bool = True
 
@@ -220,11 +220,18 @@ def _add_checkpoint_arguments(parser: argparse.ArgumentParser) -> None:
         help="fix end point (default: off)",
     )
     parser.add_argument(
-        "--resume",
+        "--ckpt",
         type=str,
         default=None,
         metavar="CKPT",
-        help="checkpoint to resume training from (default: None)",
+        help="checkpoint to load (default: None)",
+    )
+    parser.add_argument(
+        "--resume_epoch",
+        type=int,
+        default=None,
+        metavar="CKPT",
+        help="epoch to resume training from (default: None)",
     )
     parser.add_argument(
         "--save-freq",
@@ -249,13 +256,6 @@ def _add_evaluate_arguments(parser: argparse.ArgumentParser) -> None:
         default=None,
         metavar="CKPT", # Correct metavariable?
         help="point on curve to be evaluated (default: None)",
-    )
-    parser.add_argument(
-        "--ckpt",
-        type=str,
-        default=None,
-        metavar="CKPT",
-        help="checkpoint to eval (default: None)",
     )
     parser.add_argument(
         "--save-evaluation",
