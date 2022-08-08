@@ -14,17 +14,12 @@ from mode_connectivity.argparser import (
     parse_evaluate_arguments,
     parse_train_arguments,
 )
-from mode_connectivity.curves.net import CurveNet
-from mode_connectivity.data import data_loaders
 from mode_connectivity.logger import configure_loggers
-from mode_connectivity.models.cnn import CNN
-from mode_connectivity.models.mlp import MLP
 from mode_connectivity.utils import (
     AlphaLearningRateSchedule,
     disable_gpu,
     get_model_and_loaders,
-    load_checkpoint,
-    save_checkpoint,
+    get_epoch,
     save_weights,
     set_seeds,
 )
@@ -45,12 +40,7 @@ def train(args: Arguments):
     loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
     optimizer = tf.keras.optimizers.SGD(learning_rate=args.lr, momentum=args.momentum)
 
-    start_epoch = 0
-    if args.resume:
-        start_epoch = load_checkpoint(
-            checkpoint_path=args.resume, model=model, optimizer=optimizer
-        )
-        start_epoch -= 1  # tf epoch is 0-indexed, load_checkpoint's min return is 1
+    start_epoch = get_epoch(args) - 1 # tf epoch is 0-indexed, load_checkpoint's min return is 1
 
     model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
         filepath=args.dir,
@@ -68,12 +58,7 @@ def train(args: Arguments):
         callbacks=[model_checkpoint_callback, learning_rate_scheduler],
     )
 
-    # TODO is this double call necessary, or does checkpoint save weights as well?
     save_weights(directory=args.dir, epoch=args.epochs, model=model)
-    save_checkpoint(
-        directory=args.dir, epoch=args.epochs, model=model, optimizer=optimizer
-    )
-
 
 def train_cli():
     args = parse_train_arguments()

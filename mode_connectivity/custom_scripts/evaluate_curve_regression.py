@@ -8,9 +8,6 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import tensorflow as tf
 from keras.layers import Layer
 
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import f1_score
-
 from mode_connectivity.argparser import Arguments, parse_evaluate_arguments
 from mode_connectivity.data import data_loaders
 
@@ -20,7 +17,7 @@ from mode_connectivity.curves.net import CurveNet
 from mode_connectivity.models.cnn import CNN
 from mode_connectivity.models.mlp import MLP
 
-from mode_connectivity.utils import disable_gpu
+from mode_connectivity.utils import disable_gpu, get_model
 
 def main():
     args = parse_evaluate_arguments()
@@ -36,11 +33,11 @@ def main():
         use_test=args.use_test,
     )
     architecture = get_architecture(model_name=args.model)
-    model = load_model(
+    model = get_model(
         architecture=architecture,
         args=args,
         num_classes=num_classes,
-        input_shape=input_shape, # TODO use output from data loader
+        input_shape=input_shape,
     )
 
     criterion = tf.keras.losses.MeanSquaredError()
@@ -89,7 +86,7 @@ def get_architecture(model_name: str):
         return MLP
     raise KeyError(f"Unkown model {model_name}")
 
-def load_model(architecture, args: Arguments, num_classes: int, input_shape):
+def load_model(architecture, args: Arguments, num_classes: Union[int, None], input_shape):
     curve = getattr(curves, args.curve)
     model = CurveNet(
         num_classes=num_classes,
@@ -117,7 +114,6 @@ def evaluate_epoch(
 
     loss_sum = 0.0
 
-    # PyTorch: model.eval()
     for input, target in test_loader:
         loss_batch = evaluate_batch(
             input=input,

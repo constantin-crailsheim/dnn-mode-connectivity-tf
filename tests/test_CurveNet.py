@@ -121,7 +121,8 @@ class TestCurveNet:
         curve_net.init_linear()
 
         for layer in curve_net.curve_layers:
-            for curve_param in ["curve_kernels", "curve_biases"]:
+            curve_params = [CurveLayer._get_curve_param_name(p) for p in layer.parameters]
+            for curve_param in curve_params:
                 params= getattr(layer, curve_param)
                 first_param, last_param = params[0].value(), params[-1].value()
                 min_param= tf.math.minimum(first_param, last_param)

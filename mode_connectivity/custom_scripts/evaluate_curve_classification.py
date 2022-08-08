@@ -20,7 +20,7 @@ from mode_connectivity.curves.net import CurveNet
 from mode_connectivity.models.cnn import CNN
 from mode_connectivity.models.mlp import MLP
 
-from mode_connectivity.utils import disable_gpu
+from mode_connectivity.utils import disable_gpu, get_model
 
 def main():
     args = parse_evaluate_arguments()
@@ -36,11 +36,11 @@ def main():
         use_test=args.use_test,
     )
     architecture = get_architecture(model_name=args.model)
-    model = load_model(
+    model = get_model(
         architecture=architecture,
         args=args,
         num_classes=num_classes,
-        input_shape=input_shape, # TODO use output from data loader
+        input_shape=input_shape,
     )
 
     criterion = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
@@ -79,6 +79,8 @@ def main():
             if previous_parameters is not None:
                 dl[i] = np.sqrt(np.sum(np.square(parameters - previous_parameters)))
             previous_parameters = parameters.copy()
+        
+        model.update_batchnorm(inputs=loaders["train"])
 
         train_results = evaluate_epoch(
                 test_loader = loaders["train"],
@@ -138,7 +140,7 @@ def get_architecture(model_name: str):
         return MLP
     raise KeyError(f"Unkown model {model_name}")
 
-def load_model(architecture, args: Arguments, num_classes: int, input_shape):
+def load_model(architecture, args: Arguments, num_classes: Union[int, None], input_shape):
     curve = getattr(curves, args.curve)
     model = CurveNet(
         num_classes=num_classes,
@@ -170,7 +172,6 @@ def evaluate_epoch(
     output = []
     target_list = []
 
-    # PyTorch: model.eval()
     for input, target in test_loader:
         loss_batch, pred_batch, output_batch, target_batch = evaluate_batch(
             input=input,
