@@ -29,16 +29,13 @@ def main():
     args = parse_train_arguments()
     if args.disable_gpu:
         disable_gpu()
-        
+
     set_seeds(seed=args.seed)
 
     loaders, num_classes, n_datasets, input_shape = data_loaders(
         dataset=args.dataset,
         path=args.data_path,
         batch_size=args.batch_size,
-        num_workers=args.num_workers,
-        transform_name=args.transform,
-        use_test=args.use_test,
     )
     architecture = get_architecture(model_name=args.model)
     model = get_model(
