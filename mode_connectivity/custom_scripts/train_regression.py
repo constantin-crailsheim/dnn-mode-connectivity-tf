@@ -199,7 +199,7 @@ def test_epoch(
 
     Args:
         test_loader (Iterable):  Data loader for the test set.
-        model (Layer): Model to be trained.
+        model (Layer): Model to be tested.
         criterion (Callable): Utilized loss function.
         n_test (int): Amount of samples in the test set.
 
@@ -271,7 +271,7 @@ def test_batch(
     Args:
         input (tf.Tensor): Test data that is propagated through the network leading to the network output.
         target (tf.Tensor): Test targets which are compared to network output.
-        model (Layer): Model to be trained.
+        model (Layer): Model to be tested.
         criterion (Callable): Utilized loss function.
 
     Returns:

@@ -277,7 +277,7 @@ def test_batch(
     Args:
         input (tf.Tensor): Test data that is propagated through the network leading to the network output.
         target (tf.Tensor): Test targets which are compared to network output.
-        model (Layer): Model to be trained.
+        model (Layer): Model to be tested.
         criterion (Callable): Utilized loss function.
 
     Returns:
