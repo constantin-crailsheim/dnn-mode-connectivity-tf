@@ -17,6 +17,19 @@ def data_loaders(
     use_test: bool = False, # To be excluded
     shuffle_train: bool = True,
 ):
+    """
+    Prepares the data for training.
+
+    Args:
+        dataset (str): String indicating the type of the dataset. Either "mnist" for the CNN or "regression" for the MLP.
+        path (str): Path to the dataset.
+        batch_size (int): Amount of samples per batch.
+        num_workers (int): Amount of workers.
+        shuffle_train (bool, optional): Boolean indicating whether to shuffle the train set. Defaults to True.
+
+    Returns:
+        _type_: Tuple containing the data loaders and relevant variables e.g. train set size.
+    """
     path = os.path.join(path, dataset.lower())
 
     if dataset == "mnist":

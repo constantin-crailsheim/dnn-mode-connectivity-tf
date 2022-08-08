@@ -1,6 +1,6 @@
 import os
 import time
-from typing import Callable, Dict, Iterable, Tuple, Union
+from typing import Callable, Dict, Iterable, Tuple, Union, List
 
 import tabulate
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
@@ -22,6 +22,10 @@ from mode_connectivity.utils import (
 )
 
 def main():
+    """
+    Initializes the variables necessary for the training procedure and triggers it.
+    Customized for classification tasks.
+    """
     args = parse_train_arguments()
     if args.disable_gpu:
         disable_gpu()
@@ -76,6 +80,18 @@ def train(
     start_epoch: int,
     n_datasets: Dict,
 ):
+    """
+    Carries out the training procedure for several epochs.
+
+    Args:
+        args (Arguments): Parser arguments.
+        loaders (Dict[str, Iterable]): Data loaders.
+        model (Layer): Model to be trained.
+        criterion (Callable): Utilized loss function.
+        optimizer (Optimizer): Optimizer.
+        start_epoch (int): Initial value of epoch to start from when training.
+        n_datasets (Dict): Amount of samples per data split.
+    """
     has_batch_normalization = check_batch_normalization(
         model
     )  # Not implemented yet, returns always False
@@ -129,6 +145,21 @@ def train_epoch(
     n_train: int,
     lr_schedule: Union[Callable, None] = None, # Do we need this?
 ) -> Dict[str, float]:
+    """
+    Helper method for train().
+    Carries out the training procedure for several mini-batches of an epoch and evaluates on the training set.
+
+    Args:
+        train_loader (Iterable): Data loader for the training set.
+        model (Layer): Model to be trained.
+        optimizer (Optimizer): Optimizer
+        criterion (Callable): Utilized loss function.
+        n_train (int): Amount of samples in the training set.
+        lr_schedule (Union[Callable, None], optional): Learning rate schedule. Defaults to None.
+
+    Returns:
+        Dict[str, float]: Mean loss and accuracy of the epoch on the training set.
+    """
     loss_sum = 0.0
     correct = 0.0
 
@@ -160,6 +191,21 @@ def test_epoch(
     criterion: Callable,
     n_test: int,
 ) -> Dict[str, float]:
+    """
+    Helper method for train().
+    Evaluates the model on the test set after each training epoch in order to get unbiased estimates of the performance.
+    This evaluation procedure is split into several mini-batches.
+
+    Args:
+        test_loader (Iterable):  Data loader for the test set.
+        model (Layer): Model to be trained.
+        criterion (Callable): Utilized loss function.
+        n_test (int): Amount of samples in the test set.
+
+    Returns:
+        Dict[str, float]: Mean loss and accuracy of the epoch on the test set.
+    """
+
     loss_sum = 0.0
     correct = 0.0
 
@@ -186,6 +232,20 @@ def train_batch(
     optimizer: Optimizer,
     criterion: Callable,
 ) -> Tuple[float, float]:
+    """
+    Helper method for train_epoch().
+    Performs Backpropagation and the SGD-Step for a mini-batch.
+
+    Args:
+        input (tf.Tensor): Input data that is propagated through the network leading to the network output.
+        target (tf.Tensor): Targets which are compared to network output.
+        model (Layer): Model to be trained.
+        optimizer (Optimizer): Optimizer
+        criterion (Callable): Utilized loss function.
+
+    Returns:
+        Tuple[float, float]: Batchwise metrics for the loss and accuracy on the training set. 
+    """
 
     with tf.GradientTape() as tape:
         output = model(input, training=True)
@@ -210,6 +270,19 @@ def test_batch(
     model: Layer,
     criterion: Callable,
 ) -> Dict[str, float]:
+    """
+    Helper method for test_epoch().
+    Batchwise computations for the loss and accuracy on the test set.
+
+    Args:
+        input (tf.Tensor): Test data that is propagated through the network leading to the network output.
+        target (tf.Tensor): Test targets which are compared to network output.
+        model (Layer): Model to be trained.
+        criterion (Callable): Utilized loss function.
+
+    Returns:
+        Dict[str, float]: Batchwise metrics for the loss and accuracy on the test set. 
+    """
     output = model(input, training=False) 
     loss = criterion(target, output)
     loss += tf.add_n(model.losses)  # Add Regularization loss
@@ -223,7 +296,15 @@ def test_batch(
     return loss, correct
 
 
-def print_epoch_stats(values, epoch, start_epoch):
+def print_epoch_stats(values, epoch: int, start_epoch: int):
+    """
+    Helper method for train() that displays relevant statistics of an epoch.
+
+    Args:
+        values (List): Statistics to be displayed.
+        epoch (int): Current epoch.
+        start_epoch (int): Start epoch.
+    """
     COLUMNS = ["ep", "lr", "tr_loss", "tr_acc", "te_loss", "te_acc", "time"]
     table = tabulate.tabulate([values], COLUMNS, tablefmt="simple", floatfmt="9.4f")
     if epoch % 40 == 1 or epoch == start_epoch:

@@ -6,6 +6,7 @@ from typing import Any, List, Union
 import keras
 import tensorflow as tf
 from tensorflow.python.framework.errors import NotFoundError
+from keras.optimizers import Optimizer
 
 import mode_connectivity.curves.curves as curves
 from mode_connectivity.argparser import Arguments
@@ -19,6 +20,7 @@ logger.setLevel(logging.INFO)
 
 
 def disable_gpu():
+    """GPU is used as default for tensorflow. Disables GPU and used to CPU."""
     logger.info("Trying to disable GPU")
     try:
         tf.config.set_visible_devices([], "GPU")
@@ -34,7 +36,19 @@ def disable_gpu():
 def set_seeds(seed: int):
     tf.random.set_seed(seed)
 
-def learning_rate_schedule(base_lr, epoch, total_epochs):
+def learning_rate_schedule(base_lr: float, epoch: int, total_epochs: int):
+    """
+    Determines the learning rate for an epoch  based on an initial learning rate and total amount of epochs.
+    The implemented schedule monotonically decreases the learning rate to a factor of 0.01.
+
+    Args:
+        base_lr (float): The initial learning rate.
+        epoch (int): Current epoch.
+        total_epochs (int): Total amount of epochs.
+
+    Returns:
+        float: Scheduled learning rate for the current epoch.
+    """
     alpha = epoch / total_epochs
     if alpha <= 0.5:
         factor = 1.0
@@ -47,6 +61,14 @@ def learning_rate_schedule(base_lr, epoch, total_epochs):
 
 class AlphaLearningRateSchedule(tf.keras.callbacks.Callback):
     def __init__(self, model: tf.keras.Model, total_epochs: int, verbose: bool = True):
+        """
+        Initializes the AlphaLearningRateSchedule.
+
+        Args:
+            model (tf.keras.Model): Currently trained model.
+            total_epochs (int): Total amount of epochs.
+            verbose (bool, optional): Indicates if updates are displayed. Defaults to True.
+        """
         self.model = model
         self.total_epochs = total_epochs
         self.verbose = verbose
@@ -56,9 +78,23 @@ class AlphaLearningRateSchedule(tf.keras.callbacks.Callback):
         )
 
     def get_current_lr(self) -> float:
+        """
+        Returns the current learning rate of the trained model.
+
+        Returns:
+            float: Current learning rate.
+        """
         return float(tf.keras.backend.get_value(self.model.optimizer.lr))
 
     def on_epoch_begin(self, epoch: int, logs=None):
+        #Logs not used!
+        """
+        Triggers the learning rate update at the beginning of each epoch.
+
+        Args:
+            epoch (int): Current epoch.
+            logs (_type_, optional): Not used!
+        """
         lr = self.get_current_lr()
         # tf epoch is 0-indexed, so we need to add 1 to get the
         # same behaviour as in original implementation.
@@ -73,15 +109,24 @@ class AlphaLearningRateSchedule(tf.keras.callbacks.Callback):
 
 
 def adjust_learning_rate(optimizer, lr):
+    """
+    Adjust the learning rate used in an optimizer.
+
+    Args:
+        optimizer (Optimizer): Optimizer to be updated.
+        lr (float): Current learning rate as computed by a learning rate schedule.
+
+    Returns:
+        float: The adjusted learning rate.
+    """
     optimizer.lr.assign(lr)
-    return lr
 
 # TODO Still to be implemented:
 def check_batch_normalization(model):
     return False
 
 def split_list(list_: List[Any], size: int) -> List[List[Any]]:
-    """Split a list into equal chunks of size 'size'.
+    """Split a list into equal chunks of specified size.
 
     Args:
         list_ (List[Any]): The list to split.
@@ -103,12 +148,33 @@ def save_weights(
     epoch: int,
     model: keras.Model,
 ):
+    """
+    Saves the model's weights/parameters to a specified path in order to be restored for curve fitting or evaluation.
+
+    Args:
+        directory (str): Directory to store the weights/parameters.
+        epoch (int): Current epoch of training.
+        model (keras.Model): Current model to extract parameters from.
+    """
     model_path = os.path.join(directory, f"model-weights-epoch{epoch}")
     logger.info(f"Saving model weights to {model_path}")
     model.save_weights(model_path)
 
 
 def get_architecture(model_name: str):
+    """
+    For a specified model name returns the corresponding architecture that is used for fitting the model.
+    The architecture consists of the Base and Curve version of the model.
+
+    Args:
+        model_name (str): Name of the model. One out of {"CNN", "MLP"}.
+
+    Raises:
+        KeyError: Indicates if the model name is unknown/ the model is not implemented yet.
+
+    Returns:
+        _type_: Model architecture.
+    """
     if model_name == "CNN":
         return CNN
     if model_name == "MLP":
@@ -117,7 +183,19 @@ def get_architecture(model_name: str):
 
 
 def get_model(architecture, args: Arguments, num_classes: Union[int, None], input_shape):
-    # If no curve is to be fit the base version of the architecture is initialised (e.g CNNBase instead of CNNCurve).
+    """
+    Initializes and returns either the Base or Curve version of an architecture.
+
+    Args:
+        architecture (_type_): Model architecture, e.g. CNN.
+        args (Arguments): Parsed arguments.
+        num_classes (Union[int, None]): The amount of classes the net discriminates among.  Specified as "None" in regression tasks.
+        input_shape (tf.Tensor): Shape of the input data.
+
+    Returns:
+        _type_: Initialized model.
+    """
+    # If no curve is to be fit the base version of the architecture is initialized (e.g CNNBase instead of CNNCurve).
     if args.resume_epoch and not args.ckpt:
         raise KeyError("Checkpoint needs to be defined to resume training.")
 
@@ -133,8 +211,8 @@ def get_model(architecture, args: Arguments, num_classes: Union[int, None], inpu
             model.compile()
         return model
 
-    # Otherwise the curve version of the architecture (e.g. CNNCurve) is initialised in the context of a CurveNet.
-    # The CurveNet additionally contains the curve (e.g. Bezier) and imports the parameters of the pre-trained base-nets that constitute the outer points of the curve.
+    # Otherwise the curve version of the architecture (e.g. CNNCurve) is initialized in the context of a CurveNet.
+    # The CurveNet additionally contains the curve (e.g. Bezier) and imports parameters from the pre-trained base-nets that constitute the outer points of the curve.
     curve = getattr(curves, args.curve)
     logger.info(
         f"Loading CurveNet with CurveModel {architecture.__name__} and Curve {curve.__name__}"
@@ -192,6 +270,16 @@ def get_epoch(args: Arguments):
 def load_base_weights(
     path: str, index: int, model: tf.keras.Model, base_model: tf.keras.Model
 ) -> None:
+    """
+    Helper method for get_model().
+    Loads the weights/parameters of a BaseModel and assigns them to a bend/ point of curve of the CurveModel.
+
+    Args:
+        path (str): Path to load weights/ parameters from.
+        index (int): Index indicating the bend/ point of curve.
+        model (tf.keras.Model): Model to be assigned with weights/parameters.
+        base_model (tf.keras.Model): Model to load weights/parameters from.
+    """
     if not path:
         return None
     logger.info(f"Loading {path} as point #{index}")
@@ -199,7 +287,15 @@ def load_base_weights(
     model.import_base_parameters(base_model, index)
 
 def get_model_and_loaders(args: Arguments):
-    
+    """
+    Returns data loaders and a model based on parser arguments.
+
+    Args:
+        args (Arguments): Parsed arguments.
+
+    Returns:
+        _type_: Tuple of data loaders and model.
+    """
     loaders, num_classes, _, input_shape = data_loaders(
         dataset=args.dataset,
         path=args.data_path,
