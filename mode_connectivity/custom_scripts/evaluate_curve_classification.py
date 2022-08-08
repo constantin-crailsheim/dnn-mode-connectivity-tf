@@ -172,7 +172,6 @@ def evaluate_epoch(
     output = []
     target_list = []
 
-    # PyTorch: model.eval()
     for input, target in test_loader:
         loss_batch, pred_batch, output_batch, target_batch = evaluate_batch(
             input=input,

@@ -14,11 +14,7 @@ from mode_connectivity.argparser import (
     parse_evaluate_arguments,
     parse_train_arguments,
 )
-from mode_connectivity.curves.net import CurveNet
-from mode_connectivity.data import data_loaders
 from mode_connectivity.logger import configure_loggers
-from mode_connectivity.models.cnn import CNN
-from mode_connectivity.models.mlp import MLP
 from mode_connectivity.utils import (
     AlphaLearningRateSchedule,
     disable_gpu,

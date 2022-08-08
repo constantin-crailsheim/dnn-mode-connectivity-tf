@@ -159,7 +159,7 @@ class CurveNet(tf.keras.Model):
             )
         return np.concatenate(
             [tf.stop_gradient(w).numpy().ravel() for w in parameters]
-        )  # .cpu() missing
+        )
 
     def _compute_inner_weights(self, weights: List[tf.Variable]) -> None:
         # Is this procedure mentioned somewhere in the paper?
@@ -176,7 +176,7 @@ class CurveNet(tf.keras.Model):
     def call(
         self,
         inputs: tf.Tensor,
-        training=None,  # Why are we not setting this to True as default
+        training=None,
     ):
         if training is not False:
             # If training is False, we are in evaluation.

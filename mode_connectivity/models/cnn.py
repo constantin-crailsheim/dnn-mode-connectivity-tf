@@ -18,18 +18,6 @@ class CNNBase(tf.keras.Model):
     conv_part: tf.keras.Sequential
     fc_part: tf.keras.Sequential
 
-    # Sources:
-    # https://www.tensorflow.org/tutorials/customization/custom_layers
-    # https://www.tensorflow.org/api_docs/python/tf/keras/layers
-
-    # Network Structure:
-    # https://github.com/constantin-crailsheim/dnn-mode-connectivity/blob/master/models/basiccnn.py
-
-    # Optional: Alternatively inherit from tf.keras.layers.Layer
-    # https://stackoverflow.com/questions/55109696/tensorflow-difference-between-tf-keras-layers-layer-vs-tf-keras-model
-
-    # Comment: In contrast to PyTorch there are no input dimensions required in Tensorflow.
-
     def __init__(self, num_classes: int, weight_decay: float):
         super().__init__()
         self.num_classes = num_classes
@@ -64,7 +52,7 @@ class CNNBase(tf.keras.Model):
                 tf.keras.layers.BatchNormalization(),
                 tf.keras.layers.Dense(units=self.num_classes, **regularizers),
             ]
-        )  # Check if weight decay needed in each layer
+        )
 
     def call(self, inputs: tf.Tensor, **kwargs):
         x = self.conv_part(inputs, **kwargs)

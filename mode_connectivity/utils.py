@@ -33,7 +33,6 @@ def disable_gpu():
 
 def set_seeds(seed: int):
     tf.random.set_seed(seed)
-    # TODO torch.cuda.manual_seed(args.seed)
 
 def learning_rate_schedule(base_lr, epoch, total_epochs):
     alpha = epoch / total_epochs
@@ -106,8 +105,6 @@ def save_weights(
 ):
     model_path = os.path.join(directory, f"model-weights-epoch{epoch}")
     logger.info(f"Saving model weights to {model_path}")
-    # print(model.curve_model.input_spec)
-    # print(model.call.get_concrete_function(inputs=model.curve_model.input_spec))
     model.save_weights(model_path)
 
 
@@ -200,9 +197,6 @@ def load_base_weights(
     logger.info(f"Loading {path} as point #{index}")
     base_model.load_weights(path).expect_partial()
     model.import_base_parameters(base_model, index)
-
-
-# Adjust to new logic with get_model to load checkpoints with start epoch.
 
 def get_model_and_loaders(args: Arguments):
     

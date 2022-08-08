@@ -37,7 +37,7 @@ def main():
         architecture=architecture,
         args=args,
         num_classes=num_classes,
-        input_shape=input_shape, # TODO use output from data loader
+        input_shape=input_shape,
     )
 
     criterion = tf.keras.losses.MeanSquaredError()
@@ -114,7 +114,6 @@ def evaluate_epoch(
 
     loss_sum = 0.0
 
-    # PyTorch: model.eval()
     for input, target in test_loader:
         loss_batch = evaluate_batch(
             input=input,

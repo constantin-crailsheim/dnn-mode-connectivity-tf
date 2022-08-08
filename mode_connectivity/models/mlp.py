@@ -7,7 +7,6 @@ __all__ = [
     "MLP",
 ]
 
-
 class MLPBase(tf.keras.Model):
     def __init__(self, num_classes: None, weight_decay: float):
         super().__init__()

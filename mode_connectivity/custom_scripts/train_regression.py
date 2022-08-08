@@ -8,12 +8,10 @@ import tensorflow as tf
 from keras.layers import Layer
 from keras.optimizers import Optimizer
 
-import mode_connectivity.curves.curves as curves
 from mode_connectivity.argparser import Arguments, parse_train_arguments
-from mode_connectivity.curves.net import CurveNet
+
 from mode_connectivity.data import data_loaders
-from mode_connectivity.models.cnn import CNN
-from mode_connectivity.models.mlp import MLP
+
 from mode_connectivity.utils import (
     adjust_learning_rate,
     check_batch_normalization,
@@ -89,7 +87,6 @@ def train(
         time_epoch = time.time()
 
         lr = learning_rate_schedule(args.lr, epoch, args.epochs)
-        # Not implemented yet:
         adjust_learning_rate(optimizer, lr)
 
         train_results = train_epoch(
@@ -137,7 +134,6 @@ def train_epoch(
     loss_sum = 0.0
 
     num_iters = len(train_loader)
-    # PyTorch: model.train()
 
     for iter, (input, target) in enumerate(train_loader):
         if callable(lr_schedule):
@@ -167,7 +163,6 @@ def test_epoch(
 ) -> Dict[str, float]:
     loss_sum = 0.0
 
-    # PyTorch: model.eval()
     for input, target in test_loader:
         loss_batch = test_batch(
             input=input,
@@ -189,7 +184,6 @@ def train_batch(
     optimizer: Optimizer,
     criterion: Callable,
 ) -> Tuple[float, float]:
-    # TODO Allocate model to GPU as well, but no necessary at the moment, since we don't have GPUs.
 
     with tf.GradientTape() as tape:
         output = model(input)
@@ -211,7 +205,6 @@ def test_batch(
     model: Layer,
     criterion: Callable,
 ) -> Dict[str, float]:
-    # TODO Allocate model to GPU as well.
 
     output = model(input)
     loss = criterion(target, output)
