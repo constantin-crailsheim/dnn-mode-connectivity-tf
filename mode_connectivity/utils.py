@@ -204,6 +204,7 @@ def get_model(architecture, args: Arguments, num_classes: Union[int, None], inpu
         model = architecture.base(
             num_classes=num_classes, weight_decay=args.wd, **architecture.kwargs
         )
+        model.compile()
         if args.ckpt:
             logger.info(f"Restoring regular model from checkpoint {args.ckpt}.")
             model.build(input_shape=input_shape)
@@ -232,7 +233,7 @@ def get_model(architecture, args: Arguments, num_classes: Union[int, None], inpu
         logger.info(f"Restoring curve model from checkpoint {args.ckpt}.")
         model.build(input_shape=input_shape)
         model.load_weights(filepath=args.ckpt)
-        model.compile() # Necessary?
+        model.compile()
     else:
         # Build model from 0, 1 or 2 base_models
         base_model = architecture.base(
@@ -254,6 +255,7 @@ def get_model(architecture, args: Arguments, num_classes: Union[int, None], inpu
         if args.init_linear:
             logger.info("Linear initialization.")
             model.init_linear()
+            model.compile()
 
     return model
 

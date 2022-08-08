@@ -239,7 +239,7 @@ def _add_checkpoint_arguments(parser: argparse.ArgumentParser) -> None:
         help="checkpoint to load (default: None)",
     )
     parser.add_argument(
-        "--resume_epoch",
+        "--resume-epoch",
         type=int,
         default=None,
         metavar="CKPT",

@@ -112,7 +112,7 @@ class TestArgparser:
             "TheCheckpoint",
             "--init-end",
             "TheEnd",
-            "--resume_epoch",
+            "--resume-epoch",
             "100",
             "--save-freq",
             "10",
