@@ -35,7 +35,6 @@ def set_seeds(seed: int):
     tf.random.set_seed(seed)
     # TODO torch.cuda.manual_seed(args.seed)
 
-
 def learning_rate_schedule(base_lr, epoch, total_epochs):
     alpha = epoch / total_epochs
     if alpha <= 0.5:
@@ -74,86 +73,13 @@ class AlphaLearningRateSchedule(tf.keras.callbacks.Callback):
             print(f" lr: {lr:.4f}", end=" - ")
 
 
-def l2_regularizer(weight_decay):
-    return lambda model: 0.5 * weight_decay * model.l2
-
-
 def adjust_learning_rate(optimizer, lr):
     optimizer.lr.assign(lr)
     return lr
 
-
+# TODO Still to be implemented:
 def check_batch_normalization(model):
     return False
-
-
-def load_checkpoint(
-    checkpoint_path: str,
-    model: tf.keras.Model,
-    optimizer: tf.keras.optimizers.Optimizer,
-    **kwargs,
-) -> int:
-    """Load the model and optimizer from a saved checkpoint.
-    The model and optimizer objects get updated with the stored parameters from the checkpoint.
-
-    Also allows for additional parameters to load via kwargs.
-
-    Args:
-        checkpoint_path (str): Path to the checkpoint.
-        model (keras.Model): The model which should be restored.
-        optimizer (keras.optimizers.Optimizer): The optimizer which should be restored.
-
-    Returns:
-        int: The next epoch, from which training should be resumed.
-    """
-    logger.info(f"Restoring train state from {checkpoint_path}")
-    epoch = tf.Variable(0, name="epoch")
-    checkpoint = tf.train.Checkpoint(
-        epoch=epoch, model=model, optimizer=optimizer, **kwargs
-    )
-    try:
-        checkpoint.restore(checkpoint_path)
-    except NotFoundError as e:
-        logger.error(
-            f"Could not restore specified checkpoint from {checkpoint_path}. Error: {e.message}"
-        )
-        logger.info("Starting from epoch 1")
-        return 1
-
-    next_epoch = int(epoch) + 1
-    logger.info(f"Restored checkpoint, resuming from epoch {next_epoch}")
-    return next_epoch
-
-
-def save_checkpoint(
-    directory: str,
-    epoch: int,
-    model: tf.keras.Model,
-    optimizer: tf.keras.optimizers.Optimizer,
-    name: str = "checkpoint",
-    **kwargs,
-) -> None:
-    """Save the current train state as a checkpoint.
-
-    Also allows for additional parameters to be saved via kwargs.
-
-    Args:
-        directory (str): Directory where the checkpoint should be saved.
-        epoch (int): The current train epoch.
-        model (keras.Model): The trained model.
-        optimizer (keras.optimizers.Optimizer): The optimizer used in training.
-        name (str, optional): Custom name of the checkpoint. Defaults to "checkpoint".
-    """
-    checkpoint = tf.train.Checkpoint(
-        epoch=tf.Variable(epoch, name="epoch"),
-        model=model,
-        optimizer=optimizer,
-        **kwargs,
-    )
-    checkpoint_path = os.path.join(directory, f"{name}-epoch{epoch}")
-    logger.info(f"Saving checkpoint to {checkpoint_path}")
-    checkpoint.save(checkpoint_path)
-
 
 def split_list(list_: List[Any], size: int) -> List[List[Any]]:
     """Split a list into equal chunks of size 'size'.
@@ -172,28 +98,6 @@ def split_list(list_: List[Any], size: int) -> List[List[Any]]:
     ```
     """
     return list(list_[i : i + size] for i in range(0, len(list_), size))
-
-
-def save_model(
-    directory: str,
-    epoch: int,
-    model: tf.keras.Model,
-) -> None:
-    """
-    Save the current model in SavedModel format.
-    Can only be called once the input dimension is specified.
-
-    Args:
-        directory (str): Directory where the checkpoint should be saved.
-        epoch (int): The current train epoch.
-        model (keras.Model): The trained model.
-    """
-    model_path = os.path.join(directory, f"model-epoch{epoch}")
-    logger.info(f"Saving model to {model_path}")
-    # print(model.curve_model.input_spec)
-    # print(model.call.get_concrete_function(inputs=model.curve_model.input_spec))
-    model.save(model_path)
-
 
 def save_weights(
     directory: str,
@@ -217,11 +121,19 @@ def get_architecture(model_name: str):
 
 def get_model(architecture, args: Arguments, num_classes: Union[int, None], input_shape):
     # If no curve is to be fit the base version of the architecture is initialised (e.g CNNBase instead of CNNCurve).
+    if args.resume_epoch and not args.ckpt:
+        raise KeyError("Checkpoint needs to be defined to resume training.")
+
     if not args.curve:
-        logger.info(f"Loading Regular Model {architecture.__name__}")
+        logger.info(f"Loading regular model {architecture.__name__}")
         model = architecture.base(
             num_classes=num_classes, weight_decay=args.wd, **architecture.kwargs
         )
+        if args.ckpt:
+            logger.info(f"Restoring regular model from checkpoint {args.ckpt}.")
+            model.build(input_shape=input_shape)
+            model.load_weights(filepath=args.ckpt)
+            model.compile()
         return model
 
     # Otherwise the curve version of the architecture (e.g. CNNCurve) is initialised in the context of a CurveNet.
@@ -240,22 +152,18 @@ def get_model(architecture, args: Arguments, num_classes: Union[int, None], inpu
         fix_end=args.fix_end,
         architecture_kwargs=architecture.kwargs,
     )
-
+    
     if args.ckpt:
-        logger.info(f"Restoring model from checkpoint {args.ckpt} for evaluation")
-        # Evalutate the model from Checkpoint
-        # expect_partial()
-        # -> silence Value in checkpoint could not be found in the restored object: (root).optimizer. ..
-        # https://stackoverflow.com/questions/58289342/tf2-0-translation-model-error-when-restoring-the-saved-model-unresolved-objec
-        model.load_weights(args.ckpt).expect_partial()
-        return model
-
-    # Build model from 0, 1 or 2 base_models
-    base_model = architecture.base(
+        logger.info(f"Restoring curve model from checkpoint {args.ckpt}.")
+        model.build(input_shape=input_shape)
+        model.load_weights(filepath=args.ckpt)
+        model.compile() # Necessary?
+    else:
+        # Build model from 0, 1 or 2 base_models
+        base_model = architecture.base(
         num_classes=num_classes, weight_decay=args.wd, **architecture.kwargs
-    )
-    base_model.build(input_shape=input_shape)
-    if args.resume is None:
+        )
+        base_model.build(input_shape=input_shape)
         load_base_weights(
             path=args.init_start,
             index=0,
@@ -275,6 +183,15 @@ def get_model(architecture, args: Arguments, num_classes: Union[int, None], inpu
     return model
 
 
+def get_epoch(args: Arguments):
+    if args.ckpt:
+        if args.resume_epoch:
+            return args.resume_epoch
+        else:
+            raise KeyError("Start epoch to resume training needs to be specified")
+    else:
+        return 1
+
 def load_base_weights(
     path: str, index: int, model: tf.keras.Model, base_model: tf.keras.Model
 ) -> None:
@@ -285,7 +202,10 @@ def load_base_weights(
     model.import_base_parameters(base_model, index)
 
 
+# Adjust to new logic with get_model to load checkpoints with start epoch.
+
 def get_model_and_loaders(args: Arguments):
+    
     loaders, num_classes, _, input_shape = data_loaders(
         dataset=args.dataset,
         path=args.data_path,
