@@ -13,7 +13,7 @@ class Curve(tf.keras.layers.Layer, ABC):
     def __init__(self, num_bends: int):
         """
         Initializes the parametric curve.
-        The amount of bends on a curve determine its flexibility/ the capacity of the metamodel.
+        The amount of bends on a curve determines its flexibility/ the capacity of the metamodel.
 
         Args:
             num_bends (int): The amount of bends on the curve.
@@ -32,14 +32,11 @@ class Curve(tf.keras.layers.Layer, ABC):
     def call(self, point_on_curve: Union[float, tf.Tensor]) -> tf.Tensor:
         """
         Returns a tensor of weights summing up to 1.
-        These weights correspond to the weight each bend on the curve is given when constructing the specified point on the curve.
+        These weights correspond to the weight each node on the curve is given when constructing the specified point on the curve.
         The resulting tensor is then used to weight the parameters of the CurveLayers.
 
-        For further information, see:
-        https://en.wikipedia.org/wiki/B%C3%A9zier_curve
-
         Args:
-            point_on_curve (Union[float, tf.Tensor]): Arbitrary point on the curve specified by values in [0, 1].
+            point_on_curve (Union[float, tf.Tensor]): Arbitrary point(s) on the curve specified by values in [0, 1].
 
         Returns:
             tf.Tensor: Tensor of weights.
@@ -64,6 +61,8 @@ class Bezier(Curve):
                 1: Quadratic
                 2: Cubic
                 ...
+            For further information, see:
+            https://en.wikipedia.org/wiki/B%C3%A9zier_curve
         """
         super().__init__(num_bends=num_bends)
         self.degree = num_bends + 1

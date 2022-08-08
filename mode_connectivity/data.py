@@ -24,7 +24,6 @@ def data_loaders(
         dataset (str): String indicating the type of the dataset. Either "mnist" for the CNN or "regression" for the MLP.
         path (str): Path to the dataset.
         batch_size (int): Amount of samples per batch.
-        num_workers (int): Amount of workers.
         shuffle_train (bool, optional): Boolean indicating whether to shuffle the train set. Defaults to True.
 
     Returns:

@@ -85,14 +85,14 @@ class CurveNet(tf.keras.Model):
                 dense_1/kernel:0
 
         whereas parameters in the CurveModel are saved with a '_curve' suffix
-        and an index that matches them to the bend/ point on curve.
+        and an index that matches them to the curve node.
 
             For example:
                 conv2d_curve/kernel_curve_1:0
                 conv2d_curve/bias_curve_0:0
                 dense_1_curve/kernel_curve_2:0
 
-        The parameters for a specific bend/ point on the curve are loaded from the pretrained BaseModel.
+        The parameters for a specific node on the curve are loaded from the pretrained BaseModel.
 
         Args:
             base_model (tf.keras.Model): The BaseModel (e.g. CNNBase) whose parameters are imported.
@@ -129,7 +129,7 @@ class CurveNet(tf.keras.Model):
 
     def _build_from_base_model(self, base_model: tf.keras.Model):
         """
-        Helper method that builds the CurveModel and thereby initializes its weights.
+        Helper method that builds the CurveModel and thereby initializes its parameters.
         It extracts information about the input shape from the corresponding BaseModel.
 
         Args:
@@ -146,13 +146,13 @@ class CurveNet(tf.keras.Model):
     @staticmethod
     def _find_parameter_index(parameter_name: str) -> Union[int, None]:
         """
-        Finds the index of a bend/ curve point given a parameter name from the CurveModel.
+        Finds the node index given a parameter name from the CurveModel.
 
         Args:
             parameter_name (str): Name of the parameter from the CurveModel.
 
         Returns:
-            Union[int, None]: Index
+            Union[int, None]: Node index.
         """
         results = re.findall(r"(\d+):", parameter_name)
         if not results:
@@ -166,7 +166,7 @@ class CurveNet(tf.keras.Model):
 
         Args:
             parameter_name (str): Name of the parameter from the CurveModel.
-            index (int): Index of the bend/ curve point.
+            index (int): Node index.
 
         Returns:
             _type_: Name of the parameter in the BaseModel.
@@ -175,8 +175,8 @@ class CurveNet(tf.keras.Model):
 
     def init_linear(self) -> None:
         """
-        Intitializes the inner bends/ points on the curve of each layer as a linear combination 
-        of the parameters (kernels and biases) of the first and last bend (pre-trained models).
+        Intitializes the inner curve nodes of each layer as a linear combination 
+        of the parameters of the first and last node (pre-trained models).
         """
         for layer in self.curve_layers:
             for param_name in layer.parameters:
@@ -195,16 +195,15 @@ class CurveNet(tf.keras.Model):
             alpha = i * 1.0 / (n_params - 1)
             parameters[i].assign(alpha * first_param + (1.0 - alpha) * last_param)
 
-    def get_weighted_parameters(self, point_on_curve):
+    def get_weighted_parameters(self, point_on_curve: float):
         """
-        TODO
-        _summary_
+        For each layer in the network computes the weighted parameters leading to a specified point on the curve.
 
         Args:
-            point_on_curve (_type_): _description_
+            point_on_curve (float): Point on the curve specified by values in [0, 1]. Defaults to None.
 
         Returns:
-            _type_: _description_
+            _type_: List of weighted parameters
         """
         point_on_curve_weights = self.curve(point_on_curve)
         parameters = []
@@ -225,10 +224,10 @@ class CurveNet(tf.keras.Model):
     @tf.function
     def generate_point_on_curve(self, dtype=tf.float32):
         """
-        Samples a random point on the curve as a value in the range [0, 1) based  on the Uniform distribution.
+        Samples a random point on the curve as a value in the range [0, 1) based on the uniform distribution.
 
         Args:
-            dtype (_type_, optional): Defaults to tf.float32.
+            dtype (_type_, optional): Type of the output. Defaults to tf.float32.
 
         Returns:
             _type_: Sampled point on curve.
@@ -274,11 +273,11 @@ class CurveNet(tf.keras.Model):
         **kwargs,
     ):
         """
-        Evaluates the CurveNet for one or several points on the curve.
+        Evaluates the CurveNet for one (Using "point_on_curve") or several (Using "num_points") points on the curve.
 
         Args:
             num_points (Union[int, None], optional): Amount of equally spaced points on the curve to be evaluated. Defaults to None.
-            point_on_curve (Union[float, None], optional): Single point on the curve to be evaluated specified by values in [0, 1]. Defaults to None.
+            point_on_curve (Union[float, None], optional): Single point on the curve to be evaluated. Specified by values in [0, 1]. Defaults to None.
 
         Raises:
             AttributeError: Indicates falsely specified attributes.
