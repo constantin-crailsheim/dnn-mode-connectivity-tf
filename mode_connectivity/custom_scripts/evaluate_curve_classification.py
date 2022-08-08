@@ -20,9 +20,17 @@ from mode_connectivity.curves.net import CurveNet
 from mode_connectivity.models.cnn import CNN
 from mode_connectivity.models.mlp import MLP
 
-from mode_connectivity.utils import disable_gpu, get_model
+from mode_connectivity.utils import (
+    disable_gpu,
+    get_model,
+    get_architecture
+)
 
 def main():
+    """
+    Initializes the variables necessary for the evaluation procedure and triggers it.
+    Customized for classification tasks.
+    """
     args = parse_evaluate_arguments()
     if args.disable_gpu:
         disable_gpu()
@@ -132,40 +140,23 @@ def main():
             test_losses, test_accuracy_scores, test_f1_scores,
             points_on_curve, dl, args.dir, save=args.save_evaluation)
 
-
-def get_architecture(model_name: str):
-    if model_name == "CNN":
-        return CNN
-    if model_name == "MLP":
-        return MLP
-    raise KeyError(f"Unkown model {model_name}")
-
-def load_model(architecture, args: Arguments, num_classes: Union[int, None], input_shape):
-    curve = getattr(curves, args.curve)
-    model = CurveNet(
-        num_classes=num_classes,
-        num_bends=args.num_bends,
-        weight_decay=args.wd,
-        curve=curve,
-        curve_model=architecture.curve,
-        fix_start=args.fix_start,
-        fix_end=args.fix_end,
-        architecture_kwargs=architecture.kwargs,
-    )
-
-    model.build(input_shape=input_shape)
-    model.load_weights(filepath=args.ckpt)
-    model.compile()
-
-    return model
-
 def evaluate_epoch(
     test_loader: Iterable,
     model: Layer,
     criterion: Callable,
     n_test: int
 ) -> Dict[str, tf.Tensor]:
+    """Evaluation of epoch for loaded model.
 
+    Args:
+        test_loader (Iterable): Data loaders with minibatches.
+        model (Layer): Model to be evaluated.
+        criterion (Callable): Utilized loss function.
+        n_test (int): Amount of example in dataset evaluated.
+
+    Returns:
+        Dict[str, tf.Tensor]: Evaluation statistics.
+    """
     loss_sum = 0.0
 
     pred = []
@@ -197,6 +188,20 @@ def evaluate_batch(
     model: Layer,
     criterion: Callable
 ) -> Dict[str, float]:
+    """
+    Helper method for evaluate_epoch().
+    Batchwise computations for the loss, predictions, output and target on the dataset evaluated.
+
+
+    Args:
+        input (tf.Tensor): Data that is propagated through the network leading to the network output.
+        target (tf.Tensor): Targets which are compared to network output.
+        model (Layer): Model to be trained.
+        criterion (Callable): Utilized loss function.
+
+    Returns:
+        float, list: Evaluation statistics.
+    """
 
     output = model(input, training = False)
     loss = criterion(target, output)
@@ -207,10 +212,17 @@ def evaluate_batch(
     return loss, pred.numpy().tolist(), output.numpy().tolist(), target.numpy().tolist()
 
 
-def print_stats_of_point_on_curve(values, i):
+def print_stats_of_point_on_curve(values, epoch):
+    """
+    Displays relevant statistics of an epoch.
+
+    Args:
+        values (List): Statistics to be displayed.
+        epoch (int): Current epoch.
+    """
     columns = ['Point on curve', 'Train loss', 'Train accuracy (%)', 'Train F1 score', 'Test loss', 'Test accuracy (%)', 'Test F1 score']
     table = tabulate.tabulate([values], columns, tablefmt='simple', floatfmt='10.4f')
-    if i % 40 == 0:
+    if epoch % 40 == 0:
         table = table.split('\n')
         table = '\n'.join([table[1]] + table)
     else:
@@ -218,52 +230,101 @@ def print_stats_of_point_on_curve(values, i):
     print(table)
 
 def save_stats_of_points_on_curve(
-        train_losses, train_accuracy_scores, train_f1_scores,
-        test_losses, test_accuracy_scores, test_f1_scores,
-        points_on_curve, dl, dir: str, file_name: str = 'stats_of_points_on_curve.npz'):
+    train_losses, train_accuracy_scores, train_f1_scores,
+    test_losses, test_accuracy_scores, test_f1_scores,
+    points_on_curve, dl, dir: str, file_name: str = 'stats_of_points_on_curve.npz'):
+    """
+    Save relevants statistics of point on curve.
 
-        os.makedirs(dir, exist_ok=True)
-        np.savez(
-            os.path.join(dir, file_name),
-            points_on_curve=points_on_curve,
-            train_losses=train_losses,
-            train_accuracy_scores=train_accuracy_scores,
-            train_f1_scores=train_f1_scores,
-            test_losses=test_losses,
-            test_accuracy_scores=test_accuracy_scores,
-            test_f1_scores=test_f1_scores,
-            dl=dl # TODO do we need to save this here?
-        )
+    Args:
+        train_losses (numpy.ndarray): Array of train losses.
+        train_accuracy_scores (numpy.ndarray): Array of train accuracy scores.
+        train_f1_scores (numpy.ndarray): Array of train F1 scores.
+        test_losses (numpy.ndarray): Array of test losses.
+        test_accuracy_scores (numpy.ndarray): Array of test accuracy scores.
+        test_f1_scores (numpy.ndarray): Array of test F1 scores.
+        points_on_curve (numpy.ndarray): Array of points on curve evaluated.
+        dl (numpy.ndarray): Norm of change of parameters between points on curve.
+        dir (str): Directory to store file.
+        file_name (str, optional): Name of file. Defaults to 'stats_of_points_on_curve.npz'.
+    """
+    os.makedirs(dir, exist_ok=True)
+    np.savez(
+        os.path.join(dir, file_name),
+        points_on_curve=points_on_curve,
+        train_losses=train_losses,
+        train_accuracy_scores=train_accuracy_scores,
+        train_f1_scores=train_f1_scores,
+        test_losses=test_losses,
+        test_accuracy_scores=test_accuracy_scores,
+        test_f1_scores=test_f1_scores,
+        dl=dl # TODO do we need to save this here?
+    )
 
 def save_predictions_and_probabilites(
-        train_predictions, train_output, train_targets,
-        test_predictions, test_output, test_targets,
-        points_on_curve, dir: str, file_name: str = 'predictions_and_probabilities_curve.npz'):
-        
-        os.makedirs(dir, exist_ok=True)
-        np.savez(
-            os.path.join(dir, file_name),
-            points_on_curve=points_on_curve,
-            train_predictions=train_predictions,
-            train_targets=train_targets,
-            train_output=train_output,
-            test_predictions=test_predictions,
-            test_targets=test_targets,
-            test_output=test_output
-        )
+    train_predictions, train_output, train_targets,
+    test_predictions, test_output, test_targets,
+    points_on_curve, dir: str, file_name: str = 'predictions_and_probabilities_curve.npz'):
+    """
+    Save relevant predictions and output of points on curve.
+
+    Args:
+        train_predictions (List): List of train prediction for points on curve evaluated.
+        train_output (List): List of train output for points on curve evaluated.
+        train_targets (List): List of train targets for points on curve evaluated.
+        test_predictions (List): List of test prediction for points on curve evaluated.
+        test_output (List): List of test output for points on curve evaluated.
+        test_targets (List): List of test targets for points on curve evaluated.
+        points_on_curve (numpy.ndarray): Array of points on curve evaluated.
+        dir (str): Directory to store file.
+        file_name (str, optional): Name of file. Defaults to 'predictions_and_probabilities_curve.npz'.
+    """
+    os.makedirs(dir, exist_ok=True)
+    np.savez(
+        os.path.join(dir, file_name),
+        points_on_curve=points_on_curve,
+        train_predictions=train_predictions,
+        train_targets=train_targets,
+        train_output=train_output,
+        test_predictions=test_predictions,
+        test_targets=test_targets,
+        test_output=test_output
+    )
 
 def compute_stats(values, dl):
+    """Compute summary statistics over all points on curve evalauted.
+
+    Args:
+        values (List): Statistics to be evaluated.
+        dl (numpy.ndarray): Norm of change of parameters between points on curve.
+
+    Returns:
+        float: Summary statistics over all points on curve evaluated.
+    """
     min = np.min(values)
     max = np.max(values)
     avg = np.mean(values)
-    int = np.sum(0.5 * (values[:-1] + values[1:]) * dl[1:]) / np.sum(dl[1:]) # What does this stats mean?
+    int = np.sum(0.5 * (values[:-1] + values[1:]) * dl[1:]) / np.sum(dl[1:])
     return min, max, avg, int
 
 def print_and_save_summary_stats(
         train_losses, train_accuracy_scores, train_f1_scores,
         test_losses, test_accuracy_scores, test_f1_scores,
         points_on_curve, dl, dir: str, file_name: str = 'summary_stats_curve.npz', save: bool = True):
+    """Save summary statistics over all points on curve evalauted.
 
+    Args:
+        train_predictions (List): List of train prediction for points on curve evaluated.
+        train_output (List): List of train output for points on curve evaluated.
+        train_targets (List): List of train targets for points on curve evaluated.
+        test_predictions (List): List of test prediction for points on curve evaluated.
+        test_output (List): List of test output for points on curve evaluated.
+        test_targets (List): List of test targets for points on curve evaluated.
+        points_on_curve (numpy.ndarray): Array of points on curve evaluated.
+        dir (str): Directory to store file.
+        file_name (str, optional): Name of file. Defaults to 'predictions_and_probabilities_curve.npz'.
+        save (bool, optional): Whether to save summary statistics or not. Defaults to True.
+    """
     train_loss_min, train_loss_max, train_loss_avg, train_loss_int = compute_stats(train_losses, dl)
     train_accuracy_scores_min, train_accuracy_scores_max, train_accuracy_scores_avg, train_accuracy_scores_int = compute_stats(train_accuracy_scores, dl)
     train_f1_scores_min, train_f1_scores_max, train_f1_scores_avg, train_f1_scores_int = compute_stats(train_f1_scores, dl)
