@@ -180,7 +180,7 @@ class CurveNet(tf.keras.Model):
         """
         for layer in self.curve_layers:
             for param_name in layer.parameters:
-                self._compute_inner_params(weights=layer.curve_params(param_name))
+                self._compute_inner_params(parameters=layer.curve_params(param_name))
 
     def _compute_inner_params(self, parameters: List[tf.Variable]) -> None:
         """
