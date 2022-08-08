@@ -11,9 +11,7 @@ import tensorflow_datasets as tfds
 def data_loaders(
     dataset: str,
     path: str,
-    batch_size: int,
-    num_workers: int, # To be excluded
-    shuffle_train: bool = True,
+    batch_size: int
 ):
     path = os.path.join(path, dataset.lower())
 
@@ -24,7 +22,7 @@ def data_loaders(
             batch_size=batch_size,
             download=True,
             split=["train", "test"],
-            shuffle_files=shuffle_train,
+            shuffle_files=True,
             as_supervised=True,
             with_info=True,
         )
