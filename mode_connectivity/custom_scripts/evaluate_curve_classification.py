@@ -79,6 +79,8 @@ def main():
             if previous_parameters is not None:
                 dl[i] = np.sqrt(np.sum(np.square(parameters - previous_parameters)))
             previous_parameters = parameters.copy()
+        
+        model.update_batchnorm(inputs=loaders["train"])
 
         train_results = evaluate_epoch(
                 test_loader = loaders["train"],

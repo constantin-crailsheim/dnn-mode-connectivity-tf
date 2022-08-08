@@ -168,7 +168,6 @@ def test_epoch(
     model: Layer,
     criterion: Callable,
     n_test: int,
-    **kwargs,
 ) -> Dict[str, float]:
     loss_sum = 0.0
     correct = 0.0
@@ -180,7 +179,6 @@ def test_epoch(
             target=target,
             model=model,
             criterion=criterion,
-            **kwargs,
         )
         loss_sum += loss_batch
         correct += correct_batch
@@ -200,7 +198,7 @@ def train_batch(
 ) -> Tuple[float, float]:
 
     with tf.GradientTape() as tape:
-        output = model(input)
+        output = model(input, training=True)
         loss = criterion(target, output)
         loss += tf.add_n(model.losses)  # Add Regularization loss
     grads = tape.gradient(loss, model.trainable_variables)
@@ -226,9 +224,8 @@ def test_batch(
     target: tf.Tensor,
     model: Layer,
     criterion: Callable,
-    **kwargs,
 ) -> Dict[str, float]:
-    output = model(input, **kwargs)
+    output = model(input, training=False) 
     # TODO is Negative Loss Likelihood calculated correctly here?
     loss = criterion(target, output)
     loss += tf.add_n(model.losses)  # Add Regularization loss
