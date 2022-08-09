@@ -50,13 +50,13 @@ class Curve(tf.keras.layers.Layer, ABC):
 class Bezier(Curve):
     """
     Implementation of the Bezier Curve in the layer context.
-    For the Bezier curve the amount of bends corresponds to the degree of the curve.
+    For the Bezier curve the amount of bends determines to the degree of the curve.
     """
 
     def __init__(self, num_bends: int):
         """
         Args:
-            num_bends (int): Degree of the Curve. Needs to be greater than 0.
+            num_bends (int): Degree of the curve minus 1. Degree to be greater than 0.
                 0: Linear
                 1: Quadratic
                 2: Cubic

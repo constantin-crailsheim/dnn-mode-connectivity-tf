@@ -75,28 +75,25 @@ class CurveNet(tf.keras.Model):
     def import_base_parameters(self, base_model: tf.keras.Model, index: int) -> None:
         """
         Imports parameters (kernels and biases) from the BaseModel into the CurveModel.
+        The parameters for the specified node on the curve are loaded from the pretrained BaseModel.
 
         Parameters in the BaseModel (without CurveLayers) are saved as
-            <layerName>_<layerIndex>/<parameter>:0
-
-            For example:
-                conv2d/kernel:0
-                conv2d/bias:0
-                dense_1/kernel:0
+        <layerName>_<layerIndex>/<parameter>:0
+        For example:
+            conv2d/kernel:0
+            conv2d/bias:0
+            dense_1/kernel:0
 
         whereas parameters in the CurveModel are saved with a '_curve' suffix
         and an index that matches them to the curve node.
-
-            For example:
-                conv2d_curve/kernel_curve_1:0
-                conv2d_curve/bias_curve_0:0
-                dense_1_curve/kernel_curve_2:0
-
-        The parameters for a specific node on the curve are loaded from the pretrained BaseModel.
+        For example:
+            conv2d_curve/kernel_curve_1:0
+            conv2d_curve/bias_curve_0:0
+            dense_1_curve/kernel_curve_2:0
 
         Args:
             base_model (tf.keras.Model): The BaseModel (e.g. CNNBase) whose parameters are imported.
-            index (int): Index of the bend/ point on curve.
+            index (int): Node index.
         """
         if not self.curve_model.built:
             self._build_from_base_model(base_model)
@@ -133,7 +130,7 @@ class CurveNet(tf.keras.Model):
         It extracts information about the input shape from the corresponding BaseModel.
 
         Args:
-            base_model (tf.keras.Model): The BaseModel (e.g. CNNBase).
+            base_model (tf.keras.Model): Pretrained BaseModel (e.g. CNNBase).
         """
         base_input_shape = base_model.layers[0].input_shape
         point_on_curve_weights_input_shape = (len(self.fix_points),)
@@ -179,12 +176,12 @@ class CurveNet(tf.keras.Model):
         of the parameters of the first and last node (pre-trained models).
         """
         for layer in self.curve_layers:
-            for param_name in layer.parameters:
+            for param_name in layer.parameter_types:
                 self._compute_inner_params(parameters=layer.curve_params(param_name))
 
     def _compute_inner_params(self, parameters: List[tf.Variable]) -> None:
         """
-        Helper method for init_linear that performs the initialization of the parameteres (kernel or bias) of each layer.
+        Helper method for init_linear() that performs the initialization of the parameteres of each layer.
 
         Args:
             parameters (List[tf.Variable]): List of kernels or biases of a CurveLayer.
@@ -225,7 +222,7 @@ class CurveNet(tf.keras.Model):
         Samples a random point on the curve as a value in the range [0, 1) based on the uniform distribution.
 
         Args:
-            dtype (_type_, optional): Type of the output. Defaults to tf.float32.
+            dtype (_type_, optional): Datatype of the output. Defaults to tf.float32.
 
         Returns:
             Sampled point on curve.
