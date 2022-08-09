@@ -7,6 +7,7 @@ from mode_connectivity.argparser import Arguments, parse_train_arguments
 from mode_connectivity.logger import configure_loggers
 from mode_connectivity.utils import (
     AlphaLearningRateSchedule,
+    PointOnCurveMetric,
     disable_gpu,
     get_epoch,
     get_model_and_loaders,
@@ -40,7 +41,9 @@ def train(args: Arguments):
         save_freq=args.save_freq,
     )
 
-    model.compile(optimizer=optimizer, loss=loss, metrics=["accuracy"])
+    model.compile(
+        optimizer=optimizer, loss=loss, metrics=["accuracy", PointOnCurveMetric(model)]
+    )
     learning_rate_scheduler = AlphaLearningRateSchedule(model, total_epochs=args.epochs)
     model.fit(
         loaders["train"],

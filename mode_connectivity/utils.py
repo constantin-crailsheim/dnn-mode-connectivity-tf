@@ -5,8 +5,6 @@ from typing import Any, List, Union
 
 import keras
 import tensorflow as tf
-from tensorflow.python.framework.errors import NotFoundError
-from keras.optimizers import Optimizer
 
 import mode_connectivity.curves.curves as curves
 from mode_connectivity.argparser import Arguments
@@ -35,6 +33,7 @@ def disable_gpu():
 
 def set_seeds(seed: int):
     tf.random.set_seed(seed)
+
 
 def learning_rate_schedule(base_lr: float, epoch: int, total_epochs: int):
     """
@@ -87,7 +86,7 @@ class AlphaLearningRateSchedule(tf.keras.callbacks.Callback):
         return float(tf.keras.backend.get_value(self.model.optimizer.lr))
 
     def on_epoch_begin(self, epoch: int, logs=None):
-        #Logs not used!
+        # Logs not used!
         """
         Triggers the learning rate update at the beginning of each epoch.
 
@@ -108,6 +107,20 @@ class AlphaLearningRateSchedule(tf.keras.callbacks.Callback):
             print(f" lr: {lr:.4f}", end=" - ")
 
 
+class PointOnCurveMetric(tf.keras.metrics.Metric):
+    """Custom Metric to display the current point on curve (poc) used in training/evaluation."""
+
+    def __init__(self, model: tf.keras.Model, **kwargs):
+        super().__init__(name="poc", **kwargs)
+        self.model = model
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        pass
+
+    def result(self):
+        return self.model.point_on_curve
+
+
 def adjust_learning_rate(optimizer, lr):
     """
     Adjust the learning rate used in an optimizer.
@@ -121,9 +134,11 @@ def adjust_learning_rate(optimizer, lr):
     """
     optimizer.lr.assign(lr)
 
+
 # TODO Still to be implemented:
 def check_batch_normalization(model):
     return False
+
 
 def split_list(list_: List[Any], size: int) -> List[List[Any]]:
     """Split a list into equal chunks of specified size.
@@ -142,6 +157,7 @@ def split_list(list_: List[Any], size: int) -> List[List[Any]]:
     ```
     """
     return list(list_[i : i + size] for i in range(0, len(list_), size))
+
 
 def save_weights(
     directory: str,
@@ -182,7 +198,9 @@ def get_architecture(model_name: str):
     raise KeyError(f"Unkown model {model_name}")
 
 
-def get_model(architecture, args: Arguments, num_classes: Union[int, None], input_shape):
+def get_model(
+    architecture, args: Arguments, num_classes: Union[int, None], input_shape
+):
     """
     Initializes and returns either the Base or Curve version of an architecture.
 
@@ -227,16 +245,16 @@ def get_model(architecture, args: Arguments, num_classes: Union[int, None], inpu
         fix_end=args.fix_end,
         architecture_kwargs=architecture.kwargs,
     )
-    
+
     if args.ckpt:
         logger.info(f"Restoring curve model from checkpoint {args.ckpt}.")
         model.build(input_shape=input_shape)
         model.load_weights(filepath=args.ckpt)
-        model.compile() # Necessary?
+        model.compile()  # Necessary?
     else:
         # Build model from 0, 1 or 2 base_models
         base_model = architecture.base(
-        num_classes=num_classes, weight_decay=args.wd, **architecture.kwargs
+            num_classes=num_classes, weight_decay=args.wd, **architecture.kwargs
         )
         base_model.build(input_shape=input_shape)
         load_base_weights(
@@ -267,6 +285,7 @@ def get_epoch(args: Arguments):
     else:
         return 1
 
+
 def load_base_weights(
     path: str, index: int, model: tf.keras.Model, base_model: tf.keras.Model
 ) -> None:
@@ -286,6 +305,7 @@ def load_base_weights(
     base_model.load_weights(path).expect_partial()
     model.import_base_parameters(base_model, index)
 
+
 def get_model_and_loaders(args: Arguments):
     """
     Returns data loaders and a model based on parser arguments.
@@ -299,7 +319,7 @@ def get_model_and_loaders(args: Arguments):
     loaders, num_classes, _, input_shape = data_loaders(
         dataset=args.dataset,
         path=args.data_path,
-        batch_size=args.batch_size
+        batch_size=args.batch_size,
     )
 
     architecture = get_architecture(model_name=args.model)
