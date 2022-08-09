@@ -19,9 +19,9 @@ pip install -e .
 
 In `scripts`, you will find three different example scripts, for training and evaluation respectively. 
 
-The `*_tensorflow.py` files display how you can use the architecture the built in tensorflow functions `.fit()`and `.evaluate()`.
+The `*_tensorflow.py` files display how you can use the architecture with the built in tensorflow functions `.fit()`and `.evaluate()`.
 
-The `*_classification.py` files use a more lower-level approach, and generate as well as save additional metrics which are used to display model progress in notebooks found in the `notebooks` folder.
+The `*_classification.py` files use a rather lower-level approach, and generate as well as save additional metrics which are used to display model progress in notebooks found in the `notebooks` folder.
 
 The `*_regression.py` files train and evaluate the models on a simple regression dataset, which was originally used [here](https://github.com/wjmaddox/drbayes/blob/master/experiments/synthetic_regression/ckpts/data.npy).
 
