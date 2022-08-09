@@ -44,16 +44,11 @@ class Arguments:
     save_evaluation: bool = True
 
 
-def parse_config() -> Arguments:
-    parser = argparse.ArgumentParser(description="DNN curve training")
-    parser.add_argument(
-        "config", nargs="?", type=str, default=None, help="Configuration to load"
-    )
-    args = parser.parse_args()
+def parse_config(config_name: str) -> Arguments:
     data = toml.load("config.toml")
-    model_config = data.get(args.config, None)
+    model_config = data.get(config_name, None)
     if not model_config:
-        raise KeyError(f"Unknown model config {args.config}")
+        raise KeyError(f"Unknown model config {config_name}")
     model_config = {k.replace("-", "_"): v for k, v in model_config.items()}
     return Arguments(**model_config)
 
@@ -61,18 +56,22 @@ def parse_config() -> Arguments:
 def parse_train_arguments() -> Arguments:
     parser = argparse.ArgumentParser(description="DNN curve training")
 
+    _add_config_argument(parser=parser)
     _add_dataset_arguments(parser=parser)
     _add_compute_arguments(parser=parser)
     _add_model_arguments(parser=parser)
     _add_checkpoint_arguments(parser=parser)
 
     args = parser.parse_args()
+    if args.config:
+        return parse_config(args.config)
     return Arguments(**args.__dict__)
 
 
 def parse_evaluate_arguments() -> Arguments:
     parser = argparse.ArgumentParser(description="DNN evaluation")
 
+    _add_config_argument(parser=parser)
     _add_dataset_arguments(parser=parser)
     _add_compute_arguments(parser=parser)
     _add_model_arguments(parser=parser)
@@ -80,7 +79,19 @@ def parse_evaluate_arguments() -> Arguments:
     _add_evaluate_arguments(parser=parser)
 
     args = parser.parse_args()
+    if args.config:
+        return parse_config(args.config)
     return Arguments(**args.__dict__)
+
+
+def _add_config_argument(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--config",
+        type=str,
+        default=None,
+        metavar="CONFIG",
+        help="Name of config to use. If this is specified, other arguments are disregarded.",
+    )
 
 
 def _add_dataset_arguments(parser: argparse.ArgumentParser) -> None:
@@ -137,7 +148,6 @@ def _add_model_arguments(parser: argparse.ArgumentParser) -> None:
         type=str,
         default=None,
         metavar="MODEL",
-        required=True,
         help="model name (default: None)",
     )
     parser.add_argument(
@@ -266,13 +276,13 @@ def _add_evaluate_arguments(parser: argparse.ArgumentParser) -> None:
         "--point-on-curve",
         type=float,
         default=None,
-        metavar="CKPT", # Correct metavariable?
+        metavar="CKPT",  # Correct metavariable?
         help="point on curve to be evaluated (default: None)",
     )
     parser.add_argument(
         "--save-evaluation",
         type=bool,
         default=True,
-        metavar="CKPT", # Correct metavariable?
+        metavar="CKPT",  # Correct metavariable?
         help="Set whether evaluation should be saved",
     )
