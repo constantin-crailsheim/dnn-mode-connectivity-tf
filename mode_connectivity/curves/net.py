@@ -22,7 +22,7 @@ class CurveNet(tf.keras.Model):
         self,
         num_classes: Union[int, None],
         num_bends: int,
-        weight_decay: float, # TODO Add to architecture
+        weight_decay: float,  # TODO Add to architecture
         curve: Type[Curve],
         curve_model: Type[tf.keras.Model],
         fix_start: bool = True,
@@ -175,7 +175,7 @@ class CurveNet(tf.keras.Model):
 
     def init_linear(self) -> None:
         """
-        Intitializes the inner curve nodes of each layer as a linear combination 
+        Intitializes the inner curve nodes of each layer as a linear combination
         of the parameters of the first and last node (pre-trained models).
         """
         for layer in self.curve_layers:
@@ -217,9 +217,7 @@ class CurveNet(tf.keras.Model):
                     if w is not None
                 ]
             )
-        return np.concatenate(
-            [tf.stop_gradient(w).numpy().ravel() for w in parameters]
-        )
+        return np.concatenate([tf.stop_gradient(w).numpy().ravel() for w in parameters])
 
     @tf.function
     def generate_point_on_curve(self, dtype=tf.float32):
@@ -230,24 +228,24 @@ class CurveNet(tf.keras.Model):
             dtype (_type_, optional): Type of the output. Defaults to tf.float32.
 
         Returns:
-            _type_: Sampled point on curve.
+            Sampled point on curve.
         """
         return tf.random.uniform(shape=(), dtype=dtype)
 
     def call(
         self,
         inputs: tf.Tensor,
-        training=None,
+        training: Union[None, bool] = None,
     ):
         """
         Performs the forward pass of the CurveNet with input data.
 
         Args:
             inputs (tf.Tensor): Input data that is propagated through the CurveNet.
-            training (_type_, optional): Boolean indicating train mode. Defaults to None.
+            training (Union[None, bool], optional): Boolean indicating train mode. Defaults to None.
 
         Returns:
-            _type_: Network predictions.
+            Network predictions.
         """
         if training is not False:
             # If training is False, we are in evaluation.
@@ -259,6 +257,15 @@ class CurveNet(tf.keras.Model):
         return outputs
 
     def evaluate(self, *args, **kwargs):
+        """Evaluate the CurveNet.
+
+        Evaluates for the currently set "point_on_curve".
+        If a BatchNormalization layer is present, update moving mean and variance
+        before evaluating.
+
+        Returns:
+            Evaluation results.
+        """
         positional_inputs = args[0] if args else None
         inputs = kwargs.get("x", positional_inputs)
         # Update moving mean/variance for BatchNorm Layers
@@ -283,7 +290,7 @@ class CurveNet(tf.keras.Model):
             AttributeError: Indicates falsely specified attributes.
 
         Returns:
-            _type_: _description_
+            Evaluation results for each specified "point_on_curve".
         """
         if not (num_points is None or point_on_curve is None):
             raise AttributeError(
@@ -315,25 +322,44 @@ class CurveNet(tf.keras.Model):
         return results
 
     @staticmethod
-    def is_batchnorm(layer: tf.keras.layers.Layer) -> bool:
+    def is_batchnorm_layer(layer: tf.keras.layers.Layer) -> bool:
+        """Check if layer is a BatchNormalization Layer.
+
+        Args:
+            layer (tf.keras.layers.Layer): The Layer to be checked.
+
+        Returns:
+            bool: Wether the Layer is a subclass of BatchNormalization or not.
+        """
         return issubclass(
             layer.__class__,
             (tf.keras.layers.BatchNormalization, BatchNormalizationCurve),
         )
 
     @property
-    def has_batchnorm(self) -> bool:
-        return any(self.is_batchnorm(l) for l in self.layers)
+    def has_batchnorm_layer(self) -> bool:
+        """Check if the model has a BatchNormalization Layer."""
+        return any(self.is_batchnorm_layer(l) for l in self.layers)
 
     def update_batchnorm(self, inputs: tf.Tensor, **kwargs):
-        if not self.has_batchnorm:
+        """Update moving mean and variance for given inputs.
+
+        When evaluating curve model with BatchNormalization layers
+        for a given "point_on_curve", we want to update the moving mean
+        and variance for each BatchNorm layer using the output of the model
+        wrt. to the "point_on_curve".
+
+        Args:
+            inputs (tf.Tensor): Either the inputs (x) or the dataloader.
+        """
+        if not self.has_batchnorm_layer:
             logger.debug("Model has no BatchNormalisation Layer")
             return
 
         momenta = {}
         # Reset stats and save momentum for BatchNorm Layers
         for layer in self.layers:
-            if self.is_batchnorm(layer):
+            if self.is_batchnorm_layer(layer):
                 layer.reset_moving_stats()
                 momenta[layer] = layer.momentum
 
