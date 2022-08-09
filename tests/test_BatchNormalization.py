@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 import tensorflow as tf
-from mode_connectivity.curves.curves import Bezier
-from mode_connectivity.curves.layers import BatchNormalizationCurve
+from mode_connectivity.curves import Bezier
+from mode_connectivity.layers import BatchNormalizationCurve
 from tensorflow.keras.layers import BatchNormalization
 
 
