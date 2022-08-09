@@ -125,7 +125,6 @@ def _add_model_arguments(parser: argparse.ArgumentParser) -> None:
         "--model",
         type=str,
         default=None,
-        required=True,
         help="model name (default: None)",
     )
     parser.add_argument(
