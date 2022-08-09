@@ -4,14 +4,14 @@ from functools import partial
 from typing import Any, List, Union
 
 import keras
+import mode_connectivity.curves as curves
 import tensorflow as tf
+from mode_connectivity.net import CurveNet
 
-import mode_connectivity.curves.curves as curves
-from mode_connectivity.argparser import Arguments
-from mode_connectivity.curves.net import CurveNet
-from mode_connectivity.data import data_loaders
-from mode_connectivity.models.cnn import CNN
-from mode_connectivity.models.mlp import MLP
+from .argparser import Arguments
+from .data import data_loaders
+from .models.cnn import CNN
+from .models.mlp import MLP
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

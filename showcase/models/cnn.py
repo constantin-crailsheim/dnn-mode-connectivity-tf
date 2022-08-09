@@ -2,7 +2,7 @@ from typing import List, Tuple
 
 import tensorflow as tf
 
-from mode_connectivity.curves.layers import (
+from mode_connectivity.layers import (
     Conv2DCurve,
     DenseCurve,
     BatchNormalizationCurve,
