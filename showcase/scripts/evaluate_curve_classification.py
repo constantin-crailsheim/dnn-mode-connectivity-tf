@@ -1,26 +1,20 @@
 import os
-from typing import Callable, Dict, Iterable, Tuple, Union
+from typing import Callable, Dict, Iterable, Union
 
 import numpy as np
 import tabulate
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+import mode_connectivity.curves as curves
 import tensorflow as tf
-from keras.layers import Layer
+from mode_connectivity.net import CurveNet
+from sklearn.metrics import accuracy_score, f1_score
 
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import f1_score
-
-from mode_connectivity.argparser import Arguments, parse_evaluate_arguments
-from mode_connectivity.data import data_loaders
-
-from mode_connectivity.curves import curves
-from mode_connectivity.curves.net import CurveNet
-
-from mode_connectivity.models.cnn import CNN
-from mode_connectivity.models.mlp import MLP
-
-from mode_connectivity.utils import disable_gpu, get_model
+from ..argparser import Arguments, parse_evaluate_arguments
+from ..data import data_loaders
+from ..models.cnn import CNN
+from ..models.mlp import MLP
+from ..utils import disable_gpu, get_model
 
 
 def main():
@@ -198,7 +192,7 @@ def load_model(
 
 
 def evaluate_epoch(
-    test_loader: Iterable, model: Layer, criterion: Callable, n_test: int
+    test_loader: Iterable, model: tf.keras.Model, criterion: Callable, n_test: int
 ) -> Dict[str, tf.Tensor]:
 
     loss_sum = 0.0
@@ -225,7 +219,7 @@ def evaluate_epoch(
 
 
 def evaluate_batch(
-    input: tf.Tensor, target: tf.Tensor, model: Layer, criterion: Callable
+    input: tf.Tensor, target: tf.Tensor, model: tf.keras.Model, criterion: Callable
 ) -> Dict[str, float]:
 
     output = model(input, training=False)

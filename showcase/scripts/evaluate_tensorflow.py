@@ -7,9 +7,10 @@ import tabulate
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import tabulate
 import tensorflow as tf
-from mode_connectivity.argparser import Arguments, parse_evaluate_arguments
-from mode_connectivity.logger import configure_loggers
-from mode_connectivity.utils import disable_gpu, get_model_and_loaders, set_seeds
+
+from ..argparser import Arguments, parse_evaluate_arguments
+from ..logger import configure_loggers
+from ..utils import disable_gpu, get_model_and_loaders, set_seeds
 
 logger = logging.getLogger(__name__)
 
