@@ -7,9 +7,9 @@ import tabulate
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import tensorflow as tf
 
-from ..argparser import Arguments, parse_train_arguments
-from ..data import data_loaders
-from ..utils import (
+from showcase.argparser import Arguments, parse_train_arguments
+from showcase.data import data_loaders
+from showcase.utils import (
     adjust_learning_rate,
     check_batch_normalization,
     disable_gpu,

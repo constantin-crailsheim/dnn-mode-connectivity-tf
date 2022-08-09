@@ -9,11 +9,11 @@ import mode_connectivity.curves as curves
 import tensorflow as tf
 from mode_connectivity.net import CurveNet
 
-from ..argparser import Arguments, parse_evaluate_arguments
-from ..data import data_loaders
-from ..models.cnn import CNN
-from ..models.mlp import MLP
-from ..utils import disable_gpu, get_model
+from showcase.argparser import Arguments, parse_evaluate_arguments
+from showcase.data import data_loaders
+from showcase.models.cnn import CNN
+from showcase.models.mlp import MLP
+from showcase.utils import disable_gpu, get_model
 
 
 def main():

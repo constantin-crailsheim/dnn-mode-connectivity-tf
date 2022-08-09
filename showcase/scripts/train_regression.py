@@ -9,9 +9,9 @@ import tensorflow as tf
 from keras.layers import Layer
 from keras.optimizers import Optimizer
 
-from ..argparser import Arguments, parse_train_arguments
-from ..data import data_loaders
-from ..utils import (
+from showcase.argparser import Arguments, parse_train_arguments
+from showcase.data import data_loaders
+from showcase.utils import (
     adjust_learning_rate,
     check_batch_normalization,
     disable_gpu,

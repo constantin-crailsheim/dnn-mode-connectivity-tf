@@ -4,9 +4,9 @@ import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import tensorflow as tf
 
-from ..argparser import Arguments, parse_train_arguments
-from ..logger import configure_loggers
-from ..utils import (
+from showcase.argparser import Arguments, parse_train_arguments
+from showcase.logger import configure_loggers
+from showcase.utils import (
     AlphaLearningRateSchedule,
     PointOnCurveMetric,
     disable_gpu,
