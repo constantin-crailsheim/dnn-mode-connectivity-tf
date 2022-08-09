@@ -6,6 +6,9 @@ import toml
 
 @dataclass
 class Arguments:
+    # Config file
+    config: str = None
+
     # Dataset
     dir: str = "results/"
     dataset: str = "mnist"
