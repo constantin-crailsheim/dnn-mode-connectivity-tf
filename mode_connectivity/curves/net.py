@@ -99,7 +99,7 @@ class CurveNet(tf.keras.Model):
             index (int): Index of the bend/ point on curve.
 
         Raises:
-            AttributeError: Indicates if not all BaseModel parameters are imported into the respective node (identifiable by its index) of the CurveModel.
+            AttributeError: Indicates if no BaseModel parameters are imported into the node of the CurveModel.
         """
         if not self.curve_model.built:
             self._build_from_base_model(base_model)
@@ -130,9 +130,9 @@ class CurveNet(tf.keras.Model):
             f"Assigned {len(assigned_params)} parameters for point #{index}: {', '.join(assigned_params)}"
         )
 
-        if len(assigned_params) != len(base_params):
+        if len(assigned_params) == 0:
             raise AttributeError(
-                "Not all BaseModel parameters were imported into the respective node of the CurveModel."
+                "No BaseModel parameters were imported into the respective node of the CurveModel."
             )
 
 
