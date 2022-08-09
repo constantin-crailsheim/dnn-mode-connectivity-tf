@@ -8,10 +8,10 @@ import mode_connectivity.curves as curves
 import tensorflow as tf
 from mode_connectivity.net import CurveNet
 
-from .argparser import Arguments
-from .data import data_loaders
-from .models.cnn import CNN
-from .models.mlp import MLP
+from showcase.argparser import Arguments
+from showcase.data import data_loaders
+from showcase.models.cnn import CNN
+from showcase.models.mlp import MLP
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

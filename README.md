@@ -23,8 +23,6 @@ or, if you want to execute the custom scripts and notebooks in 'showcase', insta
 
 ```shell
 $ pip install -e .[showcase]
-or 
-$ pip install -e .[all]
 ```
 
 # Structure
