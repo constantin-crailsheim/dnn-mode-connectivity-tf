@@ -1,6 +1,7 @@
 from typing import List, Tuple
 
 import tensorflow as tf
+from mode_connectivity.architecture import Architecture, CurveModel
 from mode_connectivity.layers import DenseCurve
 
 __all__ = [
@@ -44,7 +45,7 @@ class MLPBase(tf.keras.Model):
         return self.fc_part(inputs, **kwargs)
 
 
-class MLPCurve(tf.keras.Model):
+class MLPCurve(CurveModel):
     def __init__(self, num_classes: None, fix_points: List[bool], weight_decay: float):
         """
         Initializes the curve version of the MLP.
@@ -56,7 +57,7 @@ class MLPCurve(tf.keras.Model):
             fix_points (List[bool]): List of Booleans indicating for each bend/ point on curve if it is fixed. Defaults to True.
             weight_decay (float): Indicates the intensity of weight decay.
         """
-        super().__init__()
+        super().__init__(fix_points=fix_points)
         regularizers = {
             "kernel_regularizer": tf.keras.regularizers.L2(weight_decay),
             "bias_regularizer": tf.keras.regularizers.L2(weight_decay),
@@ -92,7 +93,7 @@ class MLPCurve(tf.keras.Model):
         return x
 
 
-class MLP:
+class MLP(Architecture):
     base = MLPBase
     curve = MLPCurve
     kwargs = {}

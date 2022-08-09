@@ -1,12 +1,8 @@
 from typing import List, Tuple
 
 import tensorflow as tf
-
-from mode_connectivity.layers import (
-    Conv2DCurve,
-    DenseCurve,
-    BatchNormalizationCurve,
-)
+from mode_connectivity.architecture import Architecture, CurveModel
+from mode_connectivity.layers import BatchNormalizationCurve, Conv2DCurve, DenseCurve
 
 __all__ = [
     "CNN",
@@ -78,7 +74,7 @@ class CNNBase(tf.keras.Model):
         return self.fc_part(x, **kwargs)
 
 
-class CNNCurve(tf.keras.Model):
+class CNNCurve(CurveModel):
     def __init__(self, num_classes: int, fix_points: List[bool], weight_decay: float):
         """
         Initializes the curve version of the CNN that consists of several Curve-Layers.
@@ -89,7 +85,7 @@ class CNNCurve(tf.keras.Model):
             fix_points (List[bool]): List of Booleans indicating for each bend/ point on curve if it is fixed. Defaults to True.
             weight_decay (float): Indicates the intensity of weight decay.
         """
-        super().__init__()
+        super().__init__(fix_points=fix_points)
         regularizers = {
             "kernel_regularizer": tf.keras.regularizers.L2(weight_decay),
             "bias_regularizer": tf.keras.regularizers.L2(weight_decay),
@@ -173,7 +169,7 @@ class CNNCurve(tf.keras.Model):
         return x
 
 
-class CNN:
+class CNN(Architecture):
     base = CNNBase
     curve = CNNCurve
     kwargs = {}
