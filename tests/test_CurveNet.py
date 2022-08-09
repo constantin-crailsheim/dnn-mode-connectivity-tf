@@ -121,7 +121,7 @@ class TestCurveNet:
         curve_net.init_linear()
 
         for layer in curve_net.curve_layers:
-            curve_params = [CurveLayer._get_curve_param_name(p) for p in layer.parameters]
+            curve_params = [CurveLayer._get_curve_param_type(p) for p in layer.parameters]
             for curve_param in curve_params:
                 params= getattr(layer, curve_param)
                 first_param, last_param = params[0].value(), params[-1].value()
