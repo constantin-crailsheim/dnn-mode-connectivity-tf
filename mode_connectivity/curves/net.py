@@ -130,7 +130,7 @@ class CurveNet(tf.keras.Model):
             f"Assigned {len(assigned_params)} parameters for point #{index}: {', '.join(assigned_params)}"
         )
 
-        if len(assigned_params) == len(base_params):
+        if len(assigned_params) != len(base_params):
             raise AttributeError(
                 "Not all BaseModel parameters were imported into the respective node of the CurveModel."
             )
