@@ -6,18 +6,28 @@ This project was part of the Summer 2022 course *Applied Deep Learning with Tens
 
 # Setup
 
-Install in development mode
+Setup a virtual environment
 
 ```shell
-python -m venv .venv
-source .venv/bin/activate
+$ python -m venv .venv
+$ source .venv/bin/activate
+```
 
-pip install -e .
+To install in development, if you want to make changes to the existing code
+
+```shell
+$ pip install -e .
+```
+
+or, if you want to execute the custom scripts and notebooks in 'showcase', install with additional dependencies
+
+```shell
+$ pip install -e .[showcase]
 ```
 
 # Structure
 
-In `scripts`, you will find three different example scripts, for training and evaluation respectively. 
+In `showcase/scripts`, you will find three different example scripts, for training and evaluation respectively. 
 
 The `*_tensorflow.py` files display how you can use the architecture with the built in tensorflow functions `.fit()`and `.evaluate()`.
 
@@ -31,9 +41,9 @@ The `*_regression.py` files train and evaluate the models on a simple regression
 ## Base Models
 
 ```shell
-$ python scripts/train_tensorflow base-model-1
+$ python showcase/scripts/train_tensorflow.py --config base-model-1
 or
-$ python scripts/train_classification base-model-1
+$ python showcase/scripts/train_classification.py --config base-model-1
 ```
 with a configuration like this in the `config.toml` file
 ```toml
@@ -56,9 +66,9 @@ You are also able to pass in arguments via the command line without specifying a
 You need to train the base models beforehand and match the epoch in init-start/end below.
 
 ```shell
-$ python scripts/train_tensorflow curve-pretrained
+$ python showcase/scripts/train_tensorflow.py --config curve-pretrained
 or
-$ python scripts/train_classification curve-pretrained
+$ python showcase/scripts/train_classification.py --config curve-pretrained
 ```
 with 
 ```toml
@@ -81,9 +91,9 @@ fix-end = true
 # Evaluate
 
 ```shell
-$ python scripts/evaluate_tensorflow curve-evaluate
+$ python scripts/evaluate_tensorflow.py --config curve-evaluate
 or
-$ python scripts/evaluate_classification curve-evaluate
+$ python scripts/evaluate_classification.py --config curve-evaluate
 ```
 with
 ```toml
