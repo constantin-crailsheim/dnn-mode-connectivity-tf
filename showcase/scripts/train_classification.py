@@ -112,11 +112,11 @@ def train(
                 test_results = {'loss': None, 'accuracy': None}
             else:
                 test_results = test_epoch(
-                    loaders["test"], model, criterion, n_datasets["test"]
+                    loaders["test"], model, criterion, n_datasets["test"], training=True
                 )
         else:
             test_results = test_epoch(
-                loaders["test"], model, criterion, n_datasets["test"]
+                loaders["test"], model, criterion, n_datasets["test"], training=False
             )
 
         if epoch % args.save_freq == 0:
@@ -193,6 +193,7 @@ def test_epoch(
     model: tf.keras.Model,
     criterion: Callable,
     n_test: int,
+    training: bool,
 ) -> Dict[str, float]:
     """
     Helper method for train().
@@ -218,6 +219,7 @@ def test_epoch(
             target=target,
             model=model,
             criterion=criterion,
+            training=training,
         )
         loss_sum += loss_batch
         correct += correct_batch
@@ -272,6 +274,7 @@ def test_batch(
     target: tf.Tensor,
     model: tf.keras.Model,
     criterion: Callable,
+    training: bool
 ) -> Dict[str, float]:
     """
     Helper method for test_epoch().
@@ -286,7 +289,7 @@ def test_batch(
     Returns:
         Dict[str, float]: Batchwise metrics for the loss and accuracy on the test set.
     """
-    output = model(input, training=True)
+    output = model(input, training=training)
     loss = criterion(target, output)
     loss += tf.add_n(model.losses)  # Add Regularization loss
 
