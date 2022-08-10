@@ -32,9 +32,8 @@ def train(args: Arguments):
     loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
     optimizer = tf.keras.optimizers.SGD(learning_rate=args.lr, momentum=args.momentum)
 
-    start_epoch = (
-        get_epoch(args) - 1
-    )  # tf epoch is 0-indexed, load_checkpoint's min return is 1
+    # tf epoch is 0-indexed, load_checkpoint's min return is 1
+    start_epoch = get_epoch(args) - 1
 
     model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
         filepath=args.dir,
@@ -42,13 +41,17 @@ def train(args: Arguments):
         save_freq=args.save_freq,
     )
 
-    model.compile(
-        optimizer=optimizer, loss=loss, metrics=["accuracy", PointOnCurveMetric(model)]
-    )
+    validation_data = loaders["test"]
+    metrics = ["accuracy"]
+    if args.curve:
+        validation_data = None
+        metrics.append(PointOnCurveMetric(model))
+
+    model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
     learning_rate_scheduler = AlphaLearningRateSchedule(model, total_epochs=args.epochs)
     model.fit(
         loaders["train"],
-        validation_data=loaders["test"],
+        validation_data=validation_data,
         epochs=args.epochs,
         initial_epoch=start_epoch,
         callbacks=[model_checkpoint_callback, learning_rate_scheduler],
