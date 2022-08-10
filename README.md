@@ -133,5 +133,5 @@ $ evaluate --dir=results/MNIST_BasicCNN/evaluation_curve \
 
 ```shell
 pip install -r requirements-dev.txt
-pytest pytest tests --forked
+pytest pytest tests
 ```
