@@ -5,14 +5,15 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
-from mode_connectivity.models.cnn import CNN
-from mode_connectivity.models.mlp import MLP
+from showcase.models.cnn import CNN
+from showcase.models.mlp import MLP
 
-from mode_connectivity.utils import (
+from showcase.utils import (
     learning_rate_schedule,
     adjust_learning_rate,
-    get_architecture
+    get_architecture,
 )
+
 
 @pytest.fixture
 def checkpoints_dir(tmpdir):
@@ -41,23 +42,29 @@ def basic_model() -> keras.Model:
 def basic_optimizer() -> keras.optimizers.Optimizer:
     return tf.keras.optimizers.SGD(learning_rate=0.1, momentum=0.1)
 
+
 testdata_lr_schedule = [
-    (1, 1, 20, 1), 
+    (1, 1, 20, 1),
     (1, 10, 20, 1),
     (1, 14, 20, 0.505),
     (1, 18, 20, 0.01),
-    (1, 20, 20, 0.01)
+    (1, 20, 20, 0.01),
 ]
 
-@pytest.mark.parametrize("base_lr, epoch, total_epochs, expected_lr", testdata_lr_schedule)
+
+@pytest.mark.parametrize(
+    "base_lr, epoch, total_epochs, expected_lr", testdata_lr_schedule
+)
 def test_learning_rate_schedule(base_lr, epoch, total_epochs, expected_lr):
     lr = learning_rate_schedule(base_lr, epoch, total_epochs)
     assert np.allclose(lr, expected_lr)
+
 
 @pytest.mark.parametrize("lr", [0.01, 0.05, 0.2, 0.5, 1.0])
 def test_adjust_learning_rate(lr, basic_optimizer):
     adjust_learning_rate(basic_optimizer, lr)
     assert basic_optimizer.lr == lr
+
 
 # TODO test save weights
 
@@ -71,9 +78,9 @@ def test_adjust_learning_rate(lr, basic_optimizer):
 #         assert isinstance(architecture, MLP)
 
 
- # TODO Write tests for util functions.
+# TODO Write tests for util functions.
 
-# 
+#
 #     def test_save_checkpoint(self, checkpoints_dir, basic_model, basic_optimizer):
 #         assert not os.path.isfile(
 #             os.path.join(checkpoints_dir, "checkpoint-epoch1-1.index")

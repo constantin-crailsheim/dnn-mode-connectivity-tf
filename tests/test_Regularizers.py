@@ -5,7 +5,7 @@ from typing import List, Tuple
 import numpy as np
 import pytest
 import tensorflow as tf
-from mode_connectivity.curves.layers import DenseCurve
+from mode_connectivity.layers import DenseCurve
 
 
 @pytest.fixture(params=[4])

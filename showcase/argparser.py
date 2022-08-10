@@ -6,6 +6,9 @@ import toml
 
 @dataclass
 class Arguments:
+    # Config file
+    config: str = None
+
     # Dataset
     dir: str = "results/"
     dataset: str = "mnist"
@@ -43,16 +46,11 @@ class Arguments:
     save_evaluation: bool = True
 
 
-def parse_config() -> Arguments:
-    parser = argparse.ArgumentParser(description="DNN curve training")
-    parser.add_argument(
-        "config", nargs="?", type=str, default=None, help="Configuration to load"
-    )
-    args = parser.parse_args()
+def parse_config(config_name: str) -> Arguments:
     data = toml.load("config.toml")
-    model_config = data.get(args.config, None)
+    model_config = data.get(config_name, None)
     if not model_config:
-        raise KeyError(f"Unknown model config {args.config}")
+        raise KeyError(f"Unknown model config {config_name}")
     model_config = {k.replace("-", "_"): v for k, v in model_config.items()}
     return Arguments(**model_config)
 
@@ -60,6 +58,7 @@ def parse_config() -> Arguments:
 def parse_train_arguments() -> Arguments:
     parser = argparse.ArgumentParser(description="DNN curve training")
 
+    _add_config_argument(parser=parser)
     _add_dataset_arguments(parser=parser)
     _add_model_arguments(parser=parser)
     _add_nodes_init_arguments(parser=parser)
@@ -67,12 +66,15 @@ def parse_train_arguments() -> Arguments:
     _add_computation_arguments(parser=parser)
 
     args = parser.parse_args()
+    if args.config:
+        return parse_config(args.config)
     return Arguments(**args.__dict__)
 
 
 def parse_evaluate_arguments() -> Arguments:
     parser = argparse.ArgumentParser(description="DNN evaluation")
 
+    _add_config_argument(parser=parser)
     _add_dataset_arguments(parser=parser)
     _add_model_arguments(parser=parser)
     _add_nodes_init_arguments(parser=parser)
@@ -81,7 +83,19 @@ def parse_evaluate_arguments() -> Arguments:
     _add_evaluation_arguments(parser=parser)
 
     args = parser.parse_args()
+    if args.config:
+        return parse_config(args.config)
     return Arguments(**args.__dict__)
+
+
+def _add_config_argument(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--config",
+        type=str,
+        default=None,
+        metavar="CONFIG",
+        help="Name of config to use. If this is specified, other arguments are disregarded.",
+    )
 
 
 def _add_dataset_arguments(parser: argparse.ArgumentParser) -> None:
@@ -105,12 +119,12 @@ def _add_dataset_arguments(parser: argparse.ArgumentParser) -> None:
         help="path to datasets location (default: None)",
     )
 
+
 def _add_model_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--model",
         type=str,
         default=None,
-        required=True,
         help="model name (default: None)",
     )
     parser.add_argument(
@@ -132,6 +146,7 @@ def _add_model_arguments(parser: argparse.ArgumentParser) -> None:
         default=50,
         help="save frequency (default: 50)",
     )
+
 
 def _add_nodes_init_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
@@ -174,6 +189,7 @@ def _add_nodes_init_arguments(parser: argparse.ArgumentParser) -> None:
         help="turns off linear initialization of intermediate points (default: on)",
     )
 
+
 def _add_optimization_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--batch-size",
@@ -212,6 +228,7 @@ def _add_optimization_arguments(parser: argparse.ArgumentParser) -> None:
         default=None,
         help="epoch to resume training from (default: None)",
     )
+
 
 def _add_computation_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
