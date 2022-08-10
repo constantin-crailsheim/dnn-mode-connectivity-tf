@@ -72,8 +72,9 @@ class MLPCurve(CurveModel):
 
         self.fc_part = [self.dense1, self.dense2]
 
-    def call(self, inputs: Tuple[tf.Tensor, tf.Tensor], training=None, mask=None):
-        # Delete training and mask attributes?
+    def call(
+        self, inputs: Tuple[tf.Tensor, tf.Tensor], training=None, mask=None
+    ):
         """
         Performs the forward pass of the curve MLP with input data.
 

@@ -144,7 +144,7 @@ class TestCurveNet:
 
         for layer in curve_net.curve_layers:
             curve_params = [
-                CurveLayer._get_curve_param_name(p) for p in layer.parameters
+                CurveLayer._get_curve_param_type(p) for p in layer.parameter_types
             ]
             for curve_param in curve_params:
                 params = getattr(layer, curve_param)

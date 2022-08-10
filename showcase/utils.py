@@ -18,7 +18,7 @@ logger.setLevel(logging.INFO)
 
 
 def disable_gpu():
-    """GPU is used as default for tensorflow. Disables GPU and used to CPU."""
+    """GPU is used as default for tensorflow. Disables GPU and uses CPU instead."""
     logger.info("Trying to disable GPU")
     try:
         tf.config.set_visible_devices([], "GPU")
@@ -86,13 +86,12 @@ class AlphaLearningRateSchedule(tf.keras.callbacks.Callback):
         return float(tf.keras.backend.get_value(self.model.optimizer.lr))
 
     def on_epoch_begin(self, epoch: int, logs=None):
-        # Logs not used!
         """
         Triggers the learning rate update at the beginning of each epoch.
 
         Args:
             epoch (int): Current epoch.
-            logs (_type_, optional): Not used!
+            logs (_type_, optional): Not used.
         """
         lr = self.get_current_lr()
         # tf epoch is 0-indexed, so we need to add 1 to get the
@@ -179,11 +178,11 @@ def save_weights(
 
 def get_architecture(model_name: str):
     """
-    For a specified model name returns the corresponding architecture that is used for fitting the model.
+    For a specified model name returns the corresponding architecture that is used to fit the model.
     The architecture consists of the Base and Curve version of the model.
 
     Args:
-        model_name (str): Name of the model. One out of {"CNN", "MLP"}.
+        model_name (str): Name of the model, e.g. CNN.
 
     Raises:
         KeyError: Indicates if the model name is unknown/ the model is not implemented yet.
@@ -291,7 +290,7 @@ def load_base_weights(
 ) -> None:
     """
     Helper method for get_model().
-    Loads the weights/parameters of a BaseModel and assigns them to a bend/ point of curve of the CurveModel.
+    Loads the weights/parameters of a BaseModel and assigns them to a curve node.
 
     Args:
         path (str): Path to load weights/ parameters from.
@@ -311,7 +310,7 @@ def get_model_and_loaders(args: Arguments):
     Returns data loaders and a model based on parser arguments.
 
     Args:
-        args (Arguments): Parsed arguments.
+        args (Arguments): Parser arguments.
 
     Returns:
         _type_: Tuple of data loaders and model.

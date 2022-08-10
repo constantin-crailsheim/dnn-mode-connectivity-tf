@@ -15,8 +15,11 @@ from showcase.models.cnn import CNN
 from showcase.models.mlp import MLP
 from showcase.utils import disable_gpu, get_model
 
-
 def main():
+    """
+    Initializes the variables necessary for the evaluation procedure and triggers it.
+    Customized for regression tasks.
+    """
     args = parse_evaluate_arguments()
     if args.disable_gpu:
         disable_gpu()
@@ -107,7 +110,17 @@ def load_model(
 def evaluate_epoch(
     test_loader: Iterable, model: tf.keras.Model, criterion: Callable, n_test: int
 ) -> Dict[str, tf.Tensor]:
+    """Evaluation of epoch for loaded model.
 
+    Args:
+        test_loader (Iterable): Data loaders with minibatches.
+        model (Layer): Model to be evaluated.
+        criterion (Callable): Utilized loss function.
+        n_test (int): Amount of example in dataset evaluated.
+
+    Returns:
+        Dict[str]: Evaluated loss.
+    """
     loss_sum = 0.0
 
     for input, target in test_loader:
@@ -123,6 +136,20 @@ def evaluate_epoch(
 def evaluate_batch(
     input: tf.Tensor, target: tf.Tensor, model: tf.keras.Model, criterion: Callable
 ) -> Dict[str, float]:
+    """
+    Helper method for evaluate_epoch().
+    Batchwise computations for the loss, predictions, output and target on the dataset evaluated.
+
+
+    Args:
+        input (tf.Tensor): Data that is propagated through the network leading to the network output.
+        target (tf.Tensor): Targets which are compared to network output.
+        model (Layer): Model to be trained.
+        criterion (Callable): Utilized loss function.
+
+    Returns:
+        float: Evaluated loss.
+    """
 
     output = model(input, training=False)
     loss = criterion(target, output)
@@ -133,6 +160,13 @@ def evaluate_batch(
 
 
 def print_stats_of_point_on_curve(values, i):
+    """
+    Displays relevant statistics of an epoch.
+
+    Args:
+        values (List): Statistics to be displayed.
+        epoch (int): Current epoch.
+    """
     columns = ["Point on curve", "Train loss", "Test loss"]
     table = tabulate.tabulate([values], columns, tablefmt="simple", floatfmt="10.4f")
     if i % 40 == 0:
@@ -144,13 +178,22 @@ def print_stats_of_point_on_curve(values, i):
 
 
 def save_stats_of_points_on_curve(
-    train_losses,
+    train_losses, 
     test_losses,
-    points_on_curve,
-    dir: str,
-    file_name: str = "stats_of_points_on_curve.npz",
-):
+    points_on_curve, 
+    dir: str, 
+    file_name: str = 'stats_of_points_on_curve.npz'
+    ):
+    """
+    Save relevants statistics of point on curve.
 
+    Args:
+        train_losses (numpy.ndarray): Array of train losses.
+        test_losses (numpy.ndarray): Array of test losses.
+        points_on_curve (numpy.ndarray): Array of points on curve evaluated.
+        dir (str): Directory to store file.
+        file_name (str, optional): Name of file. Defaults to 'stats_of_points_on_curve.npz'.
+    """
     os.makedirs(dir, exist_ok=True)
     np.savez(
         os.path.join(dir, file_name),
@@ -158,7 +201,6 @@ def save_stats_of_points_on_curve(
         train_losses=train_losses,
         test_losses=test_losses,
     )
-
 
 if __name__ == "__main__":
     main()
