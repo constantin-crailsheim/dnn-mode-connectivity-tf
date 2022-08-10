@@ -29,6 +29,10 @@ def evaluate(args: Arguments):
 
     model.compile(loss=loss, metrics=["accuracy"])
 
+    if not args.curve:
+        model.evaluate(loaders["test"], verbose=True)
+        return
+
     results = model.evaluate_points(
         loaders["test"],
         num_points=args.num_points,
