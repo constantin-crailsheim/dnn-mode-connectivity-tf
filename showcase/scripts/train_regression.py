@@ -229,7 +229,7 @@ def train_batch(
     """
 
     with tf.GradientTape() as tape:
-        output = model(input)
+        output = model(input, training=True)
         loss = criterion(target, output)
         loss += tf.add_n(model.losses)
 
@@ -262,7 +262,7 @@ def test_batch(
         Dict[str, float]: Batchwise loss on the test set.
     """
 
-    output = model(input)
+    output = model(input, training=True)
     loss = criterion(target, output)
     loss += tf.add_n(model.losses)
 

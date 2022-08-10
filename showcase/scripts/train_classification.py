@@ -286,7 +286,7 @@ def test_batch(
     Returns:
         Dict[str, float]: Batchwise metrics for the loss and accuracy on the test set.
     """
-    output = model(input, training=False)
+    output = model(input, training=True)
     loss = criterion(target, output)
     loss += tf.add_n(model.losses)  # Add Regularization loss
 
