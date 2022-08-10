@@ -1,25 +1,26 @@
 import os
 import time
-from typing import Callable, Dict, Iterable, Tuple, Union, List
+from typing import Callable, Dict, Iterable, Tuple, Union
 
 import tabulate
+
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import tensorflow as tf
-from keras.layers import Layer
-from keras.optimizers import Optimizer
-from mode_connectivity.argparser import Arguments, parse_train_arguments
-from mode_connectivity.data import data_loaders
-from mode_connectivity.utils import (
+
+from showcase.argparser import Arguments, parse_train_arguments
+from showcase.data import data_loaders
+from showcase.utils import (
     adjust_learning_rate,
     check_batch_normalization,
     disable_gpu,
     get_architecture,
-    get_model,
     get_epoch,
+    get_model,
     learning_rate_schedule,
     save_weights,
     set_seeds,
 )
+
 
 def main():
     """
@@ -29,16 +30,13 @@ def main():
     args = parse_train_arguments()
     if args.disable_gpu:
         disable_gpu()
-        
+
     set_seeds(seed=args.seed)
 
     loaders, num_classes, n_datasets, input_shape = data_loaders(
         dataset=args.dataset,
         path=args.data_path,
         batch_size=args.batch_size,
-        num_workers=args.num_workers,
-        transform_name=args.transform,
-        use_test=args.use_test,
     )
     architecture = get_architecture(model_name=args.model)
     model = get_model(
@@ -74,9 +72,9 @@ def main():
 def train(
     args: Arguments,
     loaders: Dict[str, Iterable],
-    model: Layer,
+    model: tf.keras.Model,
     criterion: Callable,
-    optimizer: Optimizer,
+    optimizer: tf.keras.optimizers.Optimizer,
     start_epoch: int,
     n_datasets: Dict,
 ):
@@ -86,9 +84,9 @@ def train(
     Args:
         args (Arguments): Parser arguments.
         loaders (Dict[str, Iterable]): Data loaders.
-        model (Layer): Model to be trained.
+        model (tf.keras.Model): Model to be trained.
         criterion (Callable): Utilized loss function.
-        optimizer (Optimizer): Optimizer.
+        optimizer (Optimizer): tf.keras.optimizers.Optimizer.
         start_epoch (int): Initial value of epoch to start from when training.
         n_datasets (Dict): Amount of samples per data split.
     """
@@ -137,13 +135,14 @@ def train(
         # Save last checkpoint if not already saved
         save_weights(directory=args.dir, epoch=epoch, model=model)
 
+
 def train_epoch(
     train_loader: Iterable,
-    model: Layer,
-    optimizer: Optimizer,
+    model: tf.keras.Model,
+    optimizer: tf.keras.optimizers.Optimizer,
     criterion: Callable,
     n_train: int,
-    lr_schedule: Union[Callable, None] = None, # Do we need this?
+    lr_schedule: Union[Callable, None] = None,  # Do we need this?
 ) -> Dict[str, float]:
     """
     Helper method for train().
@@ -151,8 +150,8 @@ def train_epoch(
 
     Args:
         train_loader (Iterable): Data loader for the training set.
-        model (Layer): Model to be trained.
-        optimizer (Optimizer): Optimizer
+        model (tf.keras.Model): Model to be trained.
+        optimizer (Optimizer): tf.keras.optimizers.Optimizer
         criterion (Callable): Utilized loss function.
         n_train (int): Amount of samples in the training set.
         lr_schedule (Union[Callable, None], optional): Learning rate schedule. Defaults to None.
@@ -187,7 +186,7 @@ def train_epoch(
 
 def test_epoch(
     test_loader: Iterable,
-    model: Layer,
+    model: tf.keras.Model,
     criterion: Callable,
     n_test: int,
 ) -> Dict[str, float]:
@@ -198,7 +197,7 @@ def test_epoch(
 
     Args:
         test_loader (Iterable):  Data loader for the test set.
-        model (Layer): Model to be trained.
+        model (tf.keras.Model): Model to be trained.
         criterion (Callable): Utilized loss function.
         n_test (int): Amount of samples in the test set.
 
@@ -228,8 +227,8 @@ def test_epoch(
 def train_batch(
     input: tf.Tensor,
     target: tf.Tensor,
-    model: Layer,
-    optimizer: Optimizer,
+    model: tf.keras.Model,
+    optimizer: tf.keras.optimizers.Optimizer,
     criterion: Callable,
 ) -> Tuple[float, float]:
     """
@@ -239,12 +238,12 @@ def train_batch(
     Args:
         input (tf.Tensor): Input data that is propagated through the network leading to the network output.
         target (tf.Tensor): Targets which are compared to network output.
-        model (Layer): Model to be trained.
-        optimizer (Optimizer): Optimizer
+        model (tf.keras.Model): Model to be trained.
+        optimizer (Optimizer): tf.keras.optimizers.Optimizer
         criterion (Callable): Utilized loss function.
 
     Returns:
-        Tuple[float, float]: Batchwise metrics for the loss and accuracy on the training set. 
+        Tuple[float, float]: Batchwise metrics for the loss and accuracy on the training set.
     """
 
     with tf.GradientTape() as tape:
@@ -267,7 +266,7 @@ def train_batch(
 def test_batch(
     input: tf.Tensor,
     target: tf.Tensor,
-    model: Layer,
+    model: tf.keras.Model,
     criterion: Callable,
 ) -> Dict[str, float]:
     """
@@ -281,9 +280,9 @@ def test_batch(
         criterion (Callable): Utilized loss function.
 
     Returns:
-        Dict[str, float]: Batchwise metrics for the loss and accuracy on the test set. 
+        Dict[str, float]: Batchwise metrics for the loss and accuracy on the test set.
     """
-    output = model(input, training=False) 
+    output = model(input, training=False)
     loss = criterion(target, output)
     loss += tf.add_n(model.losses)  # Add Regularization loss
 

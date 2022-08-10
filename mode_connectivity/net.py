@@ -4,8 +4,10 @@ from typing import Any, Dict, List, Type, Union
 
 import numpy as np
 import tensorflow as tf
-from mode_connectivity.curves.curves import Curve
-from mode_connectivity.curves.layers import BatchNormalizationCurve, CurveLayer
+
+from mode_connectivity.architecture import CurveModel
+from mode_connectivity.curves import Curve
+from mode_connectivity.layers import BatchNormalizationCurve, CurveLayer
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +26,7 @@ class CurveNet(tf.keras.Model):
         num_bends: int,
         weight_decay: float,  # TODO Add to architecture
         curve: Type[Curve],
-        curve_model: Type[tf.keras.Model],
+        curve_model: Type[CurveModel],
         fix_start: bool = True,
         fix_end: bool = True,
         architecture_kwargs: Union[Dict[str, Any], None] = None,
@@ -36,7 +38,7 @@ class CurveNet(tf.keras.Model):
             num_bends (int): The amount of bends on the curve.
             weight_decay (float): Indicates the intensity of weight decay.
             curve (Type[Curve]): A parametric curve (e.g. Bezier).
-            curve_model (Type[tf.keras.Model]): The curve version of the utilized model (e.g. CNNCurve).
+            curve_model (Type[CurveModel]): The curve version of the utilized model (e.g. CNNCurve).
             fix_start (bool, optional): Boolean indicating whether the first bend/ pre-trained model on the curve is fixed. Defaults to True.
             fix_end (bool, optional): Boolean indicating whether the last bend/ pre-trained model on the curve is fixed. Defaults to True.
             architecture_kwargs (Union[Dict[str, Any], None], optional): Further arguments for the CurveModel. Defaults to None.
