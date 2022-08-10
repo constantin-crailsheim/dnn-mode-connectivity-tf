@@ -81,7 +81,7 @@ def test_save_weights(checkpoints_dir, basic_model, basic_optimizer):
         os.path.join(checkpoints_dir, "model-weights-epoch1.index")
     )
 
-# TODO check on how to properly test it
+# TODO Change to CNN and CNNBase
 @pytest.mark.parametrize("model_name", ["CNN", "MLP"])
 def test_get_architecture(model_name):
     architecture = get_architecture(model_name)
@@ -90,6 +90,7 @@ def test_get_architecture(model_name):
     elif model_name == "MLP":
         assert issubclass(architecture, MLP)
 
+# TODO Change to CNN and CNNBase
 def test_get_regular_model_CNN():
     arguments = [
         "python",
@@ -107,18 +108,29 @@ def test_get_regular_model_CNN():
         input_shape=(None, 28, 28, 1)
     )
 
-    assert model.name == "cnn_base"
+    assert len(model.layers) == 2
+    assert len(model.layers[0].layers) == 9
+    assert len(model.layers[1].layers) == 5
 
-    # TODO What can be asserted?
+def test_get_regular_model_MLP():
+    arguments = [
+        "python",
+        "--model",
+        "MLP"
+        ]
+    with mock.patch("sys.argv", arguments):
+        args = parse_train_arguments()
 
-def test_get_regular_model_CNN_from_ckpt():
-    pass
+    architecture = get_architecture(model_name=args.model)
+    model = get_model(
+        architecture=architecture,
+        args=args,
+        num_classes=None,
+        input_shape=(None,2)
+    )
 
-def test_get_curve_model_CNN():
-    pass
-
-def test_get_curve_model_CNN_from_ckpt():
-    pass
+    assert len(model.layers) == 1
+    assert len(model.layers[0].layers) == 2
 
 def test_get_epoch_not_resume():
     arguments = [
@@ -145,22 +157,3 @@ def test_get_epoch_resume():
         args = parse_train_arguments()
     start_epoch = get_epoch(args)
     assert start_epoch == 21
-
-def test_load_base_weights():
-    pass
-    # What could be tested?
-
-# ckpt_path = os.path.join(checkpoints_dir, "model-weights-epoch1.index")
-# model = basic_model.get(fitted=True)
-# new_model = basic_model.get()
-
-# weights_model = model.get_weights()
-# weights_new_model = new_model.get_weights()
-# for i in range(len(weights_model)):
-#     assert not np.allclose(weights_model[i], weights_new_model[i])
-
-
-# weights_model = model.get_weights()
-# weights_new_model = new_model.get_weights()
-# for i in range(len(weights_model)):
-#     assert np.allclose(weights_model[i], weights_new_model[i])   
