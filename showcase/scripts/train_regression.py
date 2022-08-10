@@ -10,7 +10,6 @@ from showcase.argparser import Arguments, parse_train_arguments
 from showcase.data import data_loaders
 from showcase.utils import (
     adjust_learning_rate,
-    check_batch_normalization,
     disable_gpu,
     get_architecture,
     get_epoch,
@@ -89,9 +88,6 @@ def train(
         start_epoch (int): Initial value of epoch to start from when training.
         n_datasets (Dict): Amount of samples per data split.
     """
-    has_batch_normalization = check_batch_normalization(
-        model
-    )  # Not implemented yet, returns always False
     test_results = {"loss": None}
 
     for epoch in range(start_epoch, args.epochs + 1):
@@ -104,7 +100,16 @@ def train(
             loaders["train"], model, optimizer, criterion, n_datasets["train"]
         )
 
-        if not args.curve or not has_batch_normalization:
+        if args.curve:
+            if model.has_batchnorm:
+                # Testing does not make sense, since fixed moving mean/variance
+                # does not match betas/gammas for random point on curve
+                test_results = {'loss': None, 'accuracy': None}
+            else:
+                test_results = test_epoch(
+                    loaders["test"], model, criterion, n_datasets["test"]
+                )
+        else:
             test_results = test_epoch(
                 loaders["test"], model, criterion, n_datasets["test"]
             )
