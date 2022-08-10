@@ -5,7 +5,8 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
-from showcase.models.cnn import CNN
+from showcase.models.cnnbn import CNN
+from showcase.models.cnnbn import CNNBN
 from showcase.models.mlp import MLP
 
 from showcase.utils import (
