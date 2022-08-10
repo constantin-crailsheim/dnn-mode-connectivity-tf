@@ -5,15 +5,15 @@ import numpy as np
 import tabulate
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
-import mode_connectivity.curves as curves
 import tensorflow as tf
-from mode_connectivity.net import CurveNet
 
 from showcase.argparser import Arguments, parse_evaluate_arguments
 from showcase.data import data_loaders
-from showcase.models.cnn import CNN
-from showcase.models.mlp import MLP
-from showcase.utils import disable_gpu, get_model
+from showcase.utils import (
+    disable_gpu,
+    get_model,
+    get_architecture
+)
 
 
 def main():
@@ -72,37 +72,6 @@ def main():
         save_stats_of_points_on_curve(
             train_losses, test_losses, points_on_curve, args.dir
         )
-
-
-def get_architecture(model_name: str):
-    if model_name == "CNN":
-        return CNN
-    if model_name == "MLP":
-        return MLP
-    raise KeyError(f"Unkown model {model_name}")
-
-
-def load_model(
-    architecture, args: Arguments, num_classes: Union[int, None], input_shape
-):
-    curve = getattr(curves, args.curve)
-    model = CurveNet(
-        num_classes=num_classes,
-        num_bends=args.num_bends,
-        weight_decay=args.wd,
-        curve=curve,
-        curve_model=architecture.curve,
-        fix_start=args.fix_start,
-        fix_end=args.fix_end,
-        architecture_kwargs=architecture.kwargs,
-    )
-
-    model.build(input_shape=input_shape)
-    model.load_weights(filepath=args.ckpt)
-    model.compile()
-
-    return model
-
 
 def evaluate_epoch(
     test_loader: Iterable, model: tf.keras.Model, criterion: Callable, n_test: int
