@@ -119,5 +119,5 @@ Run the test suite.
 
 ```shell
 pip install -r requirements-dev.txt
-pytest pytest tests
+pytest tests
 ```
