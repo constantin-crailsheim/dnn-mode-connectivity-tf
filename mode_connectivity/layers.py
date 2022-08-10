@@ -255,9 +255,7 @@ class BatchNormalizationCurve(CurveLayer, tf.keras.layers.BatchNormalization):
         self,
         inputs: Tuple[tf.Tensor, tf.Tensor],
         training: Union[None, bool] = None,
-        update: bool = False,
     ):
-        training = True if update else None
         return super().call(inputs, training=training)
 
     def reset_moving_stats(self):

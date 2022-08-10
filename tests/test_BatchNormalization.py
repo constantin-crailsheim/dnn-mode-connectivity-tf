@@ -123,22 +123,12 @@ class TestBatchNormalization:
         assert np.allclose(bn_curve.moving_mean, expected_mean)
         assert np.allclose(bn_curve.moving_variance, expected_variance)
 
-        # Training parameter should not impact stats update
-        bn_curve((inputs, curve_weights), training=True)
-        assert np.allclose(bn_curve.moving_mean, expected_mean)
-        assert np.allclose(bn_curve.moving_variance, expected_variance)
-
-        # Neither should training=False
+        # Training=False should not impact stats update
         bn_curve((inputs, curve_weights), training=False)
         assert np.allclose(bn_curve.moving_mean, expected_mean)
         assert np.allclose(bn_curve.moving_variance, expected_variance)
 
-        # update=False shouldnt update as well
-        bn_curve((inputs, curve_weights), update=False)
-        assert np.allclose(bn_curve.moving_mean, expected_mean)
-        assert np.allclose(bn_curve.moving_variance, expected_variance)
-
-        # update=True should change stats
-        bn_curve((inputs, curve_weights), update=True)
+        # Training=True should
+        bn_curve((inputs, curve_weights), training=True)
         assert not np.allclose(bn_curve.moving_mean, expected_mean)
         assert not np.allclose(bn_curve.moving_variance, expected_variance)
