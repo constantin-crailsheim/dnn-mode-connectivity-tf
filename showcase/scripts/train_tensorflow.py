@@ -44,7 +44,9 @@ def train(args: Arguments):
     validation_data = loaders["test"]
     metrics = ["accuracy"]
     if args.curve:
-        validation_data = None
+        if model.has_batchnorm:
+            # Do not validate if BatchNorm Layer is present
+            validation_data = None
         metrics.append(PointOnCurveMetric(model))
 
     model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
