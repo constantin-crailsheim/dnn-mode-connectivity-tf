@@ -5,14 +5,15 @@ import pytest
 # Load files from parent directory
 import os
 import sys
+
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
 
-from mode_connectivity.argparser import (
+from showcase.argparser import (
     Arguments,
     parse_train_arguments,
-    parse_evaluate_arguments
+    parse_evaluate_arguments,
 )
 
 
@@ -26,11 +27,6 @@ class TestArgparser:
             assert isinstance(args, Arguments)
             assert args.__dict__.keys() == Arguments().__dict__.keys()
             assert args.model == "SomeModel"
-
-    def test_parse_train_arguments_no_model(self):
-        with mock.patch("sys.argv", ["python"]):
-            with pytest.raises(SystemExit):
-                parse_train_arguments()
 
     def test_parse_train_arguments_unknown_arg(self):
         with mock.patch("sys.argv", ["python", "--this-is-no-option", "NoOption"]):
@@ -59,7 +55,7 @@ class TestArgparser:
             "--ckpt",
             "SomeCheckpoint",
             "--save-freq",
-            "50"
+            "50",
         ]
         with mock.patch("sys.argv", BASIC_ARGS + model_args):
             args = parse_train_arguments()
@@ -98,7 +94,7 @@ class TestArgparser:
             "--wd",
             "0.01",
             "--resume-epoch",
-            "20"
+            "20",
         ]
         with mock.patch("sys.argv", BASIC_ARGS + model_args):
             args = parse_train_arguments()
