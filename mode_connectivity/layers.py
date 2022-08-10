@@ -10,6 +10,7 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
     A Curve consists of several bends that are represented by a list of parameters (kernels and biases).
     For each of those bends it can be specified if it is trainable or not/ fixed.
     """
+
     fix_points: List[bool]
     num_bends: int
     base_layer: Type[tf.keras.layers.Layer]
@@ -86,7 +87,7 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
         # trainable variables
         for param_name in self.parameters:
             delattr(self, param_name)
-            
+
     def call(self, inputs: Tuple[tf.Tensor, tf.Tensor], *args, **kwargs):
         """
         Applies the CurveLayer to inputs.
@@ -190,6 +191,7 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
 
 class Conv2DCurve(CurveLayer, tf.keras.layers.Conv2D):
     """Implementation of the Conv2D-Layer as CurveLayer."""
+
     def __init__(
         self,
         filters: int,
@@ -212,6 +214,7 @@ class Conv2DCurve(CurveLayer, tf.keras.layers.Conv2D):
 
 class DenseCurve(CurveLayer, tf.keras.layers.Dense):
     """Implementation of the Dense-Layer as CurveLayer."""
+
     def __init__(
         self,
         units: int,
@@ -248,7 +251,13 @@ class BatchNormalizationCurve(CurveLayer, tf.keras.layers.BatchNormalization):
             **kwargs,
         )
 
-    def call(self, inputs: Tuple[tf.Tensor, tf.Tensor], training: Union[None, bool]=None):
+    def call(
+        self,
+        inputs: Tuple[tf.Tensor, tf.Tensor],
+        training: Union[None, bool] = None,
+        update: bool = False,
+    ):
+        training = True if update else None
         return super().call(inputs, training=training)
 
     def reset_moving_stats(self):

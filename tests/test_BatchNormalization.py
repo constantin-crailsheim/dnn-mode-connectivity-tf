@@ -103,3 +103,42 @@ class TestBatchNormalization:
         output_default = bn_default(inputs)
         output_curve = bn_curve((inputs, curve_weights))
         assert np.allclose(output_default, output_curve)
+
+    def test_call_moving(self, fix_points, input_shape):
+        bn_curve = BatchNormalizationCurve(fix_points=fix_points)
+
+        inputs = tf.random.uniform(input_shape)
+        curve_weights = [1] + [0] * (len(bn_curve.fix_points) - 1)
+        curve_weights = tf.convert_to_tensor(np.asarray(curve_weights, np.float32))
+
+        bn_curve.build((input_shape, curve_weights.shape))
+
+        expected_mean = tf.zeros(input_shape[0])
+        expected_variance = tf.ones(input_shape[0])
+        assert np.allclose(bn_curve.moving_mean, expected_mean)
+        assert np.allclose(bn_curve.moving_variance, expected_variance)
+
+        # Call BatchNorm and check if moving stats are updated
+        bn_curve((inputs, curve_weights))
+        assert np.allclose(bn_curve.moving_mean, expected_mean)
+        assert np.allclose(bn_curve.moving_variance, expected_variance)
+
+        # Training parameter should not impact stats update
+        bn_curve((inputs, curve_weights), training=True)
+        assert np.allclose(bn_curve.moving_mean, expected_mean)
+        assert np.allclose(bn_curve.moving_variance, expected_variance)
+
+        # Neither should training=False
+        bn_curve((inputs, curve_weights), training=False)
+        assert np.allclose(bn_curve.moving_mean, expected_mean)
+        assert np.allclose(bn_curve.moving_variance, expected_variance)
+
+        # update=False shouldnt update as well
+        bn_curve((inputs, curve_weights), update=False)
+        assert np.allclose(bn_curve.moving_mean, expected_mean)
+        assert np.allclose(bn_curve.moving_variance, expected_variance)
+
+        # update=True should change stats
+        bn_curve((inputs, curve_weights), update=True)
+        assert not np.allclose(bn_curve.moving_mean, expected_mean)
+        assert not np.allclose(bn_curve.moving_variance, expected_variance)
