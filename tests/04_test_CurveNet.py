@@ -18,11 +18,9 @@ class TestCurveNet:
         (MLP, 1, 1e4, Bezier, False, False, 5, (64, 64), 7 - 1),
     ]
 
-
     @pytest.fixture
     def parameters(self, request):
         return request.param
-
 
     @pytest.mark.parametrize(
         "parameters", 
@@ -89,7 +87,23 @@ class TestCurveNet:
                 # Ensure that all other params remain as before
                 assert tf.experimental.numpy.allclose(curve_param_old, curve_param)
 
-        del base_model, curve_weights_old, curve_weights, base_weights, curve_net, model, num_classes, weight_decay, curve, fix_start, fix_end, num_bends, input_shape, index, parameters
+        del (
+            base_model, 
+            curve_weights_old, 
+            curve_weights, 
+            base_weights, 
+            curve_net, 
+            model, 
+            num_classes, 
+            weight_decay, 
+            curve, 
+            fix_start, 
+            fix_end, 
+            num_bends, 
+            input_shape, 
+            index, 
+            parameters
+        )
 
 
     @pytest.mark.parametrize(
@@ -144,7 +158,20 @@ class TestCurveNet:
                     assert tf.reduce_all(tf.math.greater_equal(param, min_param))
                     assert tf.reduce_all(tf.math.less_equal(param, max_param))
 
-        del base_model, curve_net, model, num_classes, weight_decay, curve, fix_start, fix_end, num_bends, input_shape, index, parameters
+        del (
+            base_model, 
+            curve_net, 
+            model, 
+            num_classes, 
+            weight_decay, 
+            curve, 
+            fix_start, 
+            fix_end, 
+            num_bends, 
+            input_shape, 
+            index, 
+            parameters
+        )
 
 
     @pytest.mark.parametrize("parameters", [(param) for param in testparams], indirect=True)
@@ -177,7 +204,19 @@ class TestCurveNet:
         for layer in curve_net.curve_layers:
             assert isinstance(layer, CurveLayer)
 
-        del curve_net, model, num_classes, weight_decay, curve, fix_start, fix_end, num_bends, input_shape, index, parameters
+        del (
+            curve_net, 
+            model, 
+            num_classes, 
+            weight_decay, 
+            curve, 
+            fix_start, 
+            fix_end, 
+            num_bends, 
+            input_shape, 
+            index, 
+            parameters
+        )
 
 
     @pytest.mark.parametrize("parameters", [(param) for param in testparams], indirect=True)
@@ -208,4 +247,17 @@ class TestCurveNet:
 
         assert output.shape == (input_shape[0], num_classes)
 
-        del curve_net, model, num_classes, weight_decay, curve, fix_start, fix_end, num_bends, input_shape, index, parameters, output
+        del (
+            curve_net, 
+            model, 
+            num_classes, 
+            weight_decay, 
+            curve, 
+            fix_start, 
+            fix_end, 
+            num_bends, 
+            input_shape, 
+            index, 
+            parameters, 
+            output
+        )
