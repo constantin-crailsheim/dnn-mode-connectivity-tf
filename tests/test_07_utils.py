@@ -7,12 +7,12 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
-from mode_connectivity.models.cnn import CNN, CNNBase
-from mode_connectivity.models.mlp import MLP
+from showcase.models.cnn import CNN
+from showcase.models.mlp import MLP
 
-from mode_connectivity.argparser import Arguments, parse_train_arguments
+from showcase.argparser import Arguments, parse_train_arguments
 
-from mode_connectivity.utils import (
+from showcase.utils import (
     learning_rate_schedule,
     adjust_learning_rate,
     get_architecture,
