@@ -107,18 +107,18 @@ $ python showcase/scripts/train_classification.py --config cnn-curve-resume
 with 
 ```toml
 dir = "results/MNIST_BasicCNN/checkpoints_curve"
-dataset=mnist
-data-path=datasets,
-ckpt=results/MNIST_BasicCNN/checkpoints_curve/model-weights-epoch10
+dataset="mnist"
+data-path="datasets/"
+ckpt="results/MNIST_BasicCNN/checkpoints_curve/model-weights-epoch10"
 resume-epoch=11
-model=CNN
-curve=Bezier
+model="CNN"
+curve="Bezier"
 num-bends=1
 epochs=15
 lr=0.05
 wd=0.0005
-fix-start = True
-fix-end = True
+fix-start = true
+fix-end = true
 ```
 
 # Evaluate
