@@ -125,6 +125,7 @@ def evaluate_batch(
 
     output = model(input, training=False)
     loss = criterion(target, output)
+    loss += tf.add_n(model.losses)
 
     loss = loss.numpy() * len(input)
 
