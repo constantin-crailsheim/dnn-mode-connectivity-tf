@@ -8,6 +8,7 @@ import pytest
 import tensorflow as tf
 
 from showcase.models.cnn import CNN
+from showcase.models.cnnbn import CNNBN
 from showcase.models.mlp import MLP
 
 from showcase.argparser import Arguments, parse_train_arguments
@@ -87,15 +88,37 @@ def test_get_architecture(model_name):
     architecture = get_architecture(model_name)
     if model_name == "CNN":
         assert issubclass(architecture, CNN)
+    elif model_name == "CNNBN":
+        assert issubclass(architecture, CNNBN)
     elif model_name == "MLP":
         assert issubclass(architecture, MLP)
 
-# TODO Change to CNN and CNNBase
 def test_get_regular_model_CNN():
     arguments = [
         "python",
         "--model",
         "CNN"
+        ]
+    with mock.patch("sys.argv", arguments):
+        args = parse_train_arguments()
+
+    architecture = get_architecture(model_name=args.model)
+    model = get_model(
+        architecture=architecture,
+        args=args,
+        num_classes=10,
+        input_shape=(None, 28, 28, 1)
+    )
+
+    assert len(model.layers) == 2
+    assert len(model.layers[0].layers) == 6
+    assert len(model.layers[1].layers) == 3
+
+def test_get_regular_model_CNNBN():
+    arguments = [
+        "python",
+        "--model",
+        "CNNBN"
         ]
     with mock.patch("sys.argv", arguments):
         args = parse_train_arguments()
