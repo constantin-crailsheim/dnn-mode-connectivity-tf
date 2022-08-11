@@ -10,7 +10,6 @@ from showcase.argparser import Arguments, parse_train_arguments
 from showcase.data import data_loaders
 from showcase.utils import (
     adjust_learning_rate,
-    check_batch_normalization,
     disable_gpu,
     get_architecture,
     get_epoch,
@@ -89,9 +88,6 @@ def train(
         start_epoch (int): Initial value of epoch to start from when training.
         n_datasets (Dict): Amount of samples per data split.
     """
-    has_batch_normalization = check_batch_normalization(
-        model
-    )  # Not implemented yet, returns always False
     test_results = {"loss": None}
 
     for epoch in range(start_epoch, args.epochs + 1):
@@ -104,9 +100,18 @@ def train(
             loaders["train"], model, optimizer, criterion, n_datasets["train"]
         )
 
-        if not args.curve or not has_batch_normalization:
+        if args.curve:
+            if model.has_batchnorm_layer:
+                # Testing does not make sense, since fixed moving mean/variance
+                # does not match betas/gammas for random point on curve
+                test_results = {'loss': None, 'accuracy': None}
+            else:
+                test_results = test_epoch(
+                    loaders["test"], model, criterion, n_datasets["test"], training=True
+                )
+        else:
             test_results = test_epoch(
-                loaders["test"], model, criterion, n_datasets["test"]
+                loaders["test"], model, criterion, n_datasets["test"], training=False
             )
 
         if epoch % args.save_freq == 0:
@@ -174,7 +179,11 @@ def train_epoch(
 
 
 def test_epoch(
-    test_loader: Iterable, model: tf.keras.Model, criterion: Callable, n_test: int
+    test_loader: Iterable,
+    model: tf.keras.Model,
+    criterion: Callable,
+    n_test: int,
+    training: bool
 ) -> Dict[str, float]:
     """
     Helper method for train().
@@ -194,7 +203,7 @@ def test_epoch(
 
     for input, target in test_loader:
         loss_batch = test_batch(
-            input=input, target=target, model=model, criterion=criterion
+            input=input, target=target, model=model, criterion=criterion, training=training
         )
         loss_sum += loss_batch
 
@@ -224,7 +233,7 @@ def train_batch(
     """
 
     with tf.GradientTape() as tape:
-        output = model(input)
+        output = model(input, training=True)
         loss = criterion(target, output)
         loss += tf.add_n(model.losses)
 
@@ -242,6 +251,7 @@ def test_batch(
     target: tf.Tensor,
     model: tf.keras.Model,
     criterion: Callable,
+    training: bool
 ) -> Dict[str, float]:
     """
     Helper method for test_epoch().
@@ -257,7 +267,7 @@ def test_batch(
         Dict[str, float]: Batchwise loss on the test set.
     """
 
-    output = model(input)
+    output = model(input, training=training)
     loss = criterion(target, output)
     loss += tf.add_n(model.losses)
 

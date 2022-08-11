@@ -28,7 +28,11 @@ def evaluate(args: Arguments):
     loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 
     model.compile(loss=loss, metrics=["accuracy"])
-    # TODO Do we really want to evaluate on the train set?
+
+    if not args.curve:
+        model.evaluate(loaders["test"], verbose=True)
+        return
+
     results = model.evaluate_points(
         loaders["test"],
         num_points=args.num_points,

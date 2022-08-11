@@ -11,6 +11,7 @@ from mode_connectivity.net import CurveNet
 from showcase.argparser import Arguments
 from showcase.data import data_loaders
 from showcase.models.cnn import CNN
+from showcase.models.cnnbn import CNNBN
 from showcase.models.mlp import MLP
 
 logger = logging.getLogger(__name__)
@@ -134,11 +135,6 @@ def adjust_learning_rate(optimizer, lr):
     optimizer.lr.assign(lr)
 
 
-# TODO Still to be implemented:
-def check_batch_normalization(model):
-    return False
-
-
 def split_list(list_: List[Any], size: int) -> List[List[Any]]:
     """Split a list into equal chunks of specified size.
 
@@ -182,7 +178,7 @@ def get_architecture(model_name: str):
     The architecture consists of the Base and Curve version of the model.
 
     Args:
-        model_name (str): Name of the model, e.g. CNN.
+        model_name (str): Name of the model. One out of {"CNN", "CNNBN", "MLP"}.
 
     Raises:
         KeyError: Indicates if the model name is unknown/ the model is not implemented yet.
@@ -192,6 +188,8 @@ def get_architecture(model_name: str):
     """
     if model_name == "CNN":
         return CNN
+    if model_name == "CNNBN":
+        return CNNBN
     if model_name == "MLP":
         return MLP
     raise KeyError(f"Unkown model {model_name}")

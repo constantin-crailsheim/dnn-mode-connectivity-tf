@@ -10,6 +10,7 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
     A Curve consists of several nodes that are represented by a list of parameters (kernels and biases).
     For each of those nodes it can be specified if it is trainable or not/ fixed.
     """
+
     fix_points: List[bool]
     num_bends: int
     base_layer: Type[tf.keras.layers.Layer]
@@ -303,7 +304,11 @@ class BatchNormalizationCurve(CurveLayer, tf.keras.layers.BatchNormalization):
             **kwargs,
         )
 
-    def call(self, inputs: Tuple[tf.Tensor, tf.Tensor], training: Union[None, bool]=None):
+    def call(
+        self,
+        inputs: Tuple[tf.Tensor, tf.Tensor],
+        training: Union[None, bool] = None,
+    ):
         return super().call(inputs, training=training)
 
     def reset_moving_stats(self):
