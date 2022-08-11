@@ -185,11 +185,13 @@ pytest tests
 
 # Execute config script
 
-Execute all scripts on built in tensorflow functions:
+Execute all scripts on built in tensorflow functions.
 
 ```shell
 bash execute_config_tf.sh
 ```
+
+However, to visualise the results, the custom scripts need to be executed.
 
 Execute all scripts on built in custom training/evaluation routines:
 
