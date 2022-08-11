@@ -1,19 +1,15 @@
 import os
-from typing import Callable, Dict, Iterable, Union
+from typing import Callable, Dict, Iterable
 
 import numpy as np
 import tabulate
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import tensorflow as tf
-
-from showcase.argparser import Arguments, parse_evaluate_arguments
+from showcase.argparser import parse_evaluate_arguments
 from showcase.data import data_loaders
-from showcase.utils import (
-    disable_gpu,
-    get_model,
-    get_architecture
-)
+from showcase.utils import disable_gpu, get_architecture, get_model, set_seeds
+
 
 def main():
     """
@@ -23,6 +19,7 @@ def main():
     args = parse_evaluate_arguments()
     if args.disable_gpu:
         disable_gpu()
+    set_seeds(seed=args.seed)
 
     loaders, num_classes, n_datasets, input_shape = data_loaders(
         dataset=args.dataset, path=args.data_path, batch_size=args.batch_size
@@ -79,6 +76,7 @@ def main():
             args.dir,
             args.file_name_appendix,
         )
+
 
 def evaluate_epoch(
     test_loader: Iterable, model: tf.keras.Model, criterion: Callable, n_test: int
@@ -151,12 +149,8 @@ def print_stats_of_point_on_curve(values, i):
 
 
 def save_stats_of_points_on_curve(
-    train_losses, 
-    test_losses,
-    points_on_curve, 
-    dir: str, 
-    file_name_appendix: str
-    ):
+    train_losses, test_losses, points_on_curve, dir: str, file_name_appendix: str
+):
     """
     Save relevants statistics of point on curve.
 
@@ -175,6 +169,7 @@ def save_stats_of_points_on_curve(
         train_losses=train_losses,
         test_losses=test_losses,
     )
+
 
 if __name__ == "__main__":
     main()
