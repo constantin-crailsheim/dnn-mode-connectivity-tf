@@ -106,6 +106,7 @@ $ python showcase/scripts/train_classification.py --config cnn-curve-resume
 
 with 
 ```toml
+[cnn-curve-resume]
 dir = "results/MNIST_BasicCNN/checkpoints_curve"
 dataset="mnist"
 data-path="datasets/"
