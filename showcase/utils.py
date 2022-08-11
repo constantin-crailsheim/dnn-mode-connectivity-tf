@@ -221,6 +221,7 @@ def get_model(
         model = architecture.base(
             num_classes=num_classes, weight_decay=args.wd, **architecture.kwargs
         )
+        model.compile()
         if args.ckpt:
             logger.info(f"Restoring regular model from checkpoint {args.ckpt}.")
             model.build(input_shape=input_shape)
@@ -271,6 +272,7 @@ def get_model(
         if args.init_linear:
             logger.info("Linear initialization.")
             model.init_linear()
+            model.compile()
 
     return model
 
