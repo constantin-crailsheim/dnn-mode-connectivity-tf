@@ -127,9 +127,9 @@ fix-end = true
 The curve can be evaluted for a certain number of equidistant points on curve.
 
 ```shell
-$ python scripts/evaluate_tensorflow.py --config cnn-curve-evaluate
+$ python showcase/scripts/evaluate_tensorflow.py --config cnn-curve-evaluate
 or
-$ python scripts/evaluate_classification.py --config cnn-curve-evaluate
+$ python showcase/scripts/evaluate_classification.py --config cnn-curve-evaluate
 ```
 with
 ```toml
@@ -151,9 +151,9 @@ num-points = 11
 Alternatively a specific point on the curve can be evaluated.
 
 ```shell
-$ python scripts/evaluate_tensorflow.py --config cnn-curve-evaluate-point
+$ python showcase/scripts/evaluate_tensorflow.py --config cnn-curve-evaluate-point
 or
-$ python scripts/evaluate_classification.py --config cnn-curve-evaluate-point
+$ python showcase/scripts/evaluate_classification.py --config cnn-curve-evaluate-point
 ```
 with
 ```toml
@@ -179,6 +179,20 @@ Run the test suite.
 ```shell
 pip install -r requirements-dev.txt
 pytest tests
+```
+
+# Execute config script
+
+Execute all scripts on built in tensorflow functions:
+
+```shell
+bash execute_config_tf.sh
+```
+
+Execute all scripts on built in custom training/evaluation routines:
+
+```shell
+bash execute_config_custom.sh
 ```
 
 # Comments
