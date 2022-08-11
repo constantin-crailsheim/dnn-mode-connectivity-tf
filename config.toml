@@ -71,12 +71,12 @@ model = "CNN"
 curve = "Bezier"
 num-bends = 1
 wd = 0.0005
-ckpt = "results/MNIST_CNN/checkpoints_curve/model-weights-epoch10"
+ckpt = "results/MNIST_CNN/checkpoints_curve/model-weights-epoch15"
 init-linear = false
 fix-start = true
 fix-end = true
 num-points = 11
-file-name-appendix = "_epoch10"
+file-name-appendix = "_epoch15"
 
 [cnn-curve-evaluate-point]
 dir = "results/MNIST_CNN/evaluation_curve"
@@ -86,7 +86,7 @@ model = "CNN"
 curve = "Bezier"
 num-bends = 1
 wd = 0.0005
-ckpt = "results/MNIST_CNN/checkpoints_curve/model-weights-epoch10"
+ckpt = "results/MNIST_CNN/checkpoints_curve/model-weights-epoch15"
 init-linear = false
 fix-start = true
 fix-end = true
