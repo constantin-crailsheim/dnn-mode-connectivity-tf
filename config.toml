@@ -1,5 +1,5 @@
-[base-model-1]
-dir = "results/MNIST_BasicCNN/checkpoints_base_model_1"
+[cnn-base-model-1]
+dir = "results/MNIST_CNN/checkpoints_base_model_1"
 dataset = "mnist"
 data-path = "datasets/"
 model = "CNN"
@@ -8,8 +8,8 @@ lr = 0.05
 wd = 0.0005
 seed = 1
 
-[base-model-2]
-dir = "results/MNIST_BasicCNN/checkpoints_base_model_2"
+[cnn-base-model-2]
+dir = "results/MNIST_CNN/checkpoints_base_model_2"
 dataset = "mnist"
 data-path = "datasets/"
 model = "CNN"
@@ -18,8 +18,8 @@ lr = 0.05
 wd = 0.0005
 seed = 42
 
-[curve-pretrained]
-dir = "results/MNIST_BasicCNN/checkpoints_curve"
+[cnn-curve-pretrained]
+dir = "results/MNIST_CNN/checkpoints_curve"
 dataset = "mnist"
 data-path = "datasets/"
 model = "CNN"
@@ -28,21 +28,206 @@ num-bends = 1
 epochs = 10
 lr = 0.05
 wd = 0.0005
-init-start = "results/MNIST_BasicCNN/checkpoints_base_model_1/model-weights-epoch10"
+init-start = "results/MNIST_CNN/checkpoints_base_model_1/model-weights-epoch10"
 fix-start = true
-init-end = "results/MNIST_BasicCNN/checkpoints_base_model_2/model-weights-epoch10"
+init-end = "results/MNIST_CNN/checkpoints_base_model_2/model-weights-epoch10"
 fix-end = true
 
-[curve-evaluate]
-dir = "results/MNIST_BasicCNN/evaluation_curve"
+[cnn-curve-resume]
+dir = "results/MNIST_CNN/checkpoints_curve"
+dataset="mnist"
+data-path="datasets/"
+ckpt="results/MNIST_CNN/checkpoints_curve/model-weights-epoch10"
+resume-epoch=11
+model="CNN"
+curve="Bezier"
+num-bends=1
+epochs=15
+lr=0.001
+wd=0.0005
+fix-start = true
+fix-end = true
+
+[cnn-curve-evaluate]
+dir = "results/MNIST_CNN/evaluation_curve"
 dataset = "mnist"
 data-path = "datasets/"
 model = "CNN"
 curve = "Bezier"
 num-bends = 1
 wd = 0.0005
-ckpt = "results/MNIST_BasicCNN/checkpoints_curve/model-weights-epoch10"
+ckpt = "results/MNIST_CNN/checkpoints_curve/model-weights-epoch10"
 init-linear = false
 fix-start = true
 fix-end = true
 num-points = 11
+
+[cnn-curve-evaluate-point]
+dir = "results/MNIST_CNN/evaluation_curve"
+dataset = "mnist"
+data-path = "datasets/"
+model = "CNN"
+curve = "Bezier"
+num-bends = 1
+wd = 0.0005
+ckpt = "results/MNIST_CNN/checkpoints_curve/model-weights-epoch10"
+init-linear = false
+fix-start = true
+fix-end = true
+point-on-curve = 0.5
+
+[cnnbn-base-model-1]
+dir = "results/MNIST_CNNBN/checkpoints_base_model_1"
+dataset = "mnist"
+data-path = "datasets/"
+model = "CNNBN"
+epochs = 10
+lr = 0.05
+wd = 0.0005
+seed = 1
+
+[cnnbn-base-model-2]
+dir = "results/MNIST_CNNBN/checkpoints_base_model_2"
+dataset = "mnist"
+data-path = "datasets/"
+model = "CNNBN"
+epochs = 10
+lr = 0.05
+wd = 0.0005
+seed = 42
+
+[cnnbn-curve-pretrained]
+dir = "results/MNIST_CNNBN/checkpoints_curve"
+dataset = "mnist"
+data-path = "datasets/"
+model = "CNNBN"
+curve = "Bezier"
+num-bends = 1
+epochs = 10
+lr = 0.05
+wd = 0.0005
+init-start = "results/MNIST_CNNBN/checkpoints_base_model_1/model-weights-epoch10"
+fix-start = true
+init-end = "results/MNIST_CNNBN/checkpoints_base_model_2/model-weights-epoch10"
+fix-end = true
+
+[cnnbn-curve-resume]
+dir = "results/MNIST_CNNBN/checkpoints_curve"
+dataset="mnist"
+data-path="datasets/"
+ckpt="results/MNIST_CNNBN/checkpoints_curve/model-weights-epoch10"
+resume-epoch=11
+model="CNNBN"
+curve="Bezier"
+num-bends=1
+epochs=15
+lr=0.001
+wd=0.0005
+fix-start = true
+fix-end = true
+
+[cnnbn-curve-evaluate]
+dir = "results/MNIST_CNNBN/evaluation_curve"
+dataset = "mnist"
+data-path = "datasets/"
+model = "CNNBN"
+curve = "Bezier"
+num-bends = 1
+wd = 0.0005
+ckpt = "results/MNIST_CNNBN/checkpoints_curve/model-weights-epoch15"
+init-linear = false
+fix-start = true
+fix-end = true
+num-points = 11
+
+[cnnbn-curve-evaluate-point]
+dir = "results/MNIST_CNNBN/evaluation_curve"
+dataset = "mnist"
+data-path = "datasets/"
+model = "CNNBN"
+curve = "Bezier"
+num-bends = 1
+wd = 0.0005
+ckpt = "results/MNIST_CNNBN/checkpoints_curve/model-weights-epoch15"
+init-linear = false
+fix-start = true
+fix-end = true
+point-on-curve = 0.5
+
+[mlp-base-model-1]
+dir = "results/Regression_MLP/checkpoints_base_model_1"
+dataset = "regression"
+data-path = "datasets/"
+model = "MLP"
+epochs = 150
+lr = 0.001
+wd = 0.0005
+seed = 1
+
+[mlp-base-model-2]
+dir = "results/Regression_MLP/checkpoints_base_model_2"
+dataset = "regression"
+data-path = "datasets/"
+model = "MLP"
+epochs = 150
+lr = 0.001
+wd = 0.0005
+seed = 42
+
+[mlp-curve-pretrained]
+dir = "results/Regression_MLP/checkpoints_curve"
+dataset = "regression"
+data-path = "datasets/"
+model = "MLP"
+curve = "Bezier"
+num-bends = 5
+epochs = 100
+lr = 0.01
+wd = 0.0005
+init-start = "results/Regression_MLP/checkpoints_base_model_1/model-weights-epoch150"
+fix-start = true
+init-end = "results/Regression_MLP/checkpoints_base_model_2/model-weights-epoch150"
+fix-end = true
+
+[mlp-curve-resume]
+dir = "results/Regression_MLP/checkpoints_curve"
+dataset="regression"
+data-path="datasets/"
+ckpt="results/Regression_MLP/checkpoints_curve/model-weights-epoch100"
+resume-epoch=101
+model="MLP"
+curve="Bezier"
+num-bends=1
+epochs=150
+lr=0.0005
+wd=0.0005
+fix-start = true
+fix-end = true
+
+[mlp-curve-evaluate]
+dir = "results/Regression_MLP/evaluation_curve"
+dataset = "regression"
+data-path = "datasets/"
+model = "MLP"
+curve = "Bezier"
+num-bends = 5
+wd = 0.0005
+ckpt = "results/Regression_MLP/checkpoints_curve/model-weights-epoch150"
+init-linear = false
+fix-start = true
+fix-end = true
+num-points = 11
+
+[mlp-curve-evaluate-point]
+dir = "results/Regression_MLP/evaluation_curve"
+dataset = "regression"
+data-path = "datasets/"
+model = "MLP"
+curve = "Bezier"
+num-bends = 1
+wd = 0.0005
+ckpt = "results/Regression_MLP/checkpoints_curve/model-weights-epoch150"
+init-linear = false
+fix-start = true
+fix-end = true
+point-on-curve = 0.5
