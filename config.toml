@@ -6,7 +6,6 @@ model = "CNN"
 epochs = 10
 lr = 0.05
 wd = 0.0005
-transform = "CNN"
 seed = 1
 
 [base-model-2]
@@ -17,7 +16,6 @@ model = "CNN"
 epochs = 10
 lr = 0.05
 wd = 0.0005
-transform = "CNN"
 seed = 42
 
 [curve-pretrained]
@@ -26,7 +24,6 @@ dataset = "mnist"
 data-path = "datasets/"
 model = "CNN"
 curve = "Bezier"
-transform = "CNN"
 num-bends = 1
 epochs = 10
 lr = 0.05
@@ -42,7 +39,6 @@ dataset = "mnist"
 data-path = "datasets/"
 model = "CNN"
 curve = "Bezier"
-transform = "CNN"
 num-bends = 1
 wd = 0.0005
 ckpt = "results/MNIST_BasicCNN/checkpoints_curve/model-weights-epoch10"

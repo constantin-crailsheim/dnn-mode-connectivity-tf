@@ -11,11 +11,7 @@ import tensorflow_datasets as tfds
 def data_loaders(
     dataset: str,
     path: str,
-    batch_size: int,
-    num_workers: int, # To be excluded
-    transform_name: str, # To be excluded
-    use_test: bool = False, # To be excluded
-    shuffle_train: bool = True,
+    batch_size: int
 ):
     """
     Prepares the data for training.
@@ -24,7 +20,6 @@ def data_loaders(
         dataset (str): String indicating the type of the dataset. Either "mnist" for the CNN or "regression" for the MLP.
         path (str): Path to the dataset.
         batch_size (int): Amount of samples per batch.
-        num_workers (int): Amount of workers.
         shuffle_train (bool, optional): Boolean indicating whether to shuffle the train set. Defaults to True.
 
     Returns:
@@ -39,7 +34,7 @@ def data_loaders(
             batch_size=batch_size,
             download=True,
             split=["train", "test"],
-            shuffle_files=shuffle_train,
+            shuffle_files=True,
             as_supervised=True,
             with_info=True,
         )

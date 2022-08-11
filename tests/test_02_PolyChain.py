@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 import tensorflow as tf
-from mode_connectivity.curves.curves import PolyChain, Curve
+from mode_connectivity.curves import PolyChain, Curve
 
 
 def list_as_tensor(list_: list, dtype=np.float32) -> tf.Tensor:
