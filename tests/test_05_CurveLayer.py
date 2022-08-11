@@ -59,10 +59,6 @@ class CurveLayerTest:
     def test_build(self, built_layer, parameters):
         filters, units, kernel_size, input_shape, fix_points, curve = parameters
 
-        # # Build in parent class tf.keras.layers... should add kernel and bias parameters and set them to None.
-        # assert built_layer.kernel == None
-        # assert built_layer.bias == None
-
         # Conv2DCurve build() should add curve_kernels and curve_biases parameters
         assert built_layer.curve_kernels != None
         assert built_layer.curve_biases != None
