@@ -66,7 +66,7 @@ def batch_norm_built(batch_norm_layer, input_shape):
 class TestBatchNormalization:
     def test_init(self, batch_norm_layer):
         assert batch_norm_layer.num_bends == len(batch_norm_layer.fix_points) - 2
-        assert batch_norm_layer.parameters == ("gamma", "beta")
+        assert batch_norm_layer.parameter_types == ("gamma", "beta")
         assert batch_norm_layer.base_layer == tf.keras.layers.BatchNormalization
 
     def test_build_attributes(self, batch_norm_built):
