@@ -48,7 +48,22 @@ wd=0.0005
 fix-start = true
 fix-end = true
 
-[cnn-curve-evaluate]
+[cnn-curve-evaluate-init]
+dir = "results/MNIST_CNN/evaluation_curve"
+dataset = "mnist"
+data-path = "datasets/"
+model = "CNN"
+curve = "Bezier"
+num-bends = 1
+wd = 0.0005
+ckpt = "results/MNIST_CNN/checkpoints_curve/model-weights-epoch0"
+init-linear = false
+fix-start = true
+fix-end = true
+num-points = 11
+file-name-appendix = "_epoch0"
+
+[cnn-curve-evaluate-trained]
 dir = "results/MNIST_CNN/evaluation_curve"
 dataset = "mnist"
 data-path = "datasets/"
@@ -61,6 +76,7 @@ init-linear = false
 fix-start = true
 fix-end = true
 num-points = 11
+file-name-appendix = "_epoch10"
 
 [cnn-curve-evaluate-point]
 dir = "results/MNIST_CNN/evaluation_curve"
@@ -75,6 +91,7 @@ init-linear = false
 fix-start = true
 fix-end = true
 point-on-curve = 0.5
+save-evaluation = false
 
 [cnnbn-base-model-1]
 dir = "results/MNIST_CNNBN/checkpoints_base_model_1"
@@ -126,7 +143,22 @@ wd=0.0005
 fix-start = true
 fix-end = true
 
-[cnnbn-curve-evaluate]
+[cnnbn-curve-evaluate-init]
+dir = "results/MNIST_CNNBN/evaluation_curve"
+dataset = "mnist"
+data-path = "datasets/"
+model = "CNNBN"
+curve = "Bezier"
+num-bends = 1
+wd = 0.0005
+ckpt = "results/MNIST_CNNBN/checkpoints_curve/model-weights-epoch0"
+init-linear = false
+fix-start = true
+fix-end = true
+num-points = 11
+file-name-appendix = "_epoch0"
+
+[cnnbn-curve-evaluate-trained]
 dir = "results/MNIST_CNNBN/evaluation_curve"
 dataset = "mnist"
 data-path = "datasets/"
@@ -139,6 +171,7 @@ init-linear = false
 fix-start = true
 fix-end = true
 num-points = 11
+file-name-appendix = "_epoch15"
 
 [cnnbn-curve-evaluate-point]
 dir = "results/MNIST_CNNBN/evaluation_curve"
@@ -153,6 +186,7 @@ init-linear = false
 fix-start = true
 fix-end = true
 point-on-curve = 0.5
+save-evaluation = false
 
 [mlp-base-model-1]
 dir = "results/Regression_MLP/checkpoints_base_model_1"
@@ -197,14 +231,29 @@ ckpt="results/Regression_MLP/checkpoints_curve/model-weights-epoch100"
 resume-epoch=101
 model="MLP"
 curve="Bezier"
-num-bends=1
+num-bends=5
 epochs=150
 lr=0.0005
 wd=0.0005
 fix-start = true
 fix-end = true
 
-[mlp-curve-evaluate]
+[mlp-curve-evaluate-init]
+dir = "results/Regression_MLP/evaluation_curve"
+dataset = "regression"
+data-path = "datasets/"
+model = "MLP"
+curve = "Bezier"
+num-bends = 5
+wd = 0.0005
+ckpt = "results/Regression_MLP/checkpoints_curve/model-weights-epoch0"
+init-linear = false
+fix-start = true
+fix-end = true
+num-points = 11
+file-name-appendix = "_epoch0"
+
+[mlp-curve-evaluate-trained]
 dir = "results/Regression_MLP/evaluation_curve"
 dataset = "regression"
 data-path = "datasets/"
@@ -217,6 +266,7 @@ init-linear = false
 fix-start = true
 fix-end = true
 num-points = 11
+file-name-appendix = "_epoch150"
 
 [mlp-curve-evaluate-point]
 dir = "results/Regression_MLP/evaluation_curve"
@@ -231,3 +281,4 @@ init-linear = false
 fix-start = true
 fix-end = true
 point-on-curve = 0.5
+save-evaluation = false

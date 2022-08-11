@@ -133,6 +133,7 @@ def main():
             points_on_curve,
             dl,
             args.dir,
+            args.file_name_appendix,
         )
 
         save_predictions_and_probabilites(
@@ -144,6 +145,7 @@ def main():
             test_targets,
             points_on_curve,
             args.dir,
+            args.file_name_appendix,
         )
 
     if len(points_on_curve) > 1:
@@ -157,7 +159,8 @@ def main():
             points_on_curve,
             dl,
             args.dir,
-            save=args.save_evaluation,
+            args.file_name_appendix,
+            args.save_evaluation,
         )
 
 
@@ -230,9 +233,9 @@ def save_stats_of_points_on_curve(
     points_on_curve,
     dl,
     dir: str,
-    file_name: str = "stats_of_points_on_curve.npz",
+    file_name_appendix: str,
 ):
-
+    file_name = "stats_of_points_on_curve" + file_name_appendix + ".npz"
     os.makedirs(dir, exist_ok=True)
     np.savez(
         os.path.join(dir, file_name),
@@ -256,9 +259,9 @@ def save_predictions_and_probabilites(
     test_targets,
     points_on_curve,
     dir: str,
-    file_name: str = "predictions_and_probabilities_curve.npz",
+    file_name_appendix: str,
 ):
-
+    file_name = "predictions_and_probabilities_curve" + file_name_appendix + ".npz"
     os.makedirs(dir, exist_ok=True)
     np.savez(
         os.path.join(dir, file_name),
@@ -292,10 +295,10 @@ def print_and_save_summary_stats(
     points_on_curve,
     dl,
     dir: str,
-    file_name: str = "summary_stats_curve.npz",
+    file_name_appendix: str,
     save: bool = True,
 ):
-
+    file_name = "summary_stats_curve" + file_name_appendix + ".npz"
     train_loss_min, train_loss_max, train_loss_avg, train_loss_int = compute_stats(
         train_losses, dl
     )

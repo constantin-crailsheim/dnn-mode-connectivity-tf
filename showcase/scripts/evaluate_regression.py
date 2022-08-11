@@ -73,7 +73,11 @@ def main():
 
     if args.save_evaluation == True:
         save_stats_of_points_on_curve(
-            train_losses, test_losses, points_on_curve, args.dir
+            train_losses,
+            test_losses,
+            points_on_curve,
+            args.dir,
+            args.file_name_appendix,
         )
 
 def evaluate_epoch(
@@ -108,7 +112,6 @@ def evaluate_batch(
     """
     Helper method for evaluate_epoch().
     Batchwise computations for the loss, predictions, output and target on the dataset evaluated.
-
 
     Args:
         input (tf.Tensor): Data that is propagated through the network leading to the network output.
@@ -151,7 +154,7 @@ def save_stats_of_points_on_curve(
     test_losses,
     points_on_curve, 
     dir: str, 
-    file_name: str = 'stats_of_points_on_curve.npz'
+    file_name_appendix: str
     ):
     """
     Save relevants statistics of point on curve.
@@ -163,6 +166,7 @@ def save_stats_of_points_on_curve(
         dir (str): Directory to store file.
         file_name (str, optional): Name of file. Defaults to 'stats_of_points_on_curve.npz'.
     """
+    file_name = "stats_of_points_on_curve" + file_name_appendix + ".npz"
     os.makedirs(dir, exist_ok=True)
     np.savez(
         os.path.join(dir, file_name),

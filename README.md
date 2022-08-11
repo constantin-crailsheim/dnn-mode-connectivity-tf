@@ -146,6 +146,7 @@ init-linear = false
 fix-start = true
 fix-end = true
 num-points = 11
+file-name-appendix = "_epoch10"
 ```
 
 Alternatively a specific point on the curve can be evaluated.
@@ -170,6 +171,7 @@ init-linear = false
 fix-start = true
 fix-end = true
 point-on-curve = 0.5
+save-evaluation = false
 ```
 
 # Tests
