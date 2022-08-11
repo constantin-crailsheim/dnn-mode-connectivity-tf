@@ -106,7 +106,7 @@ def train(
         )
 
         if args.curve:
-            if model.has_batchnorm:
+            if model.has_batchnorm_layer:
                 # Testing does not make sense, since fixed moving mean/variance
                 # does not match betas/gammas for random point on curve
                 test_results = {'loss': None, 'accuracy': None}
