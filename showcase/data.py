@@ -62,13 +62,14 @@ def data_loaders(
             
         f = features(x)
 
+        random.seed(1)
         index_train = random.sample(range(n), math.floor(0.8*n))
         index_test = list(set(range(n)).difference(set(index_train)))
 
         train_dataset = tf.data.Dataset.from_tensor_slices((f[index_train,:], y[index_train]))
         test_dataset = tf.data.Dataset.from_tensor_slices((f[index_test,:], y[index_test]))
 
-        train_set_loader = train_dataset.shuffle(100).batch(batch_size)
+        train_set_loader = train_dataset.shuffle(100).batch(batch_size) 
         test_set_loader = test_dataset.batch(batch_size)
 
         num_classes = None

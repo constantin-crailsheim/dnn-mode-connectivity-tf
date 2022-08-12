@@ -19,7 +19,6 @@ def main():
     args = parse_evaluate_arguments()
     if args.disable_gpu:
         disable_gpu()
-    set_seeds(seed=args.seed)
 
     loaders, num_classes, n_datasets, input_shape = data_loaders(
         dataset=args.dataset, path=args.data_path, batch_size=args.batch_size

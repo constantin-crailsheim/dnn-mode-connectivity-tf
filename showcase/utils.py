@@ -35,8 +35,6 @@ def disable_gpu():
 
 def set_seeds(seed: int):
     tf.random.set_seed(seed)
-    random.seed(seed)
-
 
 def learning_rate_schedule(base_lr: float, epoch: int, total_epochs: int):
     """
