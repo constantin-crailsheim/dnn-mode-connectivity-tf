@@ -269,7 +269,6 @@ def test_batch(
 
     output = model(input, training=training)
     loss = criterion(target, output)
-    loss += tf.add_n(model.losses)
 
     loss = loss.numpy() * len(input)
 
