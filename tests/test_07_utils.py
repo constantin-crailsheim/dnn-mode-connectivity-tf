@@ -1,5 +1,4 @@
 import os
-
 from unittest import mock
 
 import keras
@@ -7,19 +6,17 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
+from showcase.argparser import Arguments, parse_train_arguments
 from showcase.models.cnn import CNN
 from showcase.models.cnnbn import CNNBN
 from showcase.models.mlp import MLP
-
-from showcase.argparser import Arguments, parse_train_arguments
-
 from showcase.utils import (
-    learning_rate_schedule,
     adjust_learning_rate,
     get_architecture,
-    save_weights,
-    get_model,
     get_epoch,
+    get_model,
+    learning_rate_schedule,
+    save_weights,
 )
 
 

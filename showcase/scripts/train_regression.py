@@ -6,6 +6,7 @@ import tabulate
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import tensorflow as tf
+
 from showcase.argparser import Arguments, parse_train_arguments
 from showcase.data import data_loaders
 from showcase.utils import (

@@ -1,11 +1,10 @@
+import pytest
 import tensorflow as tf
 
-from mode_connectivity.curves import Curve, Bezier, PolyChain
-from mode_connectivity.net import CurveNet
+from mode_connectivity.curves import Bezier, Curve, PolyChain
 from mode_connectivity.layers import CurveLayer
+from mode_connectivity.net import CurveNet
 from showcase.models import CNN, MLP
-
-import pytest
 
 
 class TestCurveNet:

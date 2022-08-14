@@ -1,6 +1,7 @@
-import tensorflow as tf
-from typing import Any, List, Type, Dict
 from dataclasses import dataclass
+from typing import Any, Dict, List, Type
+
+import tensorflow as tf
 
 
 class CurveModel(tf.keras.Model):

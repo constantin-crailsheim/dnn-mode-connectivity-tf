@@ -5,10 +5,10 @@ from functools import partial
 from typing import Any, List, Union
 
 import keras
-import mode_connectivity.curves as curves
 import tensorflow as tf
-from mode_connectivity.net import CurveNet
 
+import mode_connectivity.curves as curves
+from mode_connectivity.net import CurveNet
 from showcase.argparser import Arguments
 from showcase.data import data_loaders
 from showcase.models.cnn import CNN

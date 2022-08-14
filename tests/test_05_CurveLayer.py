@@ -1,10 +1,10 @@
+from abc import abstractmethod
+
+import pytest
 import tensorflow as tf
 
-from mode_connectivity.layers import CurveLayer, Conv2DCurve, DenseCurve
 from mode_connectivity.curves import Bezier, PolyChain
-
-from abc import abstractmethod
-import pytest
+from mode_connectivity.layers import Conv2DCurve, CurveLayer, DenseCurve
 
 
 class CurveLayerTest:

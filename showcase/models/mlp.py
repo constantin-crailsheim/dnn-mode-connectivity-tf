@@ -1,6 +1,7 @@
 from typing import List, Tuple
 
 import tensorflow as tf
+
 from mode_connectivity.architecture import Architecture, CurveModel
 from mode_connectivity.layers import DenseCurve
 
