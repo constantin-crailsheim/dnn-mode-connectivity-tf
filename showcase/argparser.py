@@ -272,4 +272,3 @@ def _add_evaluation_arguments(parser: argparse.ArgumentParser) -> None:
         default="",
         help="Appendix with which file names should be stored.",
     )
-

@@ -7,6 +7,7 @@ from showcase.models import CNN, MLP
 
 import pytest
 
+
 class TestCurveNet:
     testparams_description = "model,num_classes,weight_decay,curve,fix_start,fix_end,num_bends,input_shape,index"
     testparams = [
@@ -23,26 +24,25 @@ class TestCurveNet:
         return request.param
 
     @pytest.mark.parametrize(
-        "parameters", 
-        [(param) for param in testparams], 
-        indirect=True)
+        "parameters", [(param) for param in testparams], indirect=True
+    )
     def test_import_base_parameters(self, parameters):
         (
-            model, 
-            num_classes, 
-            weight_decay, 
-            curve, 
-            fix_start, 
-            fix_end, 
-            num_bends, 
-            input_shape, 
-            index
-         ) = parameters
+            model,
+            num_classes,
+            weight_decay,
+            curve,
+            fix_start,
+            fix_end,
+            num_bends,
+            input_shape,
+            index,
+        ) = parameters
 
-        base_model= model.base(num_classes, weight_decay)
-        base_model.build(input_shape= input_shape)
+        base_model = model.base(num_classes, weight_decay)
+        base_model.build(input_shape=input_shape)
 
-        curve_net= CurveNet(
+        curve_net = CurveNet(
             num_classes,
             num_bends,
             weight_decay,
@@ -53,20 +53,16 @@ class TestCurveNet:
             model.kwargs,
         )
 
-        curve_net._build_from_base_model(base_model)        
+        curve_net._build_from_base_model(base_model)
 
         curve_weights_old = {
             w.name: tf.Variable(w) for w in curve_net.curve_model.variables
-            } #tf.Variable creates a fixed copy
+        }  # tf.Variable creates a fixed copy
 
         curve_net.import_base_parameters(base_model, index)
 
-        curve_weights = {
-            w.name: w for w in curve_net.curve_model.variables
-            }
-        base_weights = {
-            w.name: w for w in base_model.variables
-            }
+        curve_weights = {w.name: w for w in curve_net.curve_model.variables}
+        base_weights = {w.name: w for w in base_model.variables}
 
         for curve_param_name, curve_param in curve_weights.items():
             curve_param_old = curve_weights_old.get(curve_param_name)
@@ -81,52 +77,52 @@ class TestCurveNet:
                 # Ensure that params at index are updated and not as before
                 assert tf.experimental.numpy.allclose(base_param, curve_param)
                 if "kernel" in curve_param_name:
-                    assert not tf.experimental.numpy.allclose(curve_param_old, curve_param)
+                    assert not tf.experimental.numpy.allclose(
+                        curve_param_old, curve_param
+                    )
 
             elif parameter_index != index:
                 # Ensure that all other params remain as before
                 assert tf.experimental.numpy.allclose(curve_param_old, curve_param)
 
         del (
-            base_model, 
-            curve_weights_old, 
-            curve_weights, 
-            base_weights, 
-            curve_net, 
-            model, 
-            num_classes, 
-            weight_decay, 
-            curve, 
-            fix_start, 
-            fix_end, 
-            num_bends, 
-            input_shape, 
-            index, 
-            parameters
+            base_model,
+            curve_weights_old,
+            curve_weights,
+            base_weights,
+            curve_net,
+            model,
+            num_classes,
+            weight_decay,
+            curve,
+            fix_start,
+            fix_end,
+            num_bends,
+            input_shape,
+            index,
+            parameters,
         )
 
-
     @pytest.mark.parametrize(
-        "parameters", 
-        [(param) for param in testparams], 
-        indirect=True)
+        "parameters", [(param) for param in testparams], indirect=True
+    )
     def test_init_linear(self, parameters):
         (
-            model, 
-            num_classes, 
-            weight_decay, 
-            curve, 
-            fix_start, 
-            fix_end, 
-            num_bends, 
-            input_shape, 
-            index
-         ) = parameters
+            model,
+            num_classes,
+            weight_decay,
+            curve,
+            fix_start,
+            fix_end,
+            num_bends,
+            input_shape,
+            index,
+        ) = parameters
 
-        base_model= model.base(num_classes, weight_decay)
-        base_model.build(input_shape= input_shape)
+        base_model = model.base(num_classes, weight_decay)
+        base_model.build(input_shape=input_shape)
 
-        curve_net= CurveNet(
+        curve_net = CurveNet(
             num_classes,
             num_bends,
             weight_decay,
@@ -134,9 +130,9 @@ class TestCurveNet:
             model.curve,
             fix_start,
             fix_end,
-            model.kwargs
+            model.kwargs,
         )
-        curve_net._build_from_base_model(base_model)   
+        curve_net._build_from_base_model(base_model)
 
         curve_net.import_base_parameters(base_model, index)
 
@@ -159,36 +155,37 @@ class TestCurveNet:
                     assert tf.reduce_all(tf.math.less_equal(param, max_param))
 
         del (
-            base_model, 
-            curve_net, 
-            model, 
-            num_classes, 
-            weight_decay, 
-            curve, 
-            fix_start, 
-            fix_end, 
-            num_bends, 
-            input_shape, 
-            index, 
-            parameters
+            base_model,
+            curve_net,
+            model,
+            num_classes,
+            weight_decay,
+            curve,
+            fix_start,
+            fix_end,
+            num_bends,
+            input_shape,
+            index,
+            parameters,
         )
 
-
-    @pytest.mark.parametrize("parameters", [(param) for param in testparams], indirect=True)
+    @pytest.mark.parametrize(
+        "parameters", [(param) for param in testparams], indirect=True
+    )
     def test_init(self, parameters):
         (
-            model, 
-            num_classes, 
-            weight_decay, 
-            curve, 
-            fix_start, 
-            fix_end, 
-            num_bends, 
-            input_shape, 
-            index
-         ) = parameters
+            model,
+            num_classes,
+            weight_decay,
+            curve,
+            fix_start,
+            fix_end,
+            num_bends,
+            input_shape,
+            index,
+        ) = parameters
 
-        curve_net= CurveNet(
+        curve_net = CurveNet(
             num_classes,
             num_bends,
             weight_decay,
@@ -196,7 +193,7 @@ class TestCurveNet:
             model.curve,
             fix_start,
             fix_end,
-            model.kwargs
+            model.kwargs,
         )
 
         assert isinstance(curve_net.curve, Curve)
@@ -205,35 +202,36 @@ class TestCurveNet:
             assert isinstance(layer, CurveLayer)
 
         del (
-            curve_net, 
-            model, 
-            num_classes, 
-            weight_decay, 
-            curve, 
-            fix_start, 
-            fix_end, 
-            num_bends, 
-            input_shape, 
-            index, 
-            parameters
+            curve_net,
+            model,
+            num_classes,
+            weight_decay,
+            curve,
+            fix_start,
+            fix_end,
+            num_bends,
+            input_shape,
+            index,
+            parameters,
         )
 
-
-    @pytest.mark.parametrize("parameters", [(param) for param in testparams], indirect=True)
+    @pytest.mark.parametrize(
+        "parameters", [(param) for param in testparams], indirect=True
+    )
     def test_call(self, parameters):
         (
-            model, 
-            num_classes, 
-            weight_decay, 
-            curve, 
-            fix_start, 
-            fix_end, 
-            num_bends, 
-            input_shape, 
-            index
-         ) = parameters
+            model,
+            num_classes,
+            weight_decay,
+            curve,
+            fix_start,
+            fix_end,
+            num_bends,
+            input_shape,
+            index,
+        ) = parameters
 
-        curve_net= CurveNet(
+        curve_net = CurveNet(
             num_classes,
             num_bends,
             weight_decay,
@@ -241,23 +239,23 @@ class TestCurveNet:
             model.curve,
             fix_start,
             fix_end,
-            model.kwargs
+            model.kwargs,
         )
-        output= curve_net(inputs= tf.random.uniform(input_shape))
+        output = curve_net(inputs=tf.random.uniform(input_shape))
 
         assert output.shape == (input_shape[0], num_classes)
 
         del (
-            curve_net, 
-            model, 
-            num_classes, 
-            weight_decay, 
-            curve, 
-            fix_start, 
-            fix_end, 
-            num_bends, 
-            input_shape, 
-            index, 
-            parameters, 
-            output
+            curve_net,
+            model,
+            num_classes,
+            weight_decay,
+            curve,
+            fix_start,
+            fix_end,
+            num_bends,
+            input_shape,
+            index,
+            parameters,
+            output,
         )

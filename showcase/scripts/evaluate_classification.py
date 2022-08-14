@@ -11,11 +11,8 @@ from sklearn.metrics import accuracy_score, f1_score
 
 from showcase.argparser import Arguments, parse_evaluate_arguments
 from showcase.data import data_loaders
-from showcase.utils import (
-    disable_gpu,
-    get_model,
-    get_architecture
-)
+from showcase.utils import disable_gpu, get_model, get_architecture
+
 
 def main():
     """

@@ -134,7 +134,6 @@ class CurveNet(tf.keras.Model):
                 "No BaseModel parameters were imported into the respective node of the CurveModel."
             )
 
-
     def _build_from_base_model(self, base_model: tf.keras.Model):
         """
         Helper method that builds the CurveModel and thereby initializes its parameters.
