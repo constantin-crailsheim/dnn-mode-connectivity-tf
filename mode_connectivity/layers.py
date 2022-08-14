@@ -100,7 +100,7 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
             inputs (Tuple[tf.Tensor, tf.Tensor]): Tuple of layer inputs and weights of the nodes.
 
         Returns:
-            _type_: Layer output
+            Layer output
         """
         x, curve_point_weights = inputs
         self.compute_and_set_weighted_parameters(curve_point_weights)
@@ -164,7 +164,7 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
             fixed (bool): Indicates if the node is fixed/ not trainable.
 
         Returns:
-            _type_: Node parameter.
+            Node parameter.
         """
         name = f"{param_type}_curve_{index}"
         parameter = self.add_weight(

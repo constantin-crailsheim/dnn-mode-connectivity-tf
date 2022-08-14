@@ -18,7 +18,7 @@ def data_loaders(dataset: str, path: str, batch_size: int):
         shuffle_train (bool, optional): Boolean indicating whether to shuffle the train set. Defaults to True.
 
     Returns:
-        _type_: Tuple containing the data loaders and relevant variables e.g. train set size.
+        Tuple containing the data loaders and relevant variables e.g. train set size.
     """
     path = os.path.join(path, dataset.lower())
 

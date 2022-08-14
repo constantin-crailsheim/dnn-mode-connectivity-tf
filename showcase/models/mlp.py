@@ -41,7 +41,7 @@ class MLPBase(tf.keras.Model):
             inputs (tf.Tensor): Input data that is propagated through the base MLP.
 
         Returns:
-            _type_: Network predictions.
+            Network predictions.
         """
         return self.fc_part(inputs, **kwargs)
 
@@ -79,8 +79,8 @@ class MLPCurve(CurveModel):
 
         Args:
             inputs (Tuple[tf.Tensor, tf.Tensor]):  Input data that is propagated through the curve MLP with bend weights defining the point on curve.
-            training (_type_, optional): Unused?. Defaults to None.
-            mask (_type_, optional): Unused?. Defaults to None.
+            training (optional): Unused?. Defaults to None.
+            mask (optional): Unused?. Defaults to None.
 
         Returns:
             tf.Tensor: Final layer output/ Prediction of MLP.
