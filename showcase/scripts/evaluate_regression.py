@@ -1,19 +1,15 @@
 import os
-from typing import Callable, Dict, Iterable, Union
+from typing import Callable, Dict, Iterable
 
 import numpy as np
 import tabulate
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import tensorflow as tf
-
-from showcase.argparser import Arguments, parse_evaluate_arguments
+from showcase.argparser import parse_evaluate_arguments
 from showcase.data import data_loaders
-from showcase.utils import (
-    disable_gpu,
-    get_model,
-    get_architecture
-)
+from showcase.utils import disable_gpu, get_architecture, get_model, set_seeds
+
 
 def main():
     """
@@ -73,8 +69,13 @@ def main():
 
     if args.save_evaluation == True:
         save_stats_of_points_on_curve(
-            train_losses, test_losses, points_on_curve, args.dir
+            train_losses,
+            test_losses,
+            points_on_curve,
+            args.dir,
+            args.file_name_appendix,
         )
+
 
 def evaluate_epoch(
     test_loader: Iterable, model: tf.keras.Model, criterion: Callable, n_test: int
@@ -108,7 +109,6 @@ def evaluate_batch(
     """
     Helper method for evaluate_epoch().
     Batchwise computations for the loss, predictions, output and target on the dataset evaluated.
-
 
     Args:
         input (tf.Tensor): Data that is propagated through the network leading to the network output.
@@ -147,12 +147,8 @@ def print_stats_of_point_on_curve(values, i):
 
 
 def save_stats_of_points_on_curve(
-    train_losses, 
-    test_losses,
-    points_on_curve, 
-    dir: str, 
-    file_name: str = 'stats_of_points_on_curve.npz'
-    ):
+    train_losses, test_losses, points_on_curve, dir: str, file_name_appendix: str
+):
     """
     Save relevants statistics of point on curve.
 
@@ -163,6 +159,7 @@ def save_stats_of_points_on_curve(
         dir (str): Directory to store file.
         file_name (str, optional): Name of file. Defaults to 'stats_of_points_on_curve.npz'.
     """
+    file_name = "stats_of_points_on_curve" + file_name_appendix + ".npz"
     os.makedirs(dir, exist_ok=True)
     np.savez(
         os.path.join(dir, file_name),
@@ -170,6 +167,7 @@ def save_stats_of_points_on_curve(
         train_losses=train_losses,
         test_losses=test_losses,
     )
+
 
 if __name__ == "__main__":
     main()

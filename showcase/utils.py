@@ -1,5 +1,6 @@
 import logging
 import os
+import random
 from functools import partial
 from typing import Any, List, Union
 
@@ -34,7 +35,6 @@ def disable_gpu():
 
 def set_seeds(seed: int):
     tf.random.set_seed(seed)
-
 
 def learning_rate_schedule(base_lr: float, epoch: int, total_epochs: int):
     """
@@ -223,7 +223,7 @@ def get_model(
         if args.ckpt:
             logger.info(f"Restoring regular model from checkpoint {args.ckpt}.")
             model.build(input_shape=input_shape)
-            model.load_weights(filepath=args.ckpt)
+            model.load_weights(filepath=args.ckpt).expect_partial()
             model.compile()
         return model
 
@@ -247,8 +247,8 @@ def get_model(
     if args.ckpt:
         logger.info(f"Restoring curve model from checkpoint {args.ckpt}.")
         model.build(input_shape=input_shape)
-        model.load_weights(filepath=args.ckpt)
-        model.compile()  # Necessary?
+        model.load_weights(filepath=args.ckpt).expect_partial()
+        model.compile()
     else:
         # Build model from 0, 1 or 2 base_models
         base_model = architecture.base(

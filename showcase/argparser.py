@@ -44,6 +44,7 @@ class Arguments:
     num_points: int = None
     point_on_curve: float = None
     save_evaluation: bool = True
+    file_name_appendix: str = ""
 
 
 def parse_config(config_name: str) -> Arguments:
@@ -264,3 +265,11 @@ def _add_evaluation_arguments(parser: argparse.ArgumentParser) -> None:
         default=True,
         help="Set whether evaluation should be saved",
     )
+    parser.add_argument(
+        "--file-name-appendix",
+        dest="file_name_appendix",
+        type=str,
+        default="",
+        help="Appendix with which file names should be stored.",
+    )
+

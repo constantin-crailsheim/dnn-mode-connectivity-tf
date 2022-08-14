@@ -62,6 +62,7 @@ def data_loaders(
             
         f = features(x)
 
+        random.seed(1)
         index_train = random.sample(range(n), math.floor(0.8*n))
         index_test = list(set(range(n)).difference(set(index_train)))
 

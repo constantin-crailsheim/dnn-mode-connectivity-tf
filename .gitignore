@@ -137,3 +137,7 @@ tests/test_bezier.py
 tests/conv2d_test.py
 
 .DS_Store
+
+#VSCode
+
+.vscode/
