@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
-from showcase.argparser import Arguments, parse_train_arguments
+from showcase.argparser import parse_train_arguments
 from showcase.models.cnn import CNN
 from showcase.models.cnnbn import CNNBN
 from showcase.models.mlp import MLP
