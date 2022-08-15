@@ -63,7 +63,7 @@ class Bezier(Curve):
                 2: Cubic
                 ...
             For further information, see:
-            https://en.wikipedia.org/wiki/B%C3%A9zier_curve
+            https://en.wikipedia.org/wiki/Bezier_curve
         """
         super().__init__(num_bends=num_bends)
         self.degree = num_bends + 1

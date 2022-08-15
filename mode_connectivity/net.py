@@ -24,7 +24,7 @@ class CurveNet(tf.keras.Model):
         self,
         num_classes: Union[int, None],
         num_bends: int,
-        weight_decay: float,  # TODO Add to architecture
+        weight_decay: float,
         curve: Type[Curve],
         curve_model: Type[CurveModel],
         fix_start: bool = True,
