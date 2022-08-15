@@ -22,7 +22,7 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
         base_layer: Type[tf.keras.layers.Layer],
         parameter_types: Tuple[str] = ("kernel", "bias"),
         **kwargs,
-    ): 
+    ):
         """
         Initializes the CurveLayer.
 
@@ -89,7 +89,7 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
         # trainable variables
         for param_type in self.parameter_types:
             delattr(self, param_type)
-            
+
     def call(self, inputs: Tuple[tf.Tensor, tf.Tensor], *args, **kwargs):
         """
         Applies the CurveLayer to inputs.
@@ -100,7 +100,7 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
             inputs (Tuple[tf.Tensor, tf.Tensor]): Tuple of layer inputs and weights of the nodes.
 
         Returns:
-            _type_: Layer output
+            Layer output
         """
         x, curve_point_weights = inputs
         self.compute_and_set_weighted_parameters(curve_point_weights)
@@ -111,7 +111,7 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
         Adds the parameters for all parameter types and all curve nodes.
         Called in the build() method of the CurveLayer.
 
-        Variables for each paramter type are saved in lists 
+        Variables for each paramter type are saved in lists
         as class attributes called `curve_<parameter_type>s`, with
         the index of the curve node as the respective key.
         E.g. for self.parameter_types = ('kernel', 'bias'):
@@ -164,7 +164,7 @@ class CurveLayer(tf.keras.layers.Layer, ABC):
             fixed (bool): Indicates if the node is fixed/ not trainable.
 
         Returns:
-            _type_: Node parameter.
+            Node parameter.
         """
         name = f"{param_type}_curve_{index}"
         parameter = self.add_weight(

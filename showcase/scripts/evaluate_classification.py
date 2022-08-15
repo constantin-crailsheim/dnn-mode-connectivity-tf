@@ -6,16 +6,12 @@ import tabulate
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import tensorflow as tf
-
 from sklearn.metrics import accuracy_score, f1_score
 
 from showcase.argparser import Arguments, parse_evaluate_arguments
 from showcase.data import data_loaders
-from showcase.utils import (
-    disable_gpu,
-    get_model,
-    get_architecture
-)
+from showcase.utils import disable_gpu, get_architecture, get_model
+
 
 def main():
     """

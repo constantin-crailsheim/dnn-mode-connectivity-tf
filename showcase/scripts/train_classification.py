@@ -109,7 +109,7 @@ def train(
             if model.has_batchnorm_layer:
                 # Testing does not make sense, since fixed moving mean/variance
                 # does not match betas/gammas for random point on curve
-                test_results = {'loss': None, 'accuracy': None}
+                test_results = {"loss": None, "accuracy": None}
             else:
                 test_results = test_epoch(
                     loaders["test"], model, criterion, n_datasets["test"], training=True
@@ -274,7 +274,7 @@ def test_batch(
     target: tf.Tensor,
     model: tf.keras.Model,
     criterion: Callable,
-    training: bool
+    training: bool,
 ) -> Dict[str, float]:
     """
     Helper method for test_epoch().

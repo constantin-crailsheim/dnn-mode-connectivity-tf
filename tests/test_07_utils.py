@@ -1,5 +1,4 @@
 import os
-
 from unittest import mock
 
 import keras
@@ -7,20 +6,19 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
+from showcase.argparser import parse_train_arguments
 from showcase.models.cnn import CNN
 from showcase.models.cnnbn import CNNBN
 from showcase.models.mlp import MLP
-
-from showcase.argparser import Arguments, parse_train_arguments
-
 from showcase.utils import (
-    learning_rate_schedule,
     adjust_learning_rate,
     get_architecture,
-    save_weights,
+    get_epoch,
     get_model,
-    get_epoch
+    learning_rate_schedule,
+    save_weights,
 )
+
 
 @pytest.fixture
 def checkpoints_dir(tmpdir):
@@ -51,36 +49,36 @@ def basic_optimizer() -> keras.optimizers.Optimizer:
 
 
 testdata_lr_schedule = [
-    (1, 1, 20, 1), 
+    (1, 1, 20, 1),
     (1, 10, 20, 1),
     (1, 14, 20, 0.505),
     (1, 18, 20, 0.01),
-    (1, 20, 20, 0.01)
+    (1, 20, 20, 0.01),
 ]
 
-@pytest.mark.parametrize("base_lr, epoch, total_epochs, expected_lr", testdata_lr_schedule)
+
+@pytest.mark.parametrize(
+    "base_lr, epoch, total_epochs, expected_lr", testdata_lr_schedule
+)
 def test_learning_rate_schedule(base_lr, epoch, total_epochs, expected_lr):
     lr = learning_rate_schedule(base_lr, epoch, total_epochs)
     assert np.allclose(lr, expected_lr)
+
 
 @pytest.mark.parametrize("lr", [0.01, 0.05, 0.2, 0.5, 1.0])
 def test_adjust_learning_rate(lr, basic_optimizer):
     adjust_learning_rate(basic_optimizer, lr)
     assert basic_optimizer.lr == lr
 
+
 def test_save_weights(checkpoints_dir, basic_model, basic_optimizer):
     assert not os.path.isfile(
         os.path.join(checkpoints_dir, "model-weights-epoch1.index")
     )
     model = basic_model.get()
-    save_weights(
-        directory=checkpoints_dir,
-        epoch=1,
-        model=model
-    )
-    assert os.path.isfile(
-        os.path.join(checkpoints_dir, "model-weights-epoch1.index")
-    )
+    save_weights(directory=checkpoints_dir, epoch=1, model=model)
+    assert os.path.isfile(os.path.join(checkpoints_dir, "model-weights-epoch1.index"))
+
 
 # TODO Change to CNN and CNNBase
 @pytest.mark.parametrize("model_name", ["CNN", "MLP"])
@@ -93,12 +91,9 @@ def test_get_architecture(model_name):
     elif model_name == "MLP":
         assert issubclass(architecture, MLP)
 
+
 def test_get_regular_model_CNN():
-    arguments = [
-        "python",
-        "--model",
-        "CNN"
-        ]
+    arguments = ["python", "--model", "CNN"]
     with mock.patch("sys.argv", arguments):
         args = parse_train_arguments()
 
@@ -107,19 +102,16 @@ def test_get_regular_model_CNN():
         architecture=architecture,
         args=args,
         num_classes=10,
-        input_shape=(None, 28, 28, 1)
+        input_shape=(None, 28, 28, 1),
     )
 
     assert len(model.layers) == 2
     assert len(model.layers[0].layers) == 6
     assert len(model.layers[1].layers) == 3
 
+
 def test_get_regular_model_CNNBN():
-    arguments = [
-        "python",
-        "--model",
-        "CNNBN"
-        ]
+    arguments = ["python", "--model", "CNNBN"]
     with mock.patch("sys.argv", arguments):
         args = parse_train_arguments()
 
@@ -128,43 +120,39 @@ def test_get_regular_model_CNNBN():
         architecture=architecture,
         args=args,
         num_classes=10,
-        input_shape=(None, 28, 28, 1)
+        input_shape=(None, 28, 28, 1),
     )
 
     assert len(model.layers) == 2
     assert len(model.layers[0].layers) == 9
     assert len(model.layers[1].layers) == 5
 
+
 def test_get_regular_model_MLP():
-    arguments = [
-        "python",
-        "--model",
-        "MLP"
-        ]
+    arguments = ["python", "--model", "MLP"]
     with mock.patch("sys.argv", arguments):
         args = parse_train_arguments()
 
     architecture = get_architecture(model_name=args.model)
     model = get_model(
-        architecture=architecture,
-        args=args,
-        num_classes=None,
-        input_shape=(None,2)
+        architecture=architecture, args=args, num_classes=None, input_shape=(None, 2)
     )
 
     assert len(model.layers) == 1
     assert len(model.layers[0].layers) == 2
+
 
 def test_get_epoch_not_resume():
     arguments = [
         "python",
         "--model",
         "CNN",
-        ]
+    ]
     with mock.patch("sys.argv", arguments):
         args = parse_train_arguments()
     start_epoch = get_epoch(args)
     assert start_epoch == 1
+
 
 def test_get_epoch_resume():
     arguments = [
@@ -174,8 +162,8 @@ def test_get_epoch_resume():
         "--ckpt",
         "SomeCheckpoint",
         "--resume-epoch",
-        "21"
-        ]
+        "21",
+    ]
     with mock.patch("sys.argv", arguments):
         args = parse_train_arguments()
     start_epoch = get_epoch(args)

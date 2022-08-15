@@ -1,12 +1,12 @@
 import logging
 import os
-import random
 from functools import partial
 from typing import Any, List, Union
 
 import keras
 import mode_connectivity.curves as curves
 import tensorflow as tf
+from mode_connectivity.architecture import Architecture
 from mode_connectivity.net import CurveNet
 
 from showcase.argparser import Arguments
@@ -35,6 +35,7 @@ def disable_gpu():
 
 def set_seeds(seed: int):
     tf.random.set_seed(seed)
+
 
 def learning_rate_schedule(base_lr: float, epoch: int, total_epochs: int):
     """
@@ -92,7 +93,7 @@ class AlphaLearningRateSchedule(tf.keras.callbacks.Callback):
 
         Args:
             epoch (int): Current epoch.
-            logs (_type_, optional): Not used.
+            logs (optional): Not used.
         """
         lr = self.get_current_lr()
         # tf epoch is 0-indexed, so we need to add 1 to get the
@@ -184,7 +185,7 @@ def get_architecture(model_name: str):
         KeyError: Indicates if the model name is unknown/ the model is not implemented yet.
 
     Returns:
-        _type_: Model architecture.
+        Model architecture.
     """
     if model_name == "CNN":
         return CNN
@@ -196,19 +197,22 @@ def get_architecture(model_name: str):
 
 
 def get_model(
-    architecture, args: Arguments, num_classes: Union[int, None], input_shape
+    architecture: Architecture,
+    args: Arguments,
+    num_classes: Union[int, None],
+    input_shape,
 ):
     """
     Initializes and returns either the Base or Curve version of an architecture.
 
     Args:
-        architecture (_type_): Model architecture, e.g. CNN.
+        architecture (Architecture): Model architecture, e.g. CNN.
         args (Arguments): Parsed arguments.
         num_classes (Union[int, None]): The amount of classes the net discriminates among.  Specified as "None" in regression tasks.
         input_shape (tf.Tensor): Shape of the input data.
 
     Returns:
-        _type_: Initialized model.
+        Initialized model.
     """
     # If no curve is to be fit the base version of the architecture is initialized (e.g CNNBase instead of CNNCurve).
     if args.resume_epoch and not args.ckpt:
@@ -313,7 +317,7 @@ def get_model_and_loaders(args: Arguments):
         args (Arguments): Parser arguments.
 
     Returns:
-        _type_: Tuple of data loaders and model.
+        Tuple of data loaders and model.
     """
     loaders, num_classes, _, input_shape = data_loaders(
         dataset=args.dataset,

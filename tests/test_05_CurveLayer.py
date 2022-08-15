@@ -1,10 +1,10 @@
+from abc import abstractmethod
+
+import pytest
 import tensorflow as tf
 
-from mode_connectivity.layers import CurveLayer, Conv2DCurve, DenseCurve
 from mode_connectivity.curves import Bezier, PolyChain
-
-from abc import abstractmethod
-import pytest
+from mode_connectivity.layers import Conv2DCurve, CurveLayer, DenseCurve
 
 
 class CurveLayerTest:
@@ -75,9 +75,9 @@ class CurveLayerTest:
                 # Ensure that curve kernels and biases are of the same shape as of the original net
                 assert temp_curve_param[i].shape == temp_param.shape
                 if param != "bias":
-                    #Check if initialized
-                    assert tf.math.count_nonzero(temp_curve_param[i]) != 0 
-        
+                    # Check if initialized
+                    assert tf.math.count_nonzero(temp_curve_param[i]) != 0
+
         del built_layer, filters, units, kernel_size, input_shape, fix_points, curve
 
     def test_call(self, built_layer, parameters):
@@ -97,7 +97,19 @@ class CurveLayerTest:
 
         self.check_output_size(output, parameters)
 
-        del built_layer, curve_point_weights, old_kernel, new_kernel, output, filters, units, kernel_size, input_shape, fix_points, curve
+        del (
+            built_layer,
+            curve_point_weights,
+            old_kernel,
+            new_kernel,
+            output,
+            filters,
+            units,
+            kernel_size,
+            input_shape,
+            fix_points,
+            curve,
+        )
 
     @abstractmethod
     def check_output_size(self, output):
@@ -132,7 +144,17 @@ class CurveLayerTest:
                 getattr(built_layer, param_type), alt_param
             )
 
-        del built_layer, curve_point_weights, output, filters, units, kernel_size, input_shape, fix_points, curve
+        del (
+            built_layer,
+            curve_point_weights,
+            output,
+            filters,
+            units,
+            kernel_size,
+            input_shape,
+            fix_points,
+            curve,
+        )
 
 
 class TestConv2DCurveLayer(CurveLayerTest):
@@ -192,7 +214,18 @@ class TestConv2DCurveLayer(CurveLayerTest):
         output_shape_w = input_shape[2] - kernel_size[1] + 1
         assert output.shape == (input_shape[0], output_shape_h, output_shape_w, filters)
 
-        del output, output_shape_h, output_shape_w, parameters, filters, units, kernel_size, input_shape, fix_points, curve
+        del (
+            output,
+            output_shape_h,
+            output_shape_w,
+            parameters,
+            filters,
+            units,
+            kernel_size,
+            input_shape,
+            fix_points,
+            curve,
+        )
 
     @pytest.mark.parametrize(
         "built_layer,curve_point_weights,parameters",
@@ -265,7 +298,16 @@ class TestDenseCurveLayer(CurveLayerTest):
         filters, units, kernel_size, input_shape, fix_points, curve = parameters
         assert output.shape == (input_shape[0], units)
 
-        del output, parameters, filters, units, kernel_size, input_shape, fix_points, curve
+        del (
+            output,
+            parameters,
+            filters,
+            units,
+            kernel_size,
+            input_shape,
+            fix_points,
+            curve,
+        )
 
     @pytest.mark.parametrize(
         "built_layer,curve_point_weights,parameters",

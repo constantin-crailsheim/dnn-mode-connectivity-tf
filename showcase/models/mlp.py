@@ -1,6 +1,7 @@
 from typing import List, Tuple
 
 import tensorflow as tf
+
 from mode_connectivity.architecture import Architecture, CurveModel
 from mode_connectivity.layers import DenseCurve
 
@@ -40,7 +41,7 @@ class MLPBase(tf.keras.Model):
             inputs (tf.Tensor): Input data that is propagated through the base MLP.
 
         Returns:
-            _type_: Network predictions.
+            Network predictions.
         """
         return self.fc_part(inputs, **kwargs)
 
@@ -72,16 +73,14 @@ class MLPCurve(CurveModel):
 
         self.fc_part = [self.dense1, self.dense2]
 
-    def call(
-        self, inputs: Tuple[tf.Tensor, tf.Tensor], training=None, mask=None
-    ):
+    def call(self, inputs: Tuple[tf.Tensor, tf.Tensor], training=None, mask=None):
         """
         Performs the forward pass of the curve MLP with input data.
 
         Args:
             inputs (Tuple[tf.Tensor, tf.Tensor]):  Input data that is propagated through the curve MLP with bend weights defining the point on curve.
-            training (_type_, optional): Unused?. Defaults to None.
-            mask (_type_, optional): Unused?. Defaults to None.
+            training (optional): Unused?. Defaults to None.
+            mask (optional): Unused?. Defaults to None.
 
         Returns:
             tf.Tensor: Final layer output/ Prediction of MLP.

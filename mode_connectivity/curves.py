@@ -8,6 +8,7 @@ from scipy.special import binom
 
 class Curve(tf.keras.layers.Layer, ABC):
     """Base class for parametric curves."""
+
     num_bends: int
 
     def __init__(self, num_bends: int):
@@ -62,7 +63,7 @@ class Bezier(Curve):
                 2: Cubic
                 ...
             For further information, see:
-            https://en.wikipedia.org/wiki/B%C3%A9zier_curve
+            https://en.wikipedia.org/wiki/Bezier_curve
         """
         super().__init__(num_bends=num_bends)
         self.degree = num_bends + 1
@@ -84,6 +85,7 @@ class Bezier(Curve):
             * tf.math.pow((1.0 - point_on_curve), self.rev_range)
         )
 
+
 class PolyChain(Curve):
     """Implementation of the polygonal chain in the layer context."""
 
@@ -93,9 +95,9 @@ class PolyChain(Curve):
         self.range = tf.Variable(tf.range(0, float(num_bends + 2)), trainable=False)
 
     def call(self, point_on_curve: Union[float, tf.Tensor]) -> tf.Tensor:
-        t_n = point_on_curve * (self.num_bends + 1) # Better name for t_n
+        t_n = point_on_curve * (self.num_bends + 1)  # Better name for t_n
         tensor_of_zeros = tf.Variable(tf.zeros(self.num_bends + 2), trainable=False)
-        point_on_curve_weight_tmp = 1.0 - tf.math.abs(t_n - self.range) # Find better name
-        return (
-            tf.math.maximum(tensor_of_zeros, point_on_curve_weight_tmp)
-        )
+        point_on_curve_weight_tmp = 1.0 - tf.math.abs(
+            t_n - self.range
+        )  # Find better name
+        return tf.math.maximum(tensor_of_zeros, point_on_curve_weight_tmp)

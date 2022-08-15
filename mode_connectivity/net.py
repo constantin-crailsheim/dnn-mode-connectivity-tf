@@ -24,7 +24,7 @@ class CurveNet(tf.keras.Model):
         self,
         num_classes: Union[int, None],
         num_bends: int,
-        weight_decay: float,  # TODO Add to architecture
+        weight_decay: float,
         curve: Type[Curve],
         curve_model: Type[CurveModel],
         fix_start: bool = True,
@@ -134,7 +134,6 @@ class CurveNet(tf.keras.Model):
                 "No BaseModel parameters were imported into the respective node of the CurveModel."
             )
 
-
     def _build_from_base_model(self, base_model: tf.keras.Model):
         """
         Helper method that builds the CurveModel and thereby initializes its parameters.
@@ -177,7 +176,7 @@ class CurveNet(tf.keras.Model):
             index (int): Node index.
 
         Returns:
-            _type_: Name of the parameter in the BaseModel.
+            Name of the parameter in the BaseModel.
         """
         return parameter_name.replace("_curve", "").replace(f"_{index}:", ":")
 
@@ -211,7 +210,7 @@ class CurveNet(tf.keras.Model):
             point_on_curve (float): Point on the curve specified by values in [0, 1]. Defaults to None.
 
         Returns:
-            _type_: List of weighted parameters
+            List of weighted parameters
         """
         point_on_curve_weights = self.curve(point_on_curve)
         parameters = []
@@ -233,7 +232,7 @@ class CurveNet(tf.keras.Model):
         Samples a random point on the curve as a value in the range [0, 1) based on the uniform distribution.
 
         Args:
-            dtype (_type_, optional): Datatype of the output. Defaults to tf.float32.
+            dtype (optional): Datatype of the output. Defaults to tf.float32.
 
         Returns:
             Sampled point on curve.

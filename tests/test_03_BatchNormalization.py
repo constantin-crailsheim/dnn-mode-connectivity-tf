@@ -1,9 +1,10 @@
 import numpy as np
 import pytest
 import tensorflow as tf
+from tensorflow.keras.layers import BatchNormalization
+
 from mode_connectivity.curves import Bezier
 from mode_connectivity.layers import BatchNormalizationCurve
-from tensorflow.keras.layers import BatchNormalization
 
 
 @pytest.fixture(params=[True, False])
