@@ -13,7 +13,7 @@ $ python -m venv .venv
 $ source .venv/bin/activate
 ```
 
-To install in development, if you want to make changes to the existing code
+To install in development mode (if you want to make changes to the existing code)
 
 ```shell
 $ pip install -e .
@@ -205,3 +205,4 @@ There are some issues which may cause confusion:
 - The train loss might be larger than the test loss. This can happen, since the train loss is computed as average over all minibatches over the whole epoch, while the model is still improving. The test loss, on the other hand, is computed for the best model at the end of the epoch.
 - The test loss of the fixed corner points might not correspond to the test loss of the last epoch of the base models. This can happen, since for evaluation the moving mean/variance have to be recomputed for every point on curve for the final model and thus might not exactly correspond to the moving mean/variance computed during training.
 - For the CurveNet with BatchNorm, no testing is possible during the training mode, since the moving mean/variance was computed based on the randomly sampled points on the curve during training and thus would not fit to the randomly sampled points on the curve during testing. 
+- Although this repository is layed out to work with the Apple M1 architecture, it won't work properly with the current tensorflow-metal version 0.5. This is because random number generation is broken in this version, thus training with different random generated points on curve is impossible. Apple seems to be aware of this issue and working on it though. See this [thread](https://developer.apple.com/forums/thread/697057).
