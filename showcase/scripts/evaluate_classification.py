@@ -221,7 +221,7 @@ def evaluate_batch(
     output = model(input, training=False)
     loss = criterion(target, output)
     loss += tf.add_n(model.losses)
-    
+
     loss = loss.numpy() * len(input)
     pred = tf.math.argmax(output, axis=1, output_type=tf.dtypes.int64)
 
@@ -292,7 +292,7 @@ def save_stats_of_points_on_curve(
         test_losses=test_losses,
         test_accuracy_scores=test_accuracy_scores,
         test_f1_scores=test_f1_scores,
-        dl=dl,  # TODO do we need to save this here?
+        dl=dl,
     )
 
 

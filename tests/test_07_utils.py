@@ -80,8 +80,7 @@ def test_save_weights(checkpoints_dir, basic_model, basic_optimizer):
     assert os.path.isfile(os.path.join(checkpoints_dir, "model-weights-epoch1.index"))
 
 
-# TODO Change to CNN and CNNBase
-@pytest.mark.parametrize("model_name", ["CNN", "MLP"])
+@pytest.mark.parametrize("model_name", ["CNN", "CNNBN", "MLP"])
 def test_get_architecture(model_name):
     architecture = get_architecture(model_name)
     if model_name == "CNN":
