@@ -9,7 +9,7 @@ import tensorflow as tf
 
 from showcase.argparser import parse_evaluate_arguments
 from showcase.data import data_loaders
-from showcase.utils import disable_gpu, get_architecture, get_model
+from showcase.utils import disable_gpu, set_seeds, get_architecture, get_model
 
 
 def main():
@@ -20,7 +20,8 @@ def main():
     args = parse_evaluate_arguments()
     if args.disable_gpu:
         disable_gpu()
-
+    set_seeds(args.seed)
+    
     loaders, num_classes, n_datasets, input_shape = data_loaders(
         dataset=args.dataset, path=args.data_path, batch_size=args.batch_size
     )
