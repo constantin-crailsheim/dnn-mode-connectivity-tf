@@ -2,7 +2,7 @@
 
 The content of this repository is based on the PyTorch implementation [dnn-mode-connectivity](https://github.com/timgaripov/dnn-mode-connectivity) by Timur Garipov, Pavel Izmailov, which is based on their paper [Loss Surfaces, Mode Connectivity, and Fast Ensembling of DNNs](https://arxiv.org/abs/1802.10026).
 
-This project was part of the Summer 2022 course *Applied Deep Learning with TensorFlow and Pytorch* at the LMU Munich, supervised by [Dr. David Rügamer](https://www.slds.stat.uni-muenchen.de/people/ruegamer/).
+This project was part of the Summer 2022 course *Applied Deep Learning with TensorFlow and Pytorch* at the LMU Munich, supervised by [Dr. David Rügamer](https://www.slds.stat.uni-muenchen.de/people/ruegamer/), Gregor Wiese, Tobias Weber und Daniel Dold.
 
 # Setup
 
